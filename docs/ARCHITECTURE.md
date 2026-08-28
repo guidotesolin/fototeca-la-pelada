@@ -218,7 +218,7 @@ photo                            photo_translation
   slug            unique           locale        │ pk
   credit            -- "Cortesía"  caption       │
   source            -- the book    notes         │
-  year_from         -- filters     search_vector ┘  tsvector, written on each save
+  year_from         -- filters     search_vector ┘  tsvector, filled by a trigger
   year_to
   place
   sensitive         -- bool; see "Sensitive content"
@@ -260,7 +260,11 @@ Details that matter:
   Highlights have no order of their own: they follow category order, and a `featured_position`
   gets added when that default becomes annoying.
 - **Search**: `tsvector` with Postgres dictionaries (`spanish`, `english`, `french`, `italian`)
-  plus the `unaccent` extension, so that "Tesolin" finds "Tesolín".
+  plus the `unaccent` extension, so that "Tesolin" finds "Tesolín". T2 built this as four text
+  search configurations (`es_unaccent` and friends), because the built-in dictionaries cannot be
+  altered, and **fills `search_vector` from a trigger rather than from application code**: a
+  generated column cannot pick its configuration from the row's `locale`, and a trigger means the
+  seed, the panel and the translation editor cannot forget.
 
 ### Ponytail pass
 
@@ -473,7 +477,7 @@ fototeca-la-pelada/
 │   │   │   ├── categories/
 │   │   │   └── translations/
 │   │   └── api/
-│   ├── db/{schema.ts,queries/}
+│   ├── db/{schema.ts,index.ts,queries/}
 │   ├── lib/{auth.ts,drive.ts,images.ts,r2.ts}
 │   ├── components/
 │   └── i18n/messages/{es,en,fr,it}.json
