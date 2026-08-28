@@ -28,6 +28,7 @@ Non-profit project. Archive authors: Lautaro and Marcos Tesolín — fototecalp@
 ```bash
 npm install
 cp .env.example .env.local   # fill in real values
+npm run db:migrate           # creates the schema on the database in DATABASE_URL
 npm run dev
 ```
 
@@ -35,13 +36,16 @@ npm run dev
 
 ## Scripts
 
-| Command                | What it does                      |
-| ---------------------- | --------------------------------- |
-| `npm run dev`          | Development server                |
-| `npm run build`        | Production build                  |
-| `npm run lint`         | ESLint                            |
-| `npm run format`       | Prettier across the repo          |
-| `npm run format:check` | Verify formatting without writing |
+| Command                | What it does                             |
+| ---------------------- | ---------------------------------------- |
+| `npm run dev`          | Development server                       |
+| `npm run build`        | Production build                         |
+| `npm run lint`         | ESLint                                   |
+| `npm run format`       | Prettier across the repo                 |
+| `npm run format:check` | Verify formatting without writing        |
+| `npm run db:generate`  | Generate a migration from the schema     |
+| `npm run db:migrate`   | Apply pending migrations                 |
+| `npm run db:smoke`     | Check the schema against a live database |
 
 ## Workflow
 
@@ -102,6 +106,7 @@ La documentación técnica está en inglés, por convención del proyecto:
 ```bash
 npm install
 cp .env.example .env.local   # completar con valores reales
+npm run db:migrate           # crea el esquema en la base de DATABASE_URL
 npm run dev
 ```
 
@@ -109,13 +114,16 @@ npm run dev
 
 ## Scripts
 
-| Comando                | Qué hace                      |
-| ---------------------- | ----------------------------- |
-| `npm run dev`          | Servidor de desarrollo        |
-| `npm run build`        | Build de producción           |
-| `npm run lint`         | ESLint                        |
-| `npm run format`       | Prettier sobre todo el repo   |
-| `npm run format:check` | Verifica formato sin escribir |
+| Comando                | Qué hace                                 |
+| ---------------------- | ---------------------------------------- |
+| `npm run dev`          | Servidor de desarrollo                   |
+| `npm run build`        | Build de producción                      |
+| `npm run lint`         | ESLint                                   |
+| `npm run format`       | Prettier sobre todo el repo              |
+| `npm run format:check` | Verifica formato sin escribir            |
+| `npm run db:generate`  | Genera una migración desde el esquema    |
+| `npm run db:migrate`   | Aplica las migraciones pendientes        |
+| `npm run db:smoke`     | Verifica el esquema contra una base real |
 
 ## Flujo de trabajo
 
