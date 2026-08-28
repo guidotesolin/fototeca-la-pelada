@@ -1,0 +1,32 @@
+#!/bin/sh
+# Keeps secrets out of history. Two layers:
+#   1. hard guard on .env files, except the committable .env.example
+#   2. gitleaks full content scan, when installed
+#
+# ponytail: layer 1 is a filename check, not content analysis. gitleaks does the
+# real scanning; install it to close the gap.
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+
+offenders=$(printf '%s\n' "$staged" \
+  | grep -E '(^|/)\.env($|\.)' \
+  | grep -vE '(^|/)\.env\.example$')
+
+if [ -n "$offenders" ]; then
+  echo "pre-commit: refusing to commit an env file:" >&2
+  printf '%s\n' "$offenders" | sed 's/^/  /' >&2
+  echo "Secrets belong in .env.local (git-ignored) or in the Vercel dashboard." >&2
+  echo "Only .env.example is committable." >&2
+  exit 1
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  # Newer gitleaks uses `git --staged`; older ones use `protect --staged`.
+  if ! gitleaks git --staged --redact 2>/dev/null && ! gitleaks protect --staged --redact; then
+    echo "pre-commit: gitleaks found a secret. Nothing was committed." >&2
+    exit 1
+  fi
+else
+  echo "pre-commit: gitleaks not installed - only the env guard ran." >&2
+  echo "  Install it: https://github.com/gitleaks/gitleaks/releases" >&2
+fi
