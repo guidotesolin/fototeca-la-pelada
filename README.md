@@ -1,8 +1,8 @@
 # Fototeca La Pelada
 
 Digital photographic archive of La Pelada, Santa Fe, Argentina. A migration from Google Sites to a
-purpose-built application: 617 photographs with captions and credits, browsable through search and
-filters, and administered by their own authors without touching code.
+purpose-built application: 592 photographs, nearly all with caption and credit, browsable through
+search and filters, and administered by their own authors without touching code.
 
 Non-profit project. Archive authors: Lautaro and Marcos Tesolín — fototecalp@gmail.com
 
@@ -68,13 +68,13 @@ blocks `.env*` files and runs `gitleaks` when it is installed.
 This project uses **Next 16**, which has breaking changes relative to the versions models were
 trained on. Before writing Next code, read `node_modules/next/dist/docs/`.
 
--------------------------------------------------------------
+---
 
 # Versión en Español
 
 Archivo digital fotográfico de La Pelada, Santa Fe, Argentina. Migración del sitio en Google Sites
-a una aplicación propia: 617 fotografías con epígrafe y crédito, consultables por búsqueda y
-filtros, y administrables por sus autores sin tocar código.
+a una aplicación propia: 592 fotografías, casi todas con epígrafe y crédito, consultables por
+búsqueda y filtros, y administrables por sus autores sin tocar código.
 
 Proyecto sin fines de lucro. Autores del archivo: Lautaro y Marcos Tesolín — fototecalp@gmail.com
 

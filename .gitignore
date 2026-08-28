@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Rescued archive (T1). archive.json IS versioned: it is the research work, it is
+# small and it diffs cleanly. The image files are not: ~150 MB of binaries would
+# live in git history forever, and their permanent home is Drive + R2.
+/archive/originals/
+
+# python bytecode from tools/
+__pycache__/
