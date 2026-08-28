@@ -6,14 +6,14 @@
 ## Context
 
 Lautaro and Marcos Tesolín (history teachers) maintain the photographic archive of La Pelada,
-Santa Fe, Argentina, on a Google Sites site. It holds **617 images across 12 sections**, each with
-a caption and a credit naming the family that lent the photo ("Cortesía: ..."), plus source notes
-from the town's Centenary book and video interviews with residents.
+Santa Fe, Argentina, on a Google Sites site. It holds **592 photographs across 11 sections**,
+nearly all with a caption and a credit naming the family that lent the photo ("Cortesía: ..."),
+plus source notes from the town's Centenary book and video interviews with residents.
 
 Google Sites imposes three limits that motivate the move:
 
 1. No per-photo URL, so nothing is shareable, citable, or individually indexable.
-2. No search and no filters, which makes 617 photos effectively unbrowsable.
+2. No search and no filters, which makes 592 photos effectively unbrowsable.
 3. Metadata is loose text under each image, so the research work is not data.
 
 Goal: an application where the archive is **searchable**, where **the brothers administer it
@@ -22,11 +22,14 @@ into English, French and Italian** — the main migrant origins of the town, for
 
 ### Three findings from inspecting the current site
 
-- **The images on Sites are the originals as uploaded.** Requesting `=s0` returns widths from 471
-  to 1751 px, all distinct, one of them above the 1280 px the page itself requests. No value
-  repeats, which is what an imposed cap would look like. The quality loss happened **before**
-  upload, not in Sites. Sample of 8 images; T1 confirms this via Takeout. Implication: there is no
-  better copy hidden inside Google — the good ones, if any, are with whoever did the scanning.
+- **Sites keeps the pixels it was given, and re-encodes them.** T1 measured all 592: `=s0` returns
+  widths from 300 to 2340 px, 413 distinct values, well above the 1280 px the page itself requests.
+  No cap. The quality loss happened **before** upload. The Takeout export confirmed it from the
+  other side: 497 of the 649 images in the Drive working folder have exactly the pixel dimensions
+  of a published photo, but only 4 are byte-identical, so Sites recompresses on upload. That leaves
+  a slightly better _encode_ of the same pixels in Drive for about 210 photos — worth nothing once
+  T3 re-encodes everything to AVIF. Implication unchanged: there is no better copy hidden inside
+  Google, and the good ones, if any, are with whoever did the scanning.
 - **The captions are the valuable asset, not the photos.** Who appears, which corner it is, what
   year, who lent it: that is research done by hand, and it can be rescued in full and
   automatically because the Sites HTML is perfectly regular (image → caption → "Cortesía: X").
@@ -109,7 +112,7 @@ Serving photos straight from Drive is not viable, for three independent reasons:
 | Where                          | What it holds                                                                                            |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | **Drive** — 5 TB, already paid | Preservation masters: scans at maximum quality. Never served to the public. 5 TB fits tens of thousands. |
-| **R2** — 10 GB, free           | Only the derivatives the site consumes: AVIF and WebP at three widths. ≈ 270 MB for the current 617.     |
+| **R2** — 10 GB, free           | Only the derivatives the site consumes: AVIF and WebP at three widths. ≈ 270 MB for the current 592.     |
 
 ### The bridge: importing from Drive in the admin panel
 
@@ -135,7 +138,7 @@ connections.
 
 ### Cross-cutting decision: image variants are generated at import time
 
-Vercel Hobby includes only 5,000 image transformations per month; with 617 photos and several
+Vercel Hobby includes only 5,000 image transformations per month; with 592 photos and several
 sizes that is exhausted on Google's first crawl. So variants are generated once with `sharp` at
 import (AVIF and WebP, three widths), stored in R2, and served straight from CDN via `<picture>`
 and `srcset`. **Vercel quota usage: zero.** And because encoding is paid once, outside the request
@@ -412,24 +415,38 @@ structure of the detail page, and adding a new language to the list.
 ## Rescuing the current archive
 
 **There is no API for the new Google Sites**: the Sites API only reaches Classic Sites and is
-deprecated. But **Google Takeout does export the new Sites to HTML + images**, which is what access
-to the archive's Gmail account is for. The two routes are complementary:
+deprecated. **And there is no Takeout route either** — this document used to assume one, and T1
+found it does not exist: the product list at takeout.google.com, on the archive's own account,
+offers no Sites entry at all (checked 2026-08-28, full list read item by item). Whatever the Sites
+API and Takeout used to do for Classic Sites, neither reaches this site.
 
-| Route       | What it gives                                                                                                                              | Limits                                                                                                              |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| **Takeout** | The image files as Google stores them, in bulk, with no rate limiting and no terms-of-use grey area. Settles the real-resolution question. | Only sites in My Drive, not in shared drives. Exportable **once every 2 months**: the attempt should not be wasted. |
-| **Scraper** | The metadata. In the live HTML the image → caption → "Cortesía: X" pattern is perfectly regular, verified across all 12 sections.          | The CDN rate-limits: after roughly 50 consecutive downloads it returns 403. Needs pacing and long backoff.          |
+That leaves **the scraper as the only route**, which turned out to be the good news: the live HTML
+is perfectly regular — image → caption → "Cortesía: X" — and it carries the part that took human
+work. The image bytes it downloads at `=s0` are what Sites has; the CDN 403s on stale tokens, so
+each section is downloaded right after its page is read.
 
-Order: **Takeout first** (because of the two-month quota and because it determines whether images
-need downloading at all), **the scraper for metadata** (Takeout's export flattens the HTML and does
-not guarantee preserving the photo↔caption↔credit association), and then **reconcile** by matching
-document order, keeping the image bytes from whichever source carries the larger version.
+What the Takeout attempt did deliver was the Drive folder `Fototeca`: the brothers' working
+material, 649 images organised by lending family plus their caption notes as `.txt`. It settles the
+resolution question from the other side and is recorded in [TAKEOUT.md](./TAKEOUT.md), but it is
+not a second copy of the archive: 497 of its images match a published photo's exact pixel
+dimensions and only 4 match its bytes.
 
-Known counts to verify against: Espacios 72, Sociales 106, Campo 81, Trabajo 57, Deporte 55,
-Familias 48, Educación 45, Eucaliptus 45, Religión 43, Inundación '78 33, Casamientos 29.
+Counts, as verified by T1 against the live site: Espacios 70, Sociales 104, Campo 79, Trabajo 55,
+Deporte 53, Familias 46, Educación 43, Eucaliptus 43, Religión 41, Inundación '78 31,
+Casamientos 27 — **592** in total.
 
-> `tools/extraer_sites.py` (298 lines) exists, written in Spanish and **never executed**. T1
-> rewrites it in English as `tools/extract-sites.py` and adds rate-limit handling.
+> The earlier figures in this document were every one of them two higher, and the 617 total
+> twenty-four higher, because they counted `<img>` tags: the theme's logo appears twice on each of
+> the twelve pages. The home page adds no photographs of its own, only the three social-media
+> icons, so it is read for its text and contributes nothing to the count.
+
+**73 of the 592 have no caption on the live site**, only a credit. That is the source's own state,
+not something lost in transit: their container in the page holds a single "Cortesía" paragraph.
+The Drive folder holds hand-written notes (`Explicacion.txt`, `fotos.txt`) that may cover some of
+them, which is a job for the panel once T10 exists, not for the extractor.
+
+`tools/extract-sites.py` is that scraper, in English, with the stale-token handling. It replaced
+`tools/extraer_sites.py`, which was never executed.
 
 ---
 
@@ -439,7 +456,8 @@ Familias 48, Educación 45, Eucaliptus 45, Religión 43, Inundación '78 33, Cas
 fototeca-la-pelada/
 ├── docs/
 │   ├── ARCHITECTURE.md            # this document
-│   └── TASKS.md                   # the task board
+│   ├── TASKS.md                   # the task board
+│   └── TAKEOUT.md                 # the by-hand half of the archive rescue
 ├── src/
 │   ├── app/
 │   │   ├── [locale]/              # public, pre-rendered, localized
@@ -464,6 +482,8 @@ fototeca-la-pelada/
 │   ├── extract-sites.py           # archive rescue
 │   └── seed.ts                    # archive.json → Postgres + R2
 └── archive/                       # raw rescue: permanent backup, never deleted
+    ├── archive.json               # the metadata: versioned, it is the research work
+    └── originals/                 # the image files: gitignored, ~105 MB
 ```
 
 A single Next.js app, no monorepo: the panel is a route group sharing types and model with the
@@ -480,30 +500,31 @@ Everything sits on free tiers except the domain: Vercel Hobby, Neon, R2 (10 GB) 
 Drive is already paid and simply takes on a new role at no extra cost. The only new recurring
 expense is the `.com.ar` domain at NIC Argentina, billed yearly.
 
-Storage: derivatives for the 617 photos come to roughly **270 MB of R2's 10 GB**; masters go to
+Storage: derivatives for the 592 photos come to roughly **270 MB of R2's 10 GB**; masters go to
 Drive, where 5 TB covers tens of thousands of scans.
 
 ---
 
 ## Risks
 
-| Risk                                                         | Mitigation                                                                                                                                                            |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vercel Hobby is non-commercial use only**                  | The project is non-profit, so it complies. If it is ever monetized, it must move to Pro.                                                                              |
-| **Neon's free tier suspends the database past 100 CU-hours** | The public site is pre-rendered: the database is touched on publish, not per visit. Search is the only point to watch.                                                |
-| **Photos are 471–1751 px and that already is the original**  | The improvement is not in Google but in the source scans. `master_source` + `drive_file_id` allow replacing them without touching a single metadata field.            |
-| **Google's CDN rate-limits**                                 | Confirmed in testing: after roughly 50 consecutive downloads it returns 403. T1 downloads with pacing and long backoff; Takeout avoids the problem entirely.          |
-| **Publishing stops being instantaneous**                     | Revalidation is targeted and takes seconds, not a full rebuild.                                                                                                       |
-| **Old Sites links will break**                               | Sites cannot redirect. Section slugs are preserved and a notice is left on the old site.                                                                              |
-| **Translations are human work**                              | Partial translation is supported by design: fallback to Spanish, and the panel shows what is missing.                                                                 |
-| **Photo rights**                                             | The current site states the photos were digitized with their owners' permission. That notice and the per-photo credit are preserved as a requirement, not decoration. |
+| Risk                                                             | Mitigation                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Vercel Hobby is non-commercial use only**                      | The project is non-profit, so it complies. If it is ever monetized, it must move to Pro.                                                                                                                                                   |
+| **Neon's free tier suspends the database past 100 CU-hours**     | The public site is pre-rendered: the database is touched on publish, not per visit. Search is the only point to watch.                                                                                                                     |
+| **Photos are 300–2340 px and that already is what was uploaded** | The improvement is not in Google but in the source scans. `master_source` + `drive_file_id` allow replacing them without touching a single metadata field.                                                                                 |
+| **Google's CDN rate-limits**                                     | Not a download quota: 592 downloads in a row never tripped it, while a token from a page left idle answered 403 at t+61s. The extractor downloads each section right after reading its page, and a 403 re-reads the page for fresh tokens. |
+| **Publishing stops being instantaneous**                         | Revalidation is targeted and takes seconds, not a full rebuild.                                                                                                                                                                            |
+| **Old Sites links will break**                                   | Sites cannot redirect. Section slugs are preserved and a notice is left on the old site.                                                                                                                                                   |
+| **Translations are human work**                                  | Partial translation is supported by design: fallback to Spanish, and the panel shows what is missing.                                                                                                                                      |
+| **Photo rights**                                                 | The current site states the photos were digitized with their owners' permission. That notice and the per-photo credit are preserved as a requirement, not decoration.                                                                      |
 
 ---
 
 ## Verification
 
-- **T1**: per-category counts against the table above; 10 records checked by hand against the live
-  site; no photo left without a caption.
+- **T1**: per-category counts against the table above; records checked by hand against the live
+  site, including the last photo of a section and one of the uncaptioned ones; no caption that
+  exists on the site left behind.
 - **T4**: `select count(*)` per category against T1; SHA-256 of a sample against R2.
 - **Mobile**: Lighthouse in mobile mode with simulated 3G over a gallery and a detail page, watching
   LCP and CLS; **browse with JavaScript disabled** and confirm photos, captions, pagination and
@@ -522,8 +543,8 @@ Drive, where 5 TB covers tens of thousands of scans.
 ## Still open
 
 - **Visual identity**: decided in T5 with proposals in front of us.
-- **Whether the Sites site sits in My Drive or a shared drive**, since that enables or rules out the
-  Takeout route. Checked by signing in and searching `type:site` in Drive. Confirmed present in
-  Drive; owner and location still to be verified in the details pane.
+- **Where the Sites site sits in Drive**: dropped as a question. It only mattered for the Takeout
+  route, and there is no Takeout route — the export list has no Sites product. The scraper needs
+  nothing but the public URL.
 - **People as first-class entities**: dropped. Search covers the surname case, and captions mix
   people with places.
