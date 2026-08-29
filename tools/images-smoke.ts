@@ -86,6 +86,18 @@ async function main() {
     `  ${narrow.slug}: ${narrow.width} px master -> ${small.renditions.length} renditions`,
   )
 
+  // --- a master between two steps is still served at its own width ---
+  const between = photos.find((p) => p.width > WIDTHS[0] * 1.2 && p.width < WIDTHS[1] * 0.9)
+  if (between) {
+    const mid = await derive(readFileSync(join(ARCHIVE, 'originals', between.file)))
+    const widths = [...new Set(mid.renditions.map((r) => r.width))]
+    assert.ok(
+      widths.includes(between.width),
+      `${between.slug} (${between.width} px) keeps its own width, got ${widths.join(', ')}`,
+    )
+    console.log(`  ${between.slug}: ${between.width} px master -> widths ${widths.join(', ')}`)
+  }
+
   // --- a master is validated by content, not by what it claims to be ---
   await assert.rejects(read(Buffer.from('this is not an image')), /unsupported|unreadable/)
   await assert.rejects(read(Buffer.alloc(41 * 1024 * 1024)), /over the 40 MB limit/)

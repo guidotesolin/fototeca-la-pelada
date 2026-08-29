@@ -23,6 +23,20 @@ Non-profit project. Archive authors: Lautaro and Marcos Tesolín — fototecalp@
 > which npm needs for `node_modules/.bin`, and that partition is additionally mounted `noexec` with
 > `fmask=0177`. No flag fixes it. That is why the project lives in `~/Proyectos`, on ext4.
 
+> ### If a database or R2 call hangs and then times out
+>
+> Neon and Cloudflare publish AAAA records. On a machine with no default IPv6 route, Node tries
+> IPv6 first and the connection dies with `AggregateError [ETIMEDOUT]` at `internalConnectMultiple`
+> instead of falling back. Check with `ip -6 route show default`: if it prints nothing, run the
+> scripts with
+>
+> ```bash
+> export NODE_OPTIONS="--no-network-family-autoselection --dns-result-order=ipv4first"
+> ```
+>
+> It is a local network condition, not a project setting, which is why it is not baked into the
+> npm scripts. Vercel is unaffected.
+
 ## Getting started
 
 ```bash
@@ -101,6 +115,20 @@ La documentación técnica está en inglés, por convención del proyecto:
 > El primer intento fue en `/mnt/Datos` (exFAT) y falló: exFAT **no soporta symlinks**, que npm
 > necesita para `node_modules/.bin`, y esa partición además está montada `noexec` con
 > `fmask=0177`. Ningún flag lo arregla. Por eso el proyecto vive en `~/Proyectos`, sobre ext4.
+
+> ### Si una llamada a la base o a R2 se cuelga y termina en timeout
+>
+> Neon y Cloudflare publican registros AAAA. En una máquina sin ruta IPv6 por defecto, Node intenta
+> IPv6 primero y la conexión muere con `AggregateError [ETIMEDOUT]` en `internalConnectMultiple` en
+> vez de caer a IPv4. Se verifica con `ip -6 route show default`: si no imprime nada, correr los
+> scripts con
+>
+> ```bash
+> export NODE_OPTIONS="--no-network-family-autoselection --dns-result-order=ipv4first"
+> ```
+>
+> Es una condición de la red local, no una configuración del proyecto, y por eso no está metida en
+> los scripts de npm. Vercel no se ve afectado.
 
 ## Puesta en marcha
 

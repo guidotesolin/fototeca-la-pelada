@@ -12,7 +12,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:smoke": "tsx tools/db-smoke.ts",
-    "images:smoke": "tsx tools/images-smoke.ts"
+    "images:smoke": "tsx tools/images-smoke.ts",
+    "db:seed": "tsx tools/seed.ts",
+    "db:seed:verify": "tsx tools/seed.ts --verify"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1120.0",

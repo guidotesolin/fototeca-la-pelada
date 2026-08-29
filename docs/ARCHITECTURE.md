@@ -109,10 +109,10 @@ Serving photos straight from Drive is not viable, for three independent reasons:
    viewed or downloaded this file recently". On a public site that is an outage.
 3. **The Drive API terms forbid it**: using Drive as a CDN replacement is not permitted.
 
-| Where                          | What it holds                                                                                                     |
-| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
-| **Drive** — 5 TB, already paid | Preservation masters: scans at maximum quality. Never served to the public. 5 TB fits tens of thousands.          |
-| **R2** — 10 GB, free           | The derivatives the site consumes, plus the rescued masters until real scans exist: ≈ 160 MB for the current 592. |
+| Where                          | What it holds                                                                                                                                  |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Drive** — 5 TB, already paid | Preservation masters: scans at maximum quality. Never served to the public. 5 TB fits tens of thousands.                                       |
+| **R2** — 10 GB, free           | The derivatives the site consumes, plus the rescued masters until real scans exist: 242 MB for the current 592, measured after T4 seeded them. |
 
 ### The bridge: importing from Drive in the admin panel
 
@@ -504,11 +504,12 @@ Everything sits on free tiers except the domain: Vercel Hobby, Neon, R2 (10 GB) 
 Drive is already paid and simply takes on a new role at no extra cost. The only new recurring
 expense is the `.com.ar` domain at NIC Argentina, billed yearly.
 
-Storage, as measured in T3 over a sample of 30: derivatives average 92 KB per photo, so the 592
-come to **≈ 55 MB**, and the rescued masters add the 105 MB T1 downloaded — **≈ 160 MB of R2's
-10 GB**. Far under the earlier estimate of 270 MB for derivatives alone, and the reason is the
-no-upscaling rule: with a median master of 1000 px, most photos yield two or four renditions rather
-than six. Real scans, when they exist, go to Drive, where 5 TB covers tens of thousands.
+Storage, counted in R2 after T4 seeded the archive: **242 MB of the 10 GB**, in 3,342 objects —
+592 masters at 105 MB, and 2,750 derivatives at 137 MB, an average of 4.6 renditions per photo
+rather than six. Two rules pull in opposite directions and both are deliberate: nothing is
+upscaled, which is why a 300 px master yields one width instead of three, and a master that sits
+between two steps earns a rendition at its own width, which is what keeps a 920 px scan from being
+served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens of thousands.
 
 ---
 

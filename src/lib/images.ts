@@ -9,6 +9,14 @@ import sharp from 'sharp'
 /** A 360 px phone must never download a 1440 px image. */
 export const WIDTHS = [480, 960, 1440] as const
 
+/**
+ * How much bigger than the widest step it reached a master has to be to earn a
+ * rendition at its own width. Without this a 920 px master is served at 480,
+ * throwing away half of what we have on the one screen built for looking closely.
+ * ponytail: a flat threshold, not a perceptual one. Tune it if the bytes bite.
+ */
+const OWN_WIDTH_PAYS = 1.15
+
 /** AVIF first in the `<picture>`, WebP as the fallback every browser reads. */
 export const FORMATS = ['avif', 'webp'] as const
 
@@ -59,14 +67,25 @@ export async function read(data: Buffer): Promise<Master> {
  * 1024 px wide. Metadata is dropped, which is both smaller and one less way to
  * publish something a donor did not mean to hand over.
  */
+/**
+ * The widths worth encoding for one master: the standard steps it can fill, plus
+ * its own width when that is meaningfully larger than the last step it reached.
+ * Never wider than the widest step, and never an upscale.
+ */
+function targetWidths(masterWidth: number): number[] {
+  const capped = Math.min(masterWidth, WIDTHS[WIDTHS.length - 1])
+  const steps = WIDTHS.filter((w) => w <= capped)
+  const largest = steps[steps.length - 1] ?? 0
+  return steps.length && capped < largest * OWN_WIDTH_PAYS ? steps : [...steps, capped]
+}
+
 export async function derive(data: Buffer): Promise<{ renditions: Rendition[]; master: Master }> {
   const master = await read(data)
   const renditions: Rendition[] = []
 
   // ponytail: decodes the master once per width instead of sharing one decode across
   // the pipeline. Costs seconds over the 592 photos; worth revisiting at thousands.
-  for (const width of WIDTHS) {
-    if (width > master.width && renditions.length) break // already covered by a narrower one
+  for (const width of targetWidths(master.width)) {
     const resized = sharp(data).resize({ width, withoutEnlargement: true })
     for (const format of FORMATS) {
       const encoded =
