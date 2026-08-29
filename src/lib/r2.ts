@@ -114,6 +114,20 @@ export async function exists(key: string): Promise<boolean> {
   }
 }
 
+/** Every key under a prefix, or the whole bucket when there is none. */
+export async function listKeys(prefix = ''): Promise<string[]> {
+  const keys: string[] = []
+  let token: string | undefined
+  do {
+    const page = await s3().send(
+      new ListObjectsV2Command({ Bucket: bucket(), Prefix: prefix, ContinuationToken: token }),
+    )
+    for (const object of page.Contents ?? []) if (object.Key) keys.push(object.Key)
+    token = page.IsTruncated ? page.NextContinuationToken : undefined
+  } while (token)
+  return keys
+}
+
 /**
  * Everything under a prefix, listed and then deleted. A takedown cannot build the
  * key list from the width table: a narrow master produces a rendition at its own
@@ -121,20 +135,17 @@ export async function exists(key: string): Promise<boolean> {
  * Returns how many objects were removed.
  */
 export async function removePrefix(prefix: string): Promise<number> {
-  let removed = 0
-  let token: string | undefined
-  do {
-    const listed = await s3().send(
-      new ListObjectsV2Command({ Bucket: bucket(), Prefix: prefix, ContinuationToken: token }),
+  const keys = await listKeys(prefix)
+  for (let i = 0; i < keys.length; i += 1000) {
+    // DeleteObjects takes a thousand at a time.
+    await s3().send(
+      new DeleteObjectsCommand({
+        Bucket: bucket(),
+        Delete: { Objects: keys.slice(i, i + 1000).map((Key) => ({ Key })) },
+      }),
     )
-    const keys = (listed.Contents ?? []).flatMap((o) => (o.Key ? [{ Key: o.Key }] : []))
-    if (keys.length) {
-      await s3().send(new DeleteObjectsCommand({ Bucket: bucket(), Delete: { Objects: keys } }))
-      removed += keys.length
-    }
-    token = listed.IsTruncated ? listed.NextContinuationToken : undefined
-  } while (token)
-  return removed
+  }
+  return keys.length
 }
 
 function isNotFound(error: unknown): boolean {

@@ -24,7 +24,7 @@ import {
   photoTranslation,
 } from '../src/db/schema'
 import { derive } from '../src/lib/images'
-import { exists, getBytes, keyFor, masterKeyFor, newPrefix, put } from '../src/lib/r2'
+import { exists, getBytes, keyFor, listKeys, masterKeyFor, newPrefix, put } from '../src/lib/r2'
 
 try {
   process.loadEnvFile('.env.local')
@@ -113,7 +113,13 @@ async function verify(sections: Section[]) {
   }
 
   const rows = await db
-    .select({ slug: photo.slug, mk: photo.masterKey, tk: photo.thumbKey, sha: photo.masterSha256 })
+    .select({
+      slug: photo.slug,
+      mk: photo.masterKey,
+      wk: photo.webKey,
+      tk: photo.thumbKey,
+      sha: photo.masterSha256,
+    })
     .from(photo)
   console.log(`\n  ${rows.length} photos in the database`)
 
@@ -142,11 +148,19 @@ async function verify(sections: Section[]) {
   }
   console.log(`  sha256: ${sample.length} masters read back from R2, ${mismatched} mismatched`)
 
+  // An object no row points at is an object the panel can never delete, which is
+  // the takedown promise quietly broken. An interrupted seed is how they appear.
+  const referenced = rows.flatMap((r) => [r.mk, r.wk].filter(Boolean) as string[])
+  const stored = await listKeys()
+  const orphans = stored.filter((k) => !referenced.some((p) => k === p || k.startsWith(`${p}-`)))
+  console.log(`  R2: ${stored.length} objects, ${orphans.length} referenced by no row`)
+
   const total = sections.reduce((n, s) => n + s.photos.length, 0)
   assert.equal(rows.length, total, 'every photo in archive.json is in the database')
   assert.equal(bad, 0, 'every category count matches')
   assert.equal(missingThumb.length + absent.length, 0, 'every photo has a thumbnail in R2')
   assert.equal(mismatched, 0, 'every sampled master matches its hash')
+  assert.equal(orphans.length, 0, 'no object in R2 is unreachable from the database')
   console.log('\nverify ok')
 }
 

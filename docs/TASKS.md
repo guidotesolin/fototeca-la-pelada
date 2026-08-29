@@ -187,3 +187,27 @@ _Commit_: `chore: configure production deployment, domains and security headers`
 Loading the English, French and Italian translations. Human work, no new code.
 
 _Commit_: `content: add English, French and Italian translations`
+
+---
+
+## Follow-ups
+
+Things found while executing the board and deliberately left. Each one says why it was left and
+who it belongs to, so nothing here is quietly waiting on a decision nobody knows about. Shortcuts
+_inside_ code are marked differently, with a `ponytail:` comment naming the ceiling and the way
+out: `grep -rn "ponytail:" src tools` lists those.
+
+| ID  | What                                                                                                | Why it was left                                                                                                            | Belongs to              |
+| --- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| F1  | 73 of the 592 photos have no caption on the live site, only a credit                                | The source's own state, not a loss in transit. The Drive folder's `Explicacion.txt` and `fotos.txt` are candidate material | T10, by hand            |
+| F2  | `campo-067`'s caption still ends with "A CONTINUACIÓN, FOTOGRAFÍAS DE 'CARNEADAS'…"                 | The warning is `photo.sensitive` now, so the sentence is stale — but trimming an author's words is not a script's call     | T10                     |
+| F3  | The 12 photos flagged sensitive were derived from that one marker, and 3 of them have no caption    | Worth one look from Lautaro and Marcos before the site is public                                                           | T10                     |
+| F4  | `photo.source` and `photo.place` are empty for all 592                                              | The scraper cannot separate a book reference from any other note, and place lives inside the captions as prose             | T10, or never           |
+| F5  | The three YouTube interviews in `archive.json` have no home in the data model                       | One video in three sections is not a schema, and nothing in the design consumes them yet                                   | T6, if they should show |
+| F6  | The home page text rescued in T1 (`sections[0].intro`) is in `archive.json` but not in the database | It is `/sobre` and home copy, not a category                                                                               | T6                      |
+| F7  | No index on `photo.published` or `photo.featured`                                                   | At 592 rows Postgres sequential-scans regardless                                                                           | when a plan asks for it |
+| F8  | The database client carries no `server-only` guard                                                  | Not resolvable in Next 16; it would be a new dependency for one line, and the env var already fails safe                   | T9                      |
+| F9  | `npm audit` reports 4 moderate, all esbuild ≤ 0.24.2 through `drizzle-kit`                          | Dev-only, and `audit fix --force` downgrades drizzle-kit by thirteen minor versions                                        | when drizzle-kit moves  |
+| F10 | A takedown is verified through `HeadObject`, not through a public URL                               | `img.fototecalapelada.com.ar` does not exist yet                                                                           | T14                     |
+| F11 | AVIF and WebP quality sit at 50 and 78 and were never tuned                                         | They look right on real photos from this archive and the bytes are already small                                           | nobody, probably        |
+| F12 | A Drive export including every file was never tried, in case it carries the Sites HTML              | The measured gain is a JPEG encode that the AVIF re-encode erases                                                          | see TAKEOUT.md          |
