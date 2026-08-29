@@ -46,6 +46,7 @@ npm run dev
 | `npm run db:generate`  | Generate a migration from the schema     |
 | `npm run db:migrate`   | Apply pending migrations                 |
 | `npm run db:smoke`     | Check the schema against a live database |
+| `npm run images:smoke` | Check the derivative pipeline and R2     |
 
 ## Workflow
 
@@ -124,6 +125,7 @@ npm run dev
 | `npm run db:generate`  | Genera una migración desde el esquema    |
 | `npm run db:migrate`   | Aplica las migraciones pendientes        |
 | `npm run db:smoke`     | Verifica el esquema contra una base real |
+| `npm run images:smoke` | Verifica el pipeline de derivados y R2   |
 
 ## Flujo de trabajo
 
