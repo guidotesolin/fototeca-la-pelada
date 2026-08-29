@@ -11,14 +11,17 @@
     "format:check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:smoke": "tsx tools/db-smoke.ts"
+    "db:smoke": "tsx tools/db-smoke.ts",
+    "images:smoke": "tsx tools/images-smoke.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1120.0",
     "drizzle-orm": "^0.45.2",
     "next": "16.3.3",
     "postgres": "^3.4.9",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

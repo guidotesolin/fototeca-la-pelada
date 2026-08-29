@@ -109,10 +109,10 @@ Serving photos straight from Drive is not viable, for three independent reasons:
    viewed or downloaded this file recently". On a public site that is an outage.
 3. **The Drive API terms forbid it**: using Drive as a CDN replacement is not permitted.
 
-| Where                          | What it holds                                                                                            |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| **Drive** — 5 TB, already paid | Preservation masters: scans at maximum quality. Never served to the public. 5 TB fits tens of thousands. |
-| **R2** — 10 GB, free           | Only the derivatives the site consumes: AVIF and WebP at three widths. ≈ 270 MB for the current 592.     |
+| Where                          | What it holds                                                                                                     |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| **Drive** — 5 TB, already paid | Preservation masters: scans at maximum quality. Never served to the public. 5 TB fits tens of thousands.          |
+| **R2** — 10 GB, free           | The derivatives the site consumes, plus the rescued masters until real scans exist: ≈ 160 MB for the current 592. |
 
 ### The bridge: importing from Drive in the admin panel
 
@@ -159,12 +159,12 @@ fails, the archive is still readable.
 
 **Images are most of the weight, so that is where the fight is:**
 
-| Decision                                                   | Why                                                                                                                  |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| **AVIF + WebP** via `<picture>`                            | AVIF is roughly 30% smaller than WebP at equal quality, and we can afford it because it is generated once at import. |
-| `srcset` + `sizes` at three widths                         | A 360 px phone never downloads a 1200 px image.                                                                      |
-| `width`/`height` and `aspect-ratio` from stored dimensions | **Zero layout shift.** Scrolling a gallery on a phone, that is the difference between usable and infuriating.        |
-| `loading="lazy"` except the first row                      | Do not fetch 20 thumbnails to show 4.                                                                                |
+| Decision                                                   | Why                                                                                                                                                     |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **AVIF + WebP** via `<picture>`                            | Measured on this archive in T3, AVIF comes out 46–49% smaller than WebP at the same width, and we can afford it because it is generated once at import. |
+| `srcset` + `sizes` at three widths                         | A 360 px phone never downloads a 1200 px image.                                                                                                         |
+| `width`/`height` and `aspect-ratio` from stored dimensions | **Zero layout shift.** Scrolling a gallery on a phone, that is the difference between usable and infuriating.                                           |
+| `loading="lazy"` except the first row                      | Do not fetch 20 thumbnails to show 4.                                                                                                                   |
 
 **Galleries without JavaScript.** Two columns on a phone, with per-photo `aspect-ratio` resolved
 in pure CSS. No client-side masonry. And **pagination with real URLs**
@@ -504,8 +504,11 @@ Everything sits on free tiers except the domain: Vercel Hobby, Neon, R2 (10 GB) 
 Drive is already paid and simply takes on a new role at no extra cost. The only new recurring
 expense is the `.com.ar` domain at NIC Argentina, billed yearly.
 
-Storage: derivatives for the 592 photos come to roughly **270 MB of R2's 10 GB**; masters go to
-Drive, where 5 TB covers tens of thousands of scans.
+Storage, as measured in T3 over a sample of 30: derivatives average 92 KB per photo, so the 592
+come to **≈ 55 MB**, and the rescued masters add the 105 MB T1 downloaded — **≈ 160 MB of R2's
+10 GB**. Far under the earlier estimate of 270 MB for derivatives alone, and the reason is the
+no-upscaling rule: with a median master of 1000 px, most photos yield two or four renditions rather
+than six. Real scans, when they exist, go to Drive, where 5 TB covers tens of thousands.
 
 ---
 
