@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import {
   DeleteObjectsCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
@@ -94,6 +95,13 @@ export async function put(key: string, data: Buffer, ext: string): Promise<void>
       CacheControl: CACHE_CONTROL,
     }),
   )
+}
+
+/** Reads an object back, which is how a stored hash gets checked against the bytes. */
+export async function getBytes(key: string): Promise<Buffer> {
+  const out = await s3().send(new GetObjectCommand({ Bucket: bucket(), Key: key }))
+  if (!out.Body) throw new Error(`${key} came back empty`)
+  return Buffer.from(await out.Body.transformToByteArray())
 }
 
 export async function exists(key: string): Promise<boolean> {
