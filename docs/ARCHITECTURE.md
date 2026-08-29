@@ -191,6 +191,67 @@ body text on the system stack.
 computer, and what must work well on a phone is fixing a caption and flagging a photo as
 sensitive.
 
+## Visual direction: Álbum
+
+Three directions were built on the same nine photographs from the archive and the same two screens,
+and this is the one that was chosen. The other two are worth naming, because the choice was between
+readings of what the archive _is_, not between palettes: **Ficha** treated it as a research
+catalogue, metadata as prominent as the image; **Pueblo** treated it as the town's own noticeboard,
+heavy black type and a civic accent. **Álbum** treats it as what it materially was — prints lent by
+neighbours, kept in albums and boxes.
+
+Which is why the ground is dark. It is not a fashion: mount board is where these copies actually
+lived, and a scanned sepia print lifts off a dark ground in a way it never does off white. The cost
+is real and worth writing down — a dark gallery is more solemn than the subject sometimes is, and it
+draws more power on an OLED phone.
+
+### Tokens
+
+| Token          | Value     | Contrast on ground | Used for                               |
+| -------------- | --------- | ------------------ | -------------------------------------- |
+| `--ground`     | `#1B1917` | —                  | the page                               |
+| `--surface`    | `#23201D` | —                  | cards, the veil over a sensitive photo |
+| `--text`       | `#EDE6DA` | 14.1:1             | captions, headings                     |
+| `--text-muted` | `#A2988A` | 6.2:1              | notes, metadata labels, pagination     |
+| `--rule`       | `#3B3630` | —                  | hairlines between metadata rows        |
+| `--accent`     | `#C9954E` | 6.6:1              | the credit, links, the current page    |
+| `--accent-dim` | `#8F6A38` | —                  | hover and pressed                      |
+| `--focus`      | `#E0B87A` | 9.4:1              | keyboard focus ring                    |
+| `--on-accent`  | `#1B1917` | —                  | text on an accent fill                 |
+
+Every text token clears WCAG AA at body size. A third, fainter grey was drawn and then cut: at
+`#7A7166` it measured 3.7:1, which fails, and lightening it far enough to pass made it
+indistinguishable from `--text-muted`. Two tiers and the accent carry everything.
+
+### Typography
+
+**Alegreya** — regular, medium and italic, Latin subset, `font-display: swap` — for captions, notes
+and section titles. It was drawn by Huerta Tipográfica in Argentina for long-form Spanish, so the
+accents and the ñ were designed in rather than bolted on, and this archive is mostly Italian and
+Spanish surnames.
+
+Everything that is not archive text — labels, metadata, pagination, buttons — sits on the **system
+stack**. The proposal paired Alegreya with Alegreya Sans, and production drops the second family:
+the rule in _Mobile first_ is one webfont, the bytes are paid on rural mobile data, and what makes
+this direction is serif captions on a dark ground, not the label font. Nobody will miss it.
+
+Scale: section title 28/1.15, caption 13/1.4 in the grid and 17/1.55 on the photo page, notes
+13.5/1.5, credit 11.5 italic, labels 11 uppercase with 0.1em tracking.
+
+### Grid
+
+Two columns below 640 px, three to 1000, four above. Gap of 18 px on a phone, 24 px above it —
+this direction spends its budget on air between photographs. Every cell reserves its exact height
+from `master_width`/`master_height`, so nothing moves as images arrive.
+
+A photograph is set like a mounted print: a `1px` light edge at `rgba(237, 230, 218, 0.16)` over a
+soft drop shadow, never a border-radius. The caption sits directly below, the credit under it in
+sepia italic, which reads as a signature at the foot of a print rather than as a data field.
+
+A sensitive photograph is blurred at `9px` with a `1.12` scale so the blur reaches the edges, under
+a veil at `rgba(27, 25, 23, 0.84)` — opaque enough that the label stays legible over a bright
+photograph — carrying the warning and a "Ver la fotografía" link in accent. Blurred, never hidden.
+
 ---
 
 ## Data model
@@ -550,7 +611,7 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
 
 ## Still open
 
-- **Visual identity**: decided in T5 with proposals in front of us.
+- ~~**Visual identity**~~: settled in T5. See _Visual direction: Álbum_ above.
 - **Where the Sites site sits in Drive**: dropped as a question. It only mattered for the Takeout
   route, and there is no Takeout route — the export list has no Sites product. The scraper needs
   nothing but the public URL.
