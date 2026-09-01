@@ -16,6 +16,7 @@ export function PhotoImage({
   priority = false,
   ratio,
   fill = false,
+  veil = true,
 }: {
   photo: PhotoCard
   sizes: string
@@ -24,6 +25,11 @@ export function PhotoImage({
   ratio?: string
   /** For the deck, where the card sets the size and the frame follows it. */
   fill?: boolean
+  /**
+   * The photo page states the warning in a card of its own, above the image, and
+   * that card carries the control that lifts the blur. Only the blur stays here.
+   */
+  veil?: boolean
 }) {
   const { webKey, webWidth, webHeight, caption, credit, sensitive } = photo
   const alt = caption ?? `Fotografía sin epígrafe${credit ? `. Cortesía: ${credit}` : ''}`
@@ -47,7 +53,7 @@ export function PhotoImage({
           className={`h-full w-full object-cover ${sensitive ? 'scale-110 blur-[9px]' : ''}`}
         />
       </picture>
-      {sensitive && (
+      {sensitive && veil && (
         <div className="bg-ground/85 absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
           <p className="text-text font-sans text-[11px] leading-tight">
             Contiene imágenes de faena de animales

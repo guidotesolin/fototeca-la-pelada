@@ -21,6 +21,20 @@ const alegreya = Alegreya({
 })
 
 /**
+ * The source note, and nothing else. Its own instance so it can be declared
+ * `preload: false`: the file is fetched only where a rule actually asks for it,
+ * which is a photo page that carries a note -- twelve of the 592 today.
+ */
+const alegreyaItalic = Alegreya({
+  subsets: ['latin'],
+  weight: ['400'],
+  style: ['italic'],
+  variable: '--font-alegreya-italic',
+  display: 'swap',
+  preload: false,
+})
+
+/**
  * `themeColor` lives in a `viewport` export in this version of Next, not in
  * `metadata`. The value is the logo's charcoal, from the favicon design pass.
  */
@@ -113,7 +127,7 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   })
 
   return (
-    <html lang="es" className={`${alegreya.variable} h-full`}>
+    <html lang="es" className={`${alegreya.variable} ${alegreyaItalic.variable} h-full`}>
       <body className="flex min-h-full flex-col">
         {/* The stacking that lets the menu open over the page lives in globals.css,
             on `body > header`; see the note there. */}

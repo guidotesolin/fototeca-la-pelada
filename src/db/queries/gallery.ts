@@ -40,6 +40,16 @@ export type PhotoCard = {
   webHeight: number
 }
 
+/** Everything the photo's own page shows, which is the card plus the research. */
+export type PhotoDetail = PhotoCard & {
+  notes: string | null
+  yearFrom: number | null
+  yearTo: number | null
+  /** An interpretation, never the document: the page opens on the original. */
+  restoredWebKey: string | null
+  categories: { slug: string; name: string }[]
+}
+
 export type Section = {
   slug: string
   name: string
@@ -178,5 +188,99 @@ export const listSectionPhotos = unstable_cache(
     )
   },
   ['section-photos'],
+  { tags: [GALLERY_TAG], revalidate: REVALIDATE },
+)
+
+/** Every published photo, for `generateStaticParams` on the detail page. */
+export const listPhotoSlugs = unstable_cache(
+  async (): Promise<string[]> => {
+    const rows = await db
+      .select({ slug: photo.slug })
+      .from(photo)
+      .where(eq(photo.published, true))
+      .orderBy(asc(photo.slug))
+    return rows.map((r) => r.slug)
+  },
+  ['photo-slugs'],
+  { tags: [GALLERY_TAG], revalidate: REVALIDATE },
+)
+
+/**
+ * One photograph, with everything its own page shows. The categories come back in
+ * the panel's order and only if visible, because each one is rendered as a link to
+ * a gallery that a hidden section does not have.
+ */
+export const getPhoto = unstable_cache(
+  async (slug: string): Promise<PhotoDetail | null> => {
+    const rows = await db
+      .select({
+        slug: photo.slug,
+        caption: photoTranslation.caption,
+        notes: photoTranslation.notes,
+        credit: photo.credit,
+        yearFrom: photo.yearFrom,
+        yearTo: photo.yearTo,
+        sensitive: photo.sensitive,
+        webKey: photo.webKey,
+        webWidth: photo.webWidth,
+        webHeight: photo.webHeight,
+        restoredWebKey: photo.restoredWebKey,
+        categorySlug: category.slug,
+        categoryName: categoryTranslation.name,
+      })
+      .from(photo)
+      .leftJoin(photoTranslation, and(eq(photoTranslation.photoId, photo.id), spanish))
+      .leftJoin(photoCategory, eq(photoCategory.photoId, photo.id))
+      .leftJoin(
+        category,
+        and(eq(category.id, photoCategory.categoryId), eq(category.visible, true)),
+      )
+      .leftJoin(
+        categoryTranslation,
+        and(
+          eq(categoryTranslation.categoryId, category.id),
+          eq(categoryTranslation.locale, SOURCE_LOCALE),
+        ),
+      )
+      .where(and(eq(photo.slug, slug), eq(photo.published, true)))
+      .orderBy(asc(category.position))
+
+    const first = rows[0]
+    // Same rule as the gallery: without derivatives there is nothing to show.
+    if (!first?.webKey || !first.webWidth || !first.webHeight) return null
+
+    return {
+      ...first,
+      webKey: first.webKey,
+      webWidth: first.webWidth,
+      webHeight: first.webHeight,
+      categories: rows.flatMap((r) =>
+        r.categorySlug && r.categoryName ? [{ slug: r.categorySlug, name: r.categoryName }] : [],
+      ),
+    }
+  },
+  ['photo'],
+  { tags: [GALLERY_TAG], revalidate: REVALIDATE },
+)
+
+/**
+ * A section's photos in curatorial order, slugs only: what the detail page needs to
+ * find the one before and the one after, and to know which gallery page it came
+ * from. The whole list rather than two neighbour queries, because it is cached once
+ * per section instead of twice per photograph -- eleven queries for the build's 592
+ * pages.
+ */
+export const listCategoryOrder = unstable_cache(
+  async (slug: string): Promise<string[]> => {
+    const rows = await db
+      .select({ slug: photo.slug })
+      .from(photoCategory)
+      .innerJoin(category, eq(category.id, photoCategory.categoryId))
+      .innerJoin(photo, and(eq(photo.id, photoCategory.photoId), eq(photo.published, true)))
+      .where(eq(category.slug, slug))
+      .orderBy(asc(photoCategory.position))
+    return rows.map((r) => r.slug)
+  },
+  ['category-order'],
   { tags: [GALLERY_TAG], revalidate: REVALIDATE },
 )

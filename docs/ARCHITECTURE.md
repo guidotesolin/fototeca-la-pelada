@@ -251,23 +251,30 @@ this direction is serif captions on a dark ground, not the label font. Nobody wi
 Scale, as built, with named roles rather than improvised sizes — the proposal's numbers were
 replaced during T6 because a scale with no names is how everything ends up between 11 and 30 px:
 
-| role              | phone       | from 640 px | family      | notes                       |
-| ----------------- | ----------- | ----------- | ----------- | --------------------------- |
-| `.t-headline`     | 500 34/1.08 | 64/1.02     | Alegreya    | tracking −0.015em, max 24ch |
-| `.t-section`      | 500 34/1.08 | 56/1.03     | Alegreya    | max 20ch                    |
-| `.t-intro`        | 400 17/1.5  | 22/1.45     | Alegreya    | max 78ch                    |
-| `.t-caption-grid` | 400 15/1.35 | 17/1.4      | Alegreya    | max 34ch, the heritage      |
-| `.t-credit`       | 400 16/1.4  | 17          | system      | accent, max 48ch            |
-| `.t-label`        | 400 11/1    | —           | system mono | uppercase, 0.1em, muted     |
-| `.t-meta`         | 400 14/1.4  | —           | system mono | tabular figures, muted      |
-| `.t-thanks`       | 500 24/1.16 | 34/1.14     | Alegreya    | footer, max 24ch            |
-| `.t-fineprint`    | 400 14/1.55 | —           | system      | footer, max 58ch, muted     |
-| `.t-signature`    | 500 20/1.28 | 22/1.25     | Alegreya    | footer, the authors' names  |
+| role               | phone       | from 640 px | family          | notes                                |
+| ------------------ | ----------- | ----------- | --------------- | ------------------------------------ |
+| `.t-headline`      | 500 34/1.08 | 64/1.02     | Alegreya        | tracking −0.015em, max 24ch          |
+| `.t-section`       | 500 34/1.08 | 56/1.03     | Alegreya        | max 20ch                             |
+| `.t-intro`         | 400 17/1.5  | 22/1.45     | Alegreya        | max 78ch                             |
+| `.t-caption-grid`  | 400 15/1.35 | 17/1.4      | Alegreya        | max 34ch, the heritage               |
+| `.t-caption-photo` | 400 19/1.5  | 23/1.45     | Alegreya        | max 56ch, the same on its own screen |
+| `.t-note`          | 400 16/1.6  | 17          | Alegreya italic | max 62ch, muted, the source note     |
+| `.t-credit`        | 400 16/1.4  | 17          | system          | accent, max 48ch                     |
+| `.t-label`         | 400 11/1    | —           | system mono     | uppercase, 0.1em, muted              |
+| `.t-meta`          | 400 14/1.4  | —           | system mono     | tabular figures, muted               |
+| `.t-thanks`        | 500 24/1.16 | 34/1.14     | Alegreya        | footer, max 24ch                     |
+| `.t-fineprint`     | 400 14/1.55 | —           | system          | footer, max 58ch, muted              |
+| `.t-signature`     | 500 20/1.28 | 22/1.25     | Alegreya        | footer, the authors' names           |
 
 The identifiers are English because _Language conventions_ covers identifiers, not only comments:
 the first pass shipped them as `.t-titular`, `.t-entradilla`, `.t-epigrafe-grilla` and friends, and
 T6 renamed them. `.t-caption-grid` is deliberately a family name, so the photo page's own caption
-role lands as `.t-caption-photo` in T7.
+role lands as `.t-caption-photo` in T7 — which it did, and it brought `.t-note` with it.
+
+That note is the only italic on the site, and it is why Alegreya is loaded twice: a second
+`next/font` instance declared `preload: false`, so the italic file is fetched on the twelve pages
+that carry a note and on no other. Both instances resolve to the same family name, so what the
+second one actually buys is the italic face registered without a preload link.
 
 ### Grid
 
