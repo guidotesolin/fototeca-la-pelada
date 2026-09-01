@@ -7,7 +7,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
-import type { Format } from './images'
 
 /**
  * Cloudflare R2: the derivatives the public site consumes, plus the rescued
@@ -18,12 +17,8 @@ import type { Format } from './images'
  * would let anyone walk the entire archive from a single URL, and unpublishing a
  * photo would be a lie: the file would still answer at a guessable address.
  *
- * The naming convention, in one place:
- *   prefix        photos/campo-078-Ku3nR2xQp9Vf
- *   derivative    <prefix>-960.avif        (the width is the real one, never upscaled)
- *   master        <prefix>.jpg
- * The gallery's single-URL rendition, for a grid cell or a link preview, is the
- * narrowest WebP. Everything else is a `<picture>` with both formats.
+ * The naming convention lives in `lib/photo.ts`, which the public site imports
+ * without dragging this file -- and the AWS SDK -- into its bundle.
  */
 
 const MIME: Record<string, string> = {
@@ -62,27 +57,13 @@ function bucket(): string {
   return name
 }
 
-export function contentTypeFor(ext: string): string {
+function contentTypeFor(ext: string): string {
   return MIME[ext] ?? 'application/octet-stream'
 }
 
 /** A prefix nobody can derive from another photo's, or from the slug alone. */
 export function newPrefix(kind: 'photos' | 'masters', slug: string): string {
   return `${kind}/${slug}-${randomBytes(9).toString('base64url')}`
-}
-
-export function keyFor(prefix: string, width: number, format: Format): string {
-  return `${prefix}-${width}.${format}`
-}
-
-export function masterKeyFor(prefix: string, ext: string): string {
-  return `${prefix}.${ext}`
-}
-
-export function publicUrl(key: string): string {
-  const base = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
-  if (!base) throw new Error('NEXT_PUBLIC_IMAGE_BASE_URL is not set')
-  return `${base.replace(/\/$/, '')}/${key}`
 }
 
 export async function put(key: string, data: Buffer, ext: string): Promise<void> {
@@ -114,6 +95,20 @@ export async function exists(key: string): Promise<boolean> {
   }
 }
 
+/** Every key under a prefix, or the whole bucket when there is none. */
+export async function listKeys(prefix = ''): Promise<string[]> {
+  const keys: string[] = []
+  let token: string | undefined
+  do {
+    const page = await s3().send(
+      new ListObjectsV2Command({ Bucket: bucket(), Prefix: prefix, ContinuationToken: token }),
+    )
+    for (const object of page.Contents ?? []) if (object.Key) keys.push(object.Key)
+    token = page.IsTruncated ? page.NextContinuationToken : undefined
+  } while (token)
+  return keys
+}
+
 /**
  * Everything under a prefix, listed and then deleted. A takedown cannot build the
  * key list from the width table: a narrow master produces a rendition at its own
@@ -121,20 +116,17 @@ export async function exists(key: string): Promise<boolean> {
  * Returns how many objects were removed.
  */
 export async function removePrefix(prefix: string): Promise<number> {
-  let removed = 0
-  let token: string | undefined
-  do {
-    const listed = await s3().send(
-      new ListObjectsV2Command({ Bucket: bucket(), Prefix: prefix, ContinuationToken: token }),
+  const keys = await listKeys(prefix)
+  for (let i = 0; i < keys.length; i += 1000) {
+    // DeleteObjects takes a thousand at a time.
+    await s3().send(
+      new DeleteObjectsCommand({
+        Bucket: bucket(),
+        Delete: { Objects: keys.slice(i, i + 1000).map((Key) => ({ Key })) },
+      }),
     )
-    const keys = (listed.Contents ?? []).flatMap((o) => (o.Key ? [{ Key: o.Key }] : []))
-    if (keys.length) {
-      await s3().send(new DeleteObjectsCommand({ Bucket: bucket(), Delete: { Objects: keys } }))
-      removed += keys.length
-    }
-    token = listed.IsTruncated ? listed.NextContinuationToken : undefined
-  } while (token)
-  return removed
+  }
+  return keys.length
 }
 
 function isNotFound(error: unknown): boolean {

@@ -1,26 +1,660 @@
 @import 'tailwindcss';
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * The Álbum direction. The ground is dark because mount board is where these
+ * copies actually lived, and a scanned sepia print lifts off a dark ground the way
+ * it never does off white. Every text token clears AA on the ground.
+ */
+@theme {
+  --color-ground: #1b1917;
+  --color-surface: #23201d;
+  /* The photograph's inner panel on a detail page: a scan with pale paper edges
+     cannot float without a contour. It carries no text, so it needs no AA. */
+  --color-surface-high: #2a2622;
+  --color-rule: #3b3630;
+  --color-text: #ede6da;
+  --color-muted: #a2988a;
+  --color-accent: #c9954e;
+  --color-focus: #e0b87a;
+
+  --font-serif: var(--font-alegreya), Georgia, 'Times New Roman', serif;
+
+  /* Grid: phone margin 16 and 2 columns with a 10 gutter; desktop margin 96,
+     12 columns with a 24 gutter, 1248 of content. */
+  --spacing-content: 1248px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background-color: var(--color-ground);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-ground);
+  color: var(--color-text);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Typographic scale by role. Named, not improvised: every rule knows what it is
+ * for, and the caption — which is the heritage — is the site's second size.
+ */
+
+.t-headline {
+  font: 500 34px/1.08 var(--font-serif);
+  letter-spacing: -0.015em;
+  max-width: 24ch;
+  text-wrap: balance;
+}
+
+.t-section {
+  font: 500 34px/1.08 var(--font-serif);
+  max-width: 20ch;
+  text-wrap: balance;
+}
+
+.t-intro {
+  font: 400 17px/1.5 var(--font-serif);
+}
+
+.t-caption-grid {
+  font: 400 15px/1.35 var(--font-serif);
+  max-width: 34ch;
+}
+
+/* Credit, label and meta sit on the system stack: zero extra bytes, and they
+   separate from the caption without resorting to size. */
+.t-credit {
+  font:
+    400 16px/1.4 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: var(--color-accent);
+  max-width: 48ch;
+}
+
+.t-label {
+  font:
+    400 11px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.t-meta {
+  font:
+    400 14px/1.4 ui-monospace,
+    Menlo,
+    monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-muted);
+}
+
+@media (min-width: 640px) {
+  .t-headline {
+    font-size: 64px;
+    line-height: 1.02;
+  }
+  .t-section {
+    font-size: 56px;
+    line-height: 1.03;
+  }
+  .t-intro {
+    font-size: 22px;
+    line-height: 1.45;
+    max-width: 78ch;
+  }
+  .t-caption-grid {
+    font-size: 17px;
+    line-height: 1.4;
+  }
+  .t-credit {
+    font-size: 17px;
+  }
+}
+
+/*
+ * Two roles the footer brought with it. The thanks is the archive's own voice
+ * addressed to the town, so it is set as display type and not as a note; the rights
+ * notice is the fine print inside the same mount, which is what fine print is.
+ */
+.t-thanks {
+  font: 500 24px/1.16 var(--font-serif);
+  letter-spacing: -0.015em;
+  max-width: 24ch;
+  color: var(--color-text);
+  text-wrap: pretty;
+}
+
+.t-fineprint {
+  font:
+    400 14px/1.55 system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  max-width: 58ch;
+  color: var(--color-muted);
+  text-wrap: pretty;
+}
+
+/* The authors' names, which sign the archive rather than label it. */
+.t-signature {
+  font: 500 20px/1.28 var(--font-serif);
+  color: var(--color-text);
+}
+
+@media (min-width: 640px) {
+  .t-thanks {
+    font-size: 34px;
+    line-height: 1.14;
+  }
+
+  .t-signature {
+    font-size: 22px;
+    line-height: 1.25;
+  }
+}
+
+/*
+ * THE INDEX DECK (Swiper coverflow — see section-deck.tsx)
+ *
+ * Desktop only: on phone and tablet the card list stays, which is also what a
+ * reader browsing without JavaScript sees. The veil replicates the reference: the
+ * description lives in the DOM at opacity 0 and appears on hover, over 300 ms.
+ */
+.deck .swiper {
+  padding: 24px 0 32px;
+}
+
+/* Nested under `.deck` on purpose: Swiper ships `.swiper-slide { height: 100% }`
+   at the same specificity and its sheet is imported after this one, so without the
+   ancestor the cards end up zero-height and the deck collapses. */
+.deck .deck-card {
+  position: relative;
+  width: 208px;
+  height: 340px;
+  background-color: var(--color-surface);
+  box-shadow:
+    0 0 0 1px oklch(from var(--color-ground) l c h / 0.9),
+    0 10px 26px oklch(from var(--color-ground) l c h / 0.6);
+}
+
+.deck .deck-card.swiper-slide-active {
+  box-shadow:
+    0 0 0 1px oklch(from var(--color-accent) l c h / 0.4),
+    0 18px 44px oklch(from var(--color-ground) l c h / 0.75);
+}
+
+.deck-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 18px 16px 46px;
+  background-color: oklch(from var(--color-ground) l c h / 0.72);
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.deck .deck-card a:hover .deck-veil,
+.deck .deck-card a:focus-visible .deck-veil {
+  opacity: 1;
+}
+
+.deck-intro {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 7;
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.deck-chip {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 14px;
+  z-index: 3;
+  margin-inline: auto;
+  width: fit-content;
+  max-width: calc(100% - 20px);
+  padding: 4px 10px;
+  background-color: oklch(from var(--color-ground) l c h / 0.82);
+  color: var(--color-accent);
+  font-family: system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-veil {
+    transition: none;
+  }
+}
+
+/*
+ * The sections menu in the header. A native `<details>`, so it opens with
+ * JavaScript off and the keyboard operates it without a line of ARIA -- the same
+ * element the design spec reaches for on the sensitive photograph.
+ *
+ * The marker has to be removed twice: `::marker` is the standard, and WebKit still
+ * answers to its own `::-webkit-details-marker`.
+ */
+.menu {
+  position: relative;
+}
+
+.menu > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.menu > summary::marker {
+  content: '';
+}
+
+.menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.menu-caret {
+  transition: transform 200ms ease;
+}
+
+.menu[open] > summary .menu-caret {
+  transform: rotate(180deg);
+}
+
+/* Right-anchored at every width: the hamburger sits at the right end of the bar on
+   a phone and the word does on desktop, so the panel always grows leftward. The
+   max-width is what keeps it inside a 375 px screen. */
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  max-width: calc(100vw - 32px);
+  z-index: 1;
+  min-width: 232px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  padding: 6px 0;
+  background-color: var(--color-surface);
+  box-shadow:
+    inset 0 0 0 1px oklch(from var(--color-rule) l c h / 0.9),
+    0 16px 40px oklch(from var(--color-ground) l c h / 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-caret {
+    transition: none;
+  }
+}
+
+/*
+ * The section index grid. Two cards on a phone, three to 1280, four above.
+ *
+ * The tracks are doubled and every card spans two, which leaves half a column of
+ * slack to hand out — that is what lets a partial last row sit centred instead of
+ * left-aligned with a hole at the end. The arithmetic is exact: a card spanning
+ * two tracks swallows one gap, so it measures the same as it would on half as many
+ * columns, and the leftover track plus its gap is equal on both sides.
+ *
+ * Which card to offset is read off the count at render time: `nth-child(Nn + 1)`
+ * is the first card of a row and `nth-last-child(k)` says how many follow it. So
+ * nothing here hardcodes eleven sections — the panel can add, hide or reorder them
+ * and the last row stays centred.
+ *
+ * The offsets sit in mutually exclusive width ranges. They cannot be undone by a
+ * reset in a wider breakpoint: `:nth-child():nth-last-child()` outweighs a plain
+ * `.section-grid > li`, so the narrower rule would win on specificity whatever the
+ * source order, and cards would be dragged to a column that is no longer a row
+ * start. Bounding each range is what keeps them from leaking.
+ */
+.section-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  column-gap: 16px;
+  row-gap: 36px;
+}
+
+.section-grid > li {
+  /* The span lives in the END longhand, so that setting `grid-column-start` for an
+     offset never has to restate it. */
+  grid-column-end: span 2;
+  min-width: 0;
+}
+
+@media (max-width: 639px) {
+  .section-grid > li:nth-child(2n + 1):nth-last-child(1) {
+    grid-column-start: 2;
+  }
+}
+
+@media (min-width: 640px) {
+  .section-grid {
+    grid-template-columns: repeat(6, 1fr);
+    column-gap: 24px;
+    row-gap: 44px;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1279px) {
+  .section-grid > li:nth-child(3n + 1):nth-last-child(1) {
+    grid-column-start: 3;
+  }
+
+  .section-grid > li:nth-child(3n + 1):nth-last-child(2) {
+    grid-column-start: 2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .section-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  .section-grid > li:nth-child(4n + 1):nth-last-child(1) {
+    grid-column-start: 4;
+  }
+
+  .section-grid > li:nth-child(4n + 1):nth-last-child(2) {
+    grid-column-start: 3;
+  }
+
+  .section-grid > li:nth-child(4n + 1):nth-last-child(3) {
+    grid-column-start: 2;
+  }
+}
+
+/*
+ * The gallery wall: two columns on a phone, three to 1000, four above, which is the
+ * grid ARCHITECTURE states.
+ *
+ * Multi-column and not a row-tracked grid. The packed 12-column version reserved each
+ * cell's height in 4 px rows, computed on the server from the scan's proportion plus
+ * an *estimate* of how many lines the caption would take. That estimate has to err
+ * long -- coming up short would let a cell ride over its neighbour -- so it always
+ * over-reserved: measured at 13% of the wall's height left empty, 1479 px across 24
+ * photographs, every single cell wasting something. Text height is not knowable
+ * before layout, so no calibration fixes it.
+ *
+ * Columns have no rows to reserve: each one packs tight and the different heights sit
+ * against each other, which is the Europeana behaviour this was after. Height is
+ * still reserved per photograph by its own `aspect-ratio`, so the layout does not
+ * shift as images arrive.
+ *
+ * The cost, and it is real: the reading order turns column-wise. The authors' order
+ * runs down the first column and then down the second, not left to right.
+ */
+.wall {
+  columns: 2;
+  column-gap: 16px;
+}
+
+.wall > li {
+  /* A cell is never split across a column break. */
+  -webkit-column-break-inside: avoid;
+  break-inside: avoid;
+  /* Columns space columns, not the items inside them: the vertical rhythm is margin. */
+  margin-bottom: 32px;
+}
+
+@media (min-width: 640px) {
+  .wall {
+    columns: 3;
+    column-gap: 24px;
+  }
+
+  .wall > li {
+    margin-bottom: 44px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .wall {
+    columns: 4;
+  }
+}
+
+/*
+ * FINISH
+ *
+ * Nothing here changes the direction or a single token: it is the finish that was
+ * missing, and it was the reason a dark ground read as "dark background" rather
+ * than as mount board.
+ */
+
+/* Grain. A flat plane of colour with no texture reads as an absence of design;
+   this gives the board its matter. 300 bytes of inline SVG, not an image. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* The header outranks `main` so the sections panel opens over the page. It has to be
+   set here and not as a `z-20` utility: the rule above is unlayered author CSS and
+   Tailwind's utilities sit in `@layer utilities`, which loses to it whatever the
+   specificity -- so the utility silently did nothing and the panel opened behind. */
+body > header {
+  z-index: 2;
+}
+
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-ground);
+}
+
+/*
+ * The mount. A print laid on board has an edge and a recess; until now it was a
+ * rectangle in another colour. The inner hairline is what sinks it in.
+ */
+.mount {
+  background-color: var(--color-surface);
+  padding: 8px;
+  box-shadow:
+    inset 0 0 0 1px oklch(from var(--color-rule) l c h / 0.9),
+    0 1px 0 oklch(from var(--color-text) l c h / 0.04);
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+
+@media (min-width: 640px) {
+  .mount {
+    padding: 10px;
+  }
+}
+
+.group:hover .mount {
+  background-color: var(--color-surface-high);
+  box-shadow:
+    inset 0 0 0 1px oklch(from var(--color-accent) l c h / 0.35),
+    0 2px 0 oklch(from var(--color-text) l c h / 0.06);
+}
+
+/* The print inside the mount: a pale paper edge and a shadow of its own. */
+.print {
+  box-shadow:
+    0 0 0 1px oklch(from var(--color-text) l c h / 0.16),
+    0 8px 20px oklch(from var(--color-ground) l c h / 0.55);
+  transition: box-shadow 200ms ease;
+}
+
+.group:hover .print {
+  box-shadow:
+    0 0 0 1px oklch(from var(--color-text) l c h / 0.24),
+    0 12px 28px oklch(from var(--color-ground) l c h / 0.7);
+}
+
+/* The copy answers the pointer: a slow, small zoom and a touch more light, as if
+   it were being drawn up off the board. Transform and filter only — both are
+   composited, where animating a layout property would judder. `.print` clips it,
+   so nothing spills over the mount. Scoped to the index cover on purpose: the
+   gallery wall shares `.mount` and must not move. */
+.mount-cover img {
+  transition:
+    transform 400ms ease-out,
+    filter 400ms ease-out;
+}
+
+.group:hover .mount-cover img,
+.group:focus-visible .mount-cover img {
+  transform: scale(1.08);
+  filter: brightness(1.07);
+}
+
+/*
+ * The footer's mount, from the Claude Design pass "Álbum cerrado — la última página".
+ * A print pasted into an album is held by four paper corners, and that is the one
+ * thing this footer is remembered by, so it is the only place the boldness is spent.
+ *
+ * Four elements and not pseudo-elements: an element gets two, and this needs four.
+ * They are empty and inert, so they announce nothing. Explicit classes rather than
+ * `nth-child`, so inserting anything into the mount cannot silently move a corner.
+ */
+.album {
+  position: relative;
+  background-color: var(--color-surface);
+  padding: 28px 24px 26px;
+  box-shadow:
+    inset 0 0 0 1px var(--color-rule),
+    0 14px 32px oklch(from var(--color-ground) l c h / 0.55);
+}
+
+.album-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background-color: var(--color-surface-high);
+}
+
+.album-corner-tl {
+  top: 0;
+  left: 0;
+  box-shadow: inset -1px -1px 0 var(--color-rule);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+
+.album-corner-tr {
+  top: 0;
+  right: 0;
+  box-shadow: inset 1px -1px 0 var(--color-rule);
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+}
+
+.album-corner-bl {
+  bottom: 0;
+  left: 0;
+  box-shadow: inset -1px 1px 0 var(--color-rule);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.album-corner-br {
+  bottom: 0;
+  right: 0;
+  box-shadow: inset 1px 1px 0 var(--color-rule);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+/* The accent hairline that separates the voice from the fine print. */
+.album-rule {
+  width: 72px;
+  height: 1px;
+  margin: 20px 0;
+  background-color: var(--color-accent);
+}
+
+@media (min-width: 640px) {
+  .album {
+    padding: 48px 52px 44px;
+    box-shadow:
+      inset 0 0 0 1px var(--color-rule),
+      0 20px 44px oklch(from var(--color-ground) l c h / 0.6);
+  }
+
+  .album-corner {
+    width: 34px;
+    height: 34px;
+  }
+
+  .album-rule {
+    width: 88px;
+    margin: 28px 0;
+  }
+}
+
+/* A link that answers. Without this the page feels printed, not usable. */
+.link {
+  transition: color 160ms ease;
+}
+
+/* The search field: a hairline underneath, not a box. A bordered box is the
+   closest thing there is to an unfinished form. */
+.field {
+  background-color: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--color-rule);
+  padding: 6px 2px;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+
+.field:hover {
+  border-color: var(--color-muted);
+}
+
+.field:focus {
+  outline: 0;
+  border-color: var(--color-accent);
+}
+
+/* A plate's hairline lightens when the card answers. */
+.plate {
+  border-top: 1px solid var(--color-rule);
+  transition: border-color 200ms ease;
+}
+
+.group:hover .plate {
+  border-color: var(--color-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mount,
+  .print,
+  .link,
+  .field,
+  .plate,
+  .mount-cover img {
+    transition: none;
+  }
+
+  /* Reduced motion is about movement, not about light: the zoom goes and the
+     brightening stays, so the card still answers under the pointer. */
+  .group:hover .mount-cover img,
+  .group:focus-visible .mount-cover img {
+    transform: none;
+  }
 }

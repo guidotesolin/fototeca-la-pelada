@@ -15,6 +15,13 @@
       "when": 1787928015270,
       "tag": "0001_search_config",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788199453077,
+      "tag": "0002_far_star_brand",
+      "breakpoints": true
     }
   ]
 }

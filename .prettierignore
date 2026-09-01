@@ -3,3 +3,6 @@ node_modules
 package-lock.json
 archive
 drizzle
+
+# Playwright MCP Session Artifacts (screenshots and tree dumps)
+.playwright-mcp

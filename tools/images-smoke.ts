@@ -11,8 +11,9 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { FORMATS, WIDTHS, derive, read } from '../src/lib/images'
-import { exists, keyFor, masterKeyFor, newPrefix, put, removePrefix } from '../src/lib/r2'
+import { derive, read } from '../src/lib/images'
+import { FORMATS, WIDTHS, keyFor, masterKeyFor } from '../src/lib/photo'
+import { exists, newPrefix, put, removePrefix } from '../src/lib/r2'
 
 try {
   process.loadEnvFile('.env.local')

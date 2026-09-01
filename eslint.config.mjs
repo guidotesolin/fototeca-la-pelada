@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Claude Design consultation material, not part of the product. It is
+    // gitignored, but the flat config does not read .gitignore, and its noise was
+    // burying the findings from src/.
+    '.design-ref/**',
   ]),
 ])
 

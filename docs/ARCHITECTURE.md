@@ -97,6 +97,14 @@ The alternative is recorded in case embedded-browser performance ever becomes th
 problem: **Astro for the public site + Next for the admin**, in a monorepo. The data model does
 not tie our hands about making that switch.
 
+T6 measured it, and the number is worth keeping. A gallery of 24 photographs, median of three
+Lighthouse runs each: on the standard mobile profile (slow 4G, 150 ms RTT) it scores 98 with
+LCP 2.3 s and CLS 0 — green on both. Held to fast 3G latency instead (562 ms RTT), CLS stays at 0
+and LCP goes to 5.1 s. Unthrottled, first paint is 109 ms, so what the simulation is pricing is
+round trips and bandwidth contention, and the largest thing contending is **137 KB of framework
+JavaScript on a page with no interactivity at all** — 47 KB above the estimate this section was
+written with. That is the condition under which the Astro alternative stops being theoretical.
+
 ### Why Drive stores but does not serve
 
 Serving photos straight from Drive is not viable, for three independent reasons:
@@ -167,9 +175,14 @@ fails, the archive is still readable.
 | `loading="lazy"` except the first row                      | Do not fetch 20 thumbnails to show 4.                                                                                                                   |
 
 **Galleries without JavaScript.** Two columns on a phone, with per-photo `aspect-ratio` resolved
-in pure CSS. No client-side masonry. And **pagination with real URLs**
-(`/categoria/campo?p=2`) instead of infinite scroll: infinite scroll breaks the back button,
-accumulates memory, and cannot be shared or indexed.
+in pure CSS. No client-side masonry — the packing is CSS multi-column, so it is the browser's, not
+a script's; see _Grid_. And **pagination with real URLs** instead of
+infinite scroll, which breaks the back button, accumulates memory, and cannot be shared or indexed.
+
+T6 built those URLs as paths — `/categoria/campo/2`, with page one at `/categoria/campo` — rather
+than the `?p=2` this document first sketched. A page that reads `searchParams` cannot be
+prerendered, and prerendering everything is the decision that keeps Neon out of the request path.
+Twenty-four photos to a page comes to 33 static pages for the whole archive.
 
 **The photo detail page, which is the main screen.** Full-width image, caption immediately below
 in legible type, credit visible rather than buried. Pinch zoom **is not disabled**: someone will
@@ -190,6 +203,106 @@ body text on the system stack.
 **The panel works on a phone too**, but with priorities: bulk loading happens from Drive on a
 computer, and what must work well on a phone is fixing a caption and flagging a photo as
 sensitive.
+
+## Visual direction: Álbum
+
+Three directions were built on the same nine photographs from the archive and the same two screens,
+and this is the one that was chosen. The other two are worth naming, because the choice was between
+readings of what the archive _is_, not between palettes: **Ficha** treated it as a research
+catalogue, metadata as prominent as the image; **Pueblo** treated it as the town's own noticeboard,
+heavy black type and a civic accent. **Álbum** treats it as what it materially was — prints lent by
+neighbours, kept in albums and boxes.
+
+Which is why the ground is dark. It is not a fashion: mount board is where these copies actually
+lived, and a scanned sepia print lifts off a dark ground in a way it never does off white. The cost
+is real and worth writing down — a dark gallery is more solemn than the subject sometimes is, and it
+draws more power on an OLED phone.
+
+### Tokens
+
+| Token          | Value     | Contrast on ground | Used for                               |
+| -------------- | --------- | ------------------ | -------------------------------------- |
+| `--ground`     | `#1B1917` | —                  | the page                               |
+| `--surface`    | `#23201D` | —                  | cards, the veil over a sensitive photo |
+| `--text`       | `#EDE6DA` | 14.1:1             | captions, headings                     |
+| `--text-muted` | `#A2988A` | 6.2:1              | notes, metadata labels, pagination     |
+| `--rule`       | `#3B3630` | —                  | hairlines between metadata rows        |
+| `--accent`     | `#C9954E` | 6.6:1              | the credit, links, the current page    |
+| `--accent-dim` | `#8F6A38` | —                  | hover and pressed                      |
+| `--focus`      | `#E0B87A` | 9.4:1              | keyboard focus ring                    |
+| `--on-accent`  | `#1B1917` | —                  | text on an accent fill                 |
+
+Every text token clears WCAG AA at body size. A third, fainter grey was drawn and then cut: at
+`#7A7166` it measured 3.7:1, which fails, and lightening it far enough to pass made it
+indistinguishable from `--text-muted`. Two tiers and the accent carry everything.
+
+### Typography
+
+**Alegreya** — regular, medium and italic, Latin subset, `font-display: swap` — for captions, notes
+and section titles. It was drawn by Huerta Tipográfica in Argentina for long-form Spanish, so the
+accents and the ñ were designed in rather than bolted on, and this archive is mostly Italian and
+Spanish surnames.
+
+Everything that is not archive text — labels, metadata, pagination, buttons — sits on the **system
+stack**. The proposal paired Alegreya with Alegreya Sans, and production drops the second family:
+the rule in _Mobile first_ is one webfont, the bytes are paid on rural mobile data, and what makes
+this direction is serif captions on a dark ground, not the label font. Nobody will miss it.
+
+Scale, as built, with named roles rather than improvised sizes — the proposal's numbers were
+replaced during T6 because a scale with no names is how everything ends up between 11 and 30 px:
+
+| role              | phone       | from 640 px | family      | notes                       |
+| ----------------- | ----------- | ----------- | ----------- | --------------------------- |
+| `.t-headline`     | 500 34/1.08 | 64/1.02     | Alegreya    | tracking −0.015em, max 24ch |
+| `.t-section`      | 500 34/1.08 | 56/1.03     | Alegreya    | max 20ch                    |
+| `.t-intro`        | 400 17/1.5  | 22/1.45     | Alegreya    | max 78ch                    |
+| `.t-caption-grid` | 400 15/1.35 | 17/1.4      | Alegreya    | max 34ch, the heritage      |
+| `.t-credit`       | 400 16/1.4  | 17          | system      | accent, max 48ch            |
+| `.t-label`        | 400 11/1    | —           | system mono | uppercase, 0.1em, muted     |
+| `.t-meta`         | 400 14/1.4  | —           | system mono | tabular figures, muted      |
+| `.t-thanks`       | 500 24/1.16 | 34/1.14     | Alegreya    | footer, max 24ch            |
+| `.t-fineprint`    | 400 14/1.55 | —           | system      | footer, max 58ch, muted     |
+| `.t-signature`    | 500 20/1.28 | 22/1.25     | Alegreya    | footer, the authors' names  |
+
+The identifiers are English because _Language conventions_ covers identifiers, not only comments:
+the first pass shipped them as `.t-titular`, `.t-entradilla`, `.t-epigrafe-grilla` and friends, and
+T6 renamed them. `.t-caption-grid` is deliberately a family name, so the photo page's own caption
+role lands as `.t-caption-photo` in T7.
+
+### Grid
+
+Two columns below 640 px, three to 1000, four above. Gap of 16 px on a phone, 24 px above it, and a
+32/44 px margin down the column — this direction spends its budget on air between photographs. Every
+cell reserves its exact height from `master_width`/`master_height`, so nothing moves as images
+arrive.
+
+**It is CSS multi-column, and the packed wall it replaced is worth recording.** T6 first built the
+design proposal's packed wall: twelve columns, `grid-auto-flow: dense`, 4 px row tracks, each
+photograph spanning three, four or five columns by its real proportion, and each cell's height
+reserved in rows computed on the server. That needs the caption's height, which is not knowable
+before layout, so the server estimated it from the character count — and an estimate there is forced
+to err long, because coming up short lets a cell ride over its neighbour. Measured on Espacios: 13%
+of the wall's height left empty, 1,479 px across 24 photographs, **every single cell** over-reserving
+between 33 and 104 px. No calibration of the constant fixes that; the sign of the error is
+structural.
+
+Columns have no rows to reserve, so each one packs tight and the different heights sit against each
+other, which is the behaviour the Europeana reference has. Same page, same 24 photographs: the wall
+went from 4,324 px to 2,491 px, and the vertical gaps became exactly the margin, uniform. It deleted
+`src/lib/wall.ts` whole, along with the guessed constants inside it.
+
+Two costs, both real. **The reading order turns column-wise**: the order the authors gave runs down
+the first column and then down the second, not left to right. And the variable cell widths are gone —
+a panorama no longer takes more room than a portrait. Recovering both at once means measuring text,
+which means JavaScript, or `grid-template-rows: masonry`, which is behind a flag in one browser.
+
+A photograph is set like a mounted print: a `1px` light edge at `rgba(237, 230, 218, 0.16)` over a
+soft drop shadow, never a border-radius. The caption sits directly below, the credit under it in
+sepia italic, which reads as a signature at the foot of a print rather than as a data field.
+
+A sensitive photograph is blurred at `9px` with a `1.12` scale so the blur reaches the edges, under
+a veil at `rgba(27, 25, 23, 0.84)` — opaque enough that the label stays legible over a bright
+photograph — carrying the warning and a "Ver la fotografía" link in accent. Blurred, never hidden.
 
 ---
 
@@ -257,6 +370,20 @@ Details that matter:
 - **The home page is organized with fields that already exist**: the section list comes from
   `category.position` (order), `category.visible` (show or hide) and `category.cover_photo_id`
   (which photo represents it). The only new field is `photo.featured` for the highlights strip.
+- **`site_text` is where every word of the site lives**, keyed, one row per locale. T6 seeded twelve
+  keys: `home_title`, `home_intro`, `rights_notice`, `thanks`, `authors`, `contact`, `town_title`,
+  `town_intro`, `map_embed_url`, and the three network addresses. The last six arrived while
+  building the home page and the footer, which is what closes F6 — the home copy T1 rescued is in
+  the database now, not only in `archive.json`. The map's coordinates and the social URLs are in
+  there for the same reason as the prose: moving the pin or adding a fourth network must not need a
+  deploy. The only words in code are labels: "El archivo hasta hoy", "A cargo del archivo",
+  "Contacto", "Redes", "Secciones", "Buscar", "Todas las secciones".
+- **A URL out of the database is a trust boundary.** `site_text` becomes editable from the panel in
+  T11, and its values reach an `href` and an `<iframe src>`, so `src/lib/url.ts` guards them: the
+  map embed against an exact hostname allowlist, the network links against the scheme only, since
+  which networks the archive is on is theirs to change. Exact hostname match and never `endsWith`,
+  because `maps.google.com.evil.com` ends with the right string. `npm run url:smoke` covers the
+  cases that fool a naive parser, userinfo and `javascript:` among them.
   Highlights have no order of their own: they follow category order, and a `featured_position`
   gets added when that default becomes annoying.
 - **Search**: `tsvector` with Postgres dictionaries (`spanish`, `english`, `french`, `italian`)
@@ -550,7 +677,7 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
 
 ## Still open
 
-- **Visual identity**: decided in T5 with proposals in front of us.
+- ~~**Visual identity**~~: settled in T5. See _Visual direction: Álbum_ above.
 - **Where the Sites site sits in Drive**: dropped as a question. It only mattered for the Takeout
   route, and there is no Takeout route — the export list has no Sites product. The scraper needs
   nothing but the public URL.

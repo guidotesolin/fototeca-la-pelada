@@ -1,13 +1,12 @@
 import sharp from 'sharp'
+import { FORMATS, WIDTHS } from './photo'
+import type { Format } from './photo'
 
 /**
  * Derivatives for the public site. Everything here runs once, at import time,
  * never inside a request: that is what lets us afford AVIF, and it is why Vercel's
  * 5,000 image transformations per month are never touched.
  */
-
-/** A 360 px phone must never download a 1440 px image. */
-export const WIDTHS = [480, 960, 1440] as const
 
 /**
  * How much bigger than the widest step it reached a master has to be to earn a
@@ -17,16 +16,11 @@ export const WIDTHS = [480, 960, 1440] as const
  */
 const OWN_WIDTH_PAYS = 1.15
 
-/** AVIF first in the `<picture>`, WebP as the fallback every browser reads. */
-export const FORMATS = ['avif', 'webp'] as const
-
 /** What we accept as a master. Anything else is rejected before sharp touches it. */
 const INPUT_FORMATS = new Set(['jpeg', 'png', 'webp', 'tiff', 'avif', 'heif', 'gif'])
 
 /** A scan has no business being larger than this, and an upload even less. */
 const MAX_BYTES = 40 * 1024 * 1024
-
-export type Format = (typeof FORMATS)[number]
 
 export type Rendition = {
   width: number
