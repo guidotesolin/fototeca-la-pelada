@@ -1,0 +1,34 @@
+{
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path'); case \"$f\" in *.env|*.env.local|*.env.*) [ \"${f##*/}\" = \".env.example\" ] || { echo \"blocked: real env file. Use .env.example, or read the value from the Vercel dashboard.\" >&2; exit 2; };; esac",
+            "statusMessage": "Checking for env files"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(jq -r '.tool_input.file_path'); case \"$f\" in *.ts|*.tsx|*.css|*.mjs|*.json) npx prettier --write \"$f\" >/dev/null;; esac 2>/dev/null || true",
+            "statusMessage": "Formatting with Prettier"
+          }
+        ]
+      }
+    ]
+  }
+}
