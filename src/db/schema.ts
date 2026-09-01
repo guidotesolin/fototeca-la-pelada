@@ -132,6 +132,22 @@ export const photoCategory = pgTable(
   ],
 )
 
+/**
+ * Text that belongs to the site rather than to a photograph or a section: the
+ * archive's own description, the rights notice, who made it. It is content, so it
+ * lives here and is edited from the panel — the alternative is prose frozen inside
+ * a component, which means a deploy to fix a comma and a maintainer to ask.
+ */
+export const siteText = pgTable(
+  'site_text',
+  {
+    key: varchar({ length: 64 }).notNull(),
+    locale: locale().notNull(),
+    value: text().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.locale] })],
+)
+
 /** `app_user`, because `user` is reserved in Postgres. Everyone listed is an admin. */
 export const appUser = pgTable('app_user', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

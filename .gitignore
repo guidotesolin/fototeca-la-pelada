@@ -48,3 +48,10 @@ next-env.d.ts
 
 # python bytecode from tools/
 __pycache__/
+
+# Reference design specification (Claude Design). Consultation material, not part
+# of the product: the original lives in the Claude Design project and in the zip.
+/.design-ref/
+
+# Artefactos de sesion de Playwright MCP
+/.playwright-mcp/

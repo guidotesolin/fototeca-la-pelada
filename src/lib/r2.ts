@@ -7,7 +7,6 @@ import {
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
-import type { Format } from './images'
 
 /**
  * Cloudflare R2: the derivatives the public site consumes, plus the rescued
@@ -18,12 +17,8 @@ import type { Format } from './images'
  * would let anyone walk the entire archive from a single URL, and unpublishing a
  * photo would be a lie: the file would still answer at a guessable address.
  *
- * The naming convention, in one place:
- *   prefix        photos/campo-078-Ku3nR2xQp9Vf
- *   derivative    <prefix>-960.avif        (the width is the real one, never upscaled)
- *   master        <prefix>.jpg
- * The gallery's single-URL rendition, for a grid cell or a link preview, is the
- * narrowest WebP. Everything else is a `<picture>` with both formats.
+ * The naming convention lives in `lib/photo.ts`, which the public site imports
+ * without dragging this file -- and the AWS SDK -- into its bundle.
  */
 
 const MIME: Record<string, string> = {
@@ -62,27 +57,13 @@ function bucket(): string {
   return name
 }
 
-export function contentTypeFor(ext: string): string {
+function contentTypeFor(ext: string): string {
   return MIME[ext] ?? 'application/octet-stream'
 }
 
 /** A prefix nobody can derive from another photo's, or from the slug alone. */
 export function newPrefix(kind: 'photos' | 'masters', slug: string): string {
   return `${kind}/${slug}-${randomBytes(9).toString('base64url')}`
-}
-
-export function keyFor(prefix: string, width: number, format: Format): string {
-  return `${prefix}-${width}.${format}`
-}
-
-export function masterKeyFor(prefix: string, ext: string): string {
-  return `${prefix}.${ext}`
-}
-
-export function publicUrl(key: string): string {
-  const base = process.env.NEXT_PUBLIC_IMAGE_BASE_URL
-  if (!base) throw new Error('NEXT_PUBLIC_IMAGE_BASE_URL is not set')
-  return `${base.replace(/\/$/, '')}/${key}`
 }
 
 export async function put(key: string, data: Buffer, ext: string): Promise<void> {
