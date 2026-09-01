@@ -69,8 +69,8 @@ they are internal.
 | **Web images** | **Cloudflare R2** (10 GB, free tier)     | Derivatives only, served from `img.fototecalapelada.com.ar`. 10 GB free and **free egress**: a gallery is pure egress.                                                                |
 | Auth           | **Auth.js v5 + Google**                  | They sign in with their Gmail or the archive's account. The same OAuth grants Drive access.                                                                                           |
 | i18n           | **next-intl**, routes `/es /en /fr /it`  | Public site only. Translations live in the database, falling back to Spanish.                                                                                                         |
-| Hosting        | **Vercel** (Hobby)                       | Native Next.js and GitLab integration. The project is non-profit, so it complies with the non-commercial use policy.                                                                  |
-| Repo           | **GitLab**                               | What the maintainer already uses.                                                                                                                                                     |
+| Hosting        | **Vercel** (Hobby)                       | Native Next.js and GitHub integration. The project is non-profit, so it complies with the non-commercial use policy.                                                                  |
+| Repo           | **GitHub** (public)                      | `github.com/guidotesolin/fototeca-la-pelada`. Public, which makes secret scanning and push protection free and on by default.                                                         |
 
 ### Next.js vs Astro: the honest comparison
 
@@ -504,9 +504,16 @@ both, and the reader disambiguates instantly.
   production.
 - **Neon connection string**: server only, never in a client component.
 - **Admin allowlist in the database**, not in code: adding a brother must not require a deploy.
-- **Secret detection in CI**: GitLab ships Secret Detection; plus a local `gitleaks` pre-commit
-  hook, wired through git's native `core.hooksPath` so it needs no dependency.
+- **Secret detection, two layers**: GitHub secret scanning with **push protection** is free on
+  public repositories and enabled by default, so a detected secret is refused server-side at push
+  time — a stronger guarantee than any local check, because it also covers pushes from a machine
+  with no hooks installed. On top of that, the local `gitleaks` pre-commit hook wired through
+  git's native `core.hooksPath` catches things before they even become a commit.
 - **If a secret leaks, rotate it — do not rewrite history.** Assume it has already been copied.
+  This matters more than usual here: the repository is **public**, so anything committed is
+  readable by anyone the moment it is pushed. Nothing in the repo is sensitive today — the authors'
+  names and contact address are already published on the current site — but the margin for error
+  with credentials is zero.
 
 Security beyond keys:
 

@@ -209,9 +209,12 @@ _Commit_: `feat(i18n): add locale routing and translation fallback for the publi
 
 ### T14 — Deploy and hardening
 
-Vercel connected to GitLab, environment variables, the `fototecalapelada.com.ar` and
-`img.fototecalapelada.com.ar` domains, CSP and security headers, rate limiting, Secret Detection in
-CI, sitemap, Search Console, and a notice on the old Sites site.
+Vercel connected to GitHub, environment variables, the `fototecalapelada.com.ar` and
+`img.fototecalapelada.com.ar` domains, CSP and security headers, rate limiting, sitemap, Search
+Console, and a notice on the old Sites site.
+
+Secret scanning needs no setup: the repository is public, so GitHub push protection is free and on
+by default. Verify it in Settings → Code security rather than configuring it.
 
 _Acceptance_: no secrets in the client bundle (verified by grepping the generated files); security
 headers respond; the sitemap lists only published photos.
