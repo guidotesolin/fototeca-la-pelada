@@ -31,6 +31,20 @@ export default async function Home() {
       <section>
         {text.home_title && <h1 className="t-headline mx-auto text-center">{text.home_title}</h1>}
 
+        {/* The deck (Swiper, desktop only): the reference is Europeana. Its own
+            aria-label names it, so dropping the heading costs nothing spoken. It
+            opens the page, and a phone never sees it — the component returns null
+            below 900 px, so nothing here reserves space it will not use. */}
+        <SectionDeck sections={sections} />
+
+        {/* Centred under the centred title: left-aligned it read as an orphan in the
+            corner of a symmetric composition. The four figures used to sit below it
+            and now live in the footer's "El archivo hasta hoy", so they are not
+            repeated here. */}
+        {text.home_intro && (
+          <p className="t-intro text-muted mx-auto mt-14 text-center sm:mt-16">{text.home_intro}</p>
+        )}
+
         {/* The map beside the town's own description, the way the old home page set
             them, stacking on a phone. Both are the authors' — the coordinates they
             chose and the paragraphs they wrote. */}
@@ -67,21 +81,9 @@ export default async function Home() {
             </div>
           )}
         </div>
-
-        {/* Centred under the centred title: left-aligned it read as an orphan in the
-            corner of a symmetric composition. The four figures used to sit below it
-            and now live in the footer's "El archivo hasta hoy", so they are not
-            repeated here. */}
-        {text.home_intro && (
-          <p className="t-intro text-muted mx-auto mt-14 text-center sm:mt-16">{text.home_intro}</p>
-        )}
       </section>
 
       <section className="mt-14 sm:mt-20" id="secciones">
-        {/* The deck (Swiper, desktop only): the reference is Europeana. Its own
-            aria-label names it, so dropping the heading costs nothing spoken. */}
-        <SectionDeck sections={sections} />
-
         {/* The list, which on a phone is all there is, and on desktop sits below.
             An h2: it is the section's only heading now, and h1 -> h3 would skip. */}
         <h2 className="t-label border-rule mt-6 border-b pb-3 xl:mt-10">

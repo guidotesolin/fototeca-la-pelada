@@ -18,6 +18,10 @@
   --color-focus: #e0b87a;
 
   --font-serif: var(--font-alegreya), Georgia, 'Times New Roman', serif;
+  /* The same family: what the second loader buys is the italic face registered
+     without a preload, and this is the name that keeps the rule and the loader
+     greppable from each other. See layout.tsx. */
+  --font-serif-italic: var(--font-alegreya-italic), Georgia, 'Times New Roman', serif;
 
   /* Grid: phone margin 16 and 2 columns with a 10 gutter; desktop margin 96,
      12 columns with a 24 gutter, 1248 of content. */
@@ -60,6 +64,23 @@ body {
 .t-caption-grid {
   font: 400 15px/1.35 var(--font-serif);
   max-width: 34ch;
+}
+
+/* The same heritage on the screen that is about one photograph, where it is the
+   text rather than a label under a thumbnail: the site's second display size. */
+.t-caption-photo {
+  font: 400 19px/1.5 var(--font-serif);
+  max-width: 56ch;
+  text-wrap: pretty;
+}
+
+/* The source note, which quotes the Centenary book or an interview. Italic marks
+   it as a voice from somewhere else, which is exactly what it is. */
+.t-note {
+  font: italic 400 16px/1.6 var(--font-serif-italic);
+  color: var(--color-muted);
+  max-width: 62ch;
+  text-wrap: pretty;
 }
 
 /* Credit, label and meta sit on the system stack: zero extra bytes, and they
@@ -111,6 +132,13 @@ body {
   .t-caption-grid {
     font-size: 17px;
     line-height: 1.4;
+  }
+  .t-caption-photo {
+    font-size: 23px;
+    line-height: 1.45;
+  }
+  .t-note {
+    font-size: 17px;
   }
   .t-credit {
     font-size: 17px;
@@ -300,6 +328,96 @@ body {
   .menu-caret {
     transition: none;
   }
+}
+
+/*
+ * THE PHOTO PAGE (see app/foto/[slug]/page.tsx)
+ *
+ * Both controls on this screen are native and work with JavaScript off, which is
+ * the requirement the whole archive is built to: an embedded browser in Facebook
+ * or WhatsApp on a rural phone is where these links get opened.
+ *
+ * The sensitive card is a `<details>`, the same element as the header menu. It
+ * sits *before* the figure in the document, so the warning is read first however
+ * the page is rendered -- and so the rule that lifts the blur can be a plain
+ * sibling selector instead of `:has()`, which those browsers may not have.
+ *
+ * The blur itself is PhotoImage's, from `photo.sensitive`. These rules are
+ * unlayered author CSS and Tailwind's utilities sit in `@layer utilities`, so they
+ * win over `blur-[9px]` and `scale-110` whatever the specificity -- the same
+ * cascade-layer note as `body > header` further down.
+ */
+.reveal > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.reveal > summary::marker {
+  content: '';
+}
+
+.reveal > summary::-webkit-details-marker {
+  display: none;
+}
+
+/*
+ * One grid cell for both labels, and `visibility` rather than `display`, so the
+ * card's height is the taller of the two in both states. Swapping them with
+ * `display: none` made the closed card taller than the open one, and the
+ * photograph moved under the reader's finger as it was revealed.
+ */
+.reveal-action {
+  display: grid;
+  justify-items: start;
+}
+
+.reveal-action > * {
+  grid-area: 1 / 1;
+}
+
+.reveal[open] .reveal-closed,
+.reveal:not([open]) .reveal-open {
+  visibility: hidden;
+}
+
+/* `scale`, not `transform`: Tailwind 4 compiles `scale-110` to the CSS `scale`
+   property, so resetting the transform leaves the copy cropped by a tenth. */
+.reveal[open] ~ figure img {
+  filter: none;
+  scale: none;
+}
+
+/*
+ * The original/restored switch: two links and `:target`, because a drag slider on
+ * a touchscreen fights with the page scroll and a button needs JavaScript. Each
+ * state gets an address, so a reader can send someone the restored view.
+ *
+ * The restored copy comes first in the DOM and is hidden, so the switch and the
+ * original are both *after* it and a general sibling combinator reaches them.
+ *
+ * ponytail: the current state is carried by colour alone -- no `aria-current`,
+ * because CSS cannot set one. If a screen reader ever needs to know which of the
+ * two it is looking at, that is the point where this becomes a client component.
+ */
+.ab-restored {
+  display: none;
+}
+
+.ab-restored:target {
+  display: block;
+}
+
+.ab-restored:target ~ .ab-original {
+  display: none;
+}
+
+.ab-switch a[href='#original'],
+.ab-restored:target ~ .ab-switch a[href='#restaurada'] {
+  color: var(--color-accent);
+}
+
+.ab-restored:target ~ .ab-switch a[href='#original'] {
+  color: var(--color-muted);
 }
 
 /*

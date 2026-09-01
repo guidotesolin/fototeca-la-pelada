@@ -69,8 +69,8 @@ they are internal.
 | **Web images** | **Cloudflare R2** (10 GB, free tier)     | Derivatives only, served from `img.fototecalapelada.com.ar`. 10 GB free and **free egress**: a gallery is pure egress.                                                                |
 | Auth           | **Auth.js v5 + Google**                  | They sign in with their Gmail or the archive's account. The same OAuth grants Drive access.                                                                                           |
 | i18n           | **next-intl**, routes `/es /en /fr /it`  | Public site only. Translations live in the database, falling back to Spanish.                                                                                                         |
-| Hosting        | **Vercel** (Hobby)                       | Native Next.js and GitLab integration. The project is non-profit, so it complies with the non-commercial use policy.                                                                  |
-| Repo           | **GitLab**                               | What the maintainer already uses.                                                                                                                                                     |
+| Hosting        | **Vercel** (Hobby)                       | Native Next.js and GitHub integration. The project is non-profit, so it complies with the non-commercial use policy.                                                                  |
+| Repo           | **GitHub** (public)                      | `github.com/guidotesolin/fototeca-la-pelada`. Public, which makes secret scanning and push protection free and on by default.                                                         |
 
 ### Next.js vs Astro: the honest comparison
 
@@ -251,23 +251,30 @@ this direction is serif captions on a dark ground, not the label font. Nobody wi
 Scale, as built, with named roles rather than improvised sizes — the proposal's numbers were
 replaced during T6 because a scale with no names is how everything ends up between 11 and 30 px:
 
-| role              | phone       | from 640 px | family      | notes                       |
-| ----------------- | ----------- | ----------- | ----------- | --------------------------- |
-| `.t-headline`     | 500 34/1.08 | 64/1.02     | Alegreya    | tracking −0.015em, max 24ch |
-| `.t-section`      | 500 34/1.08 | 56/1.03     | Alegreya    | max 20ch                    |
-| `.t-intro`        | 400 17/1.5  | 22/1.45     | Alegreya    | max 78ch                    |
-| `.t-caption-grid` | 400 15/1.35 | 17/1.4      | Alegreya    | max 34ch, the heritage      |
-| `.t-credit`       | 400 16/1.4  | 17          | system      | accent, max 48ch            |
-| `.t-label`        | 400 11/1    | —           | system mono | uppercase, 0.1em, muted     |
-| `.t-meta`         | 400 14/1.4  | —           | system mono | tabular figures, muted      |
-| `.t-thanks`       | 500 24/1.16 | 34/1.14     | Alegreya    | footer, max 24ch            |
-| `.t-fineprint`    | 400 14/1.55 | —           | system      | footer, max 58ch, muted     |
-| `.t-signature`    | 500 20/1.28 | 22/1.25     | Alegreya    | footer, the authors' names  |
+| role               | phone       | from 640 px | family          | notes                                |
+| ------------------ | ----------- | ----------- | --------------- | ------------------------------------ |
+| `.t-headline`      | 500 34/1.08 | 64/1.02     | Alegreya        | tracking −0.015em, max 24ch          |
+| `.t-section`       | 500 34/1.08 | 56/1.03     | Alegreya        | max 20ch                             |
+| `.t-intro`         | 400 17/1.5  | 22/1.45     | Alegreya        | max 78ch                             |
+| `.t-caption-grid`  | 400 15/1.35 | 17/1.4      | Alegreya        | max 34ch, the heritage               |
+| `.t-caption-photo` | 400 19/1.5  | 23/1.45     | Alegreya        | max 56ch, the same on its own screen |
+| `.t-note`          | 400 16/1.6  | 17          | Alegreya italic | max 62ch, muted, the source note     |
+| `.t-credit`        | 400 16/1.4  | 17          | system          | accent, max 48ch                     |
+| `.t-label`         | 400 11/1    | —           | system mono     | uppercase, 0.1em, muted              |
+| `.t-meta`          | 400 14/1.4  | —           | system mono     | tabular figures, muted               |
+| `.t-thanks`        | 500 24/1.16 | 34/1.14     | Alegreya        | footer, max 24ch                     |
+| `.t-fineprint`     | 400 14/1.55 | —           | system          | footer, max 58ch, muted              |
+| `.t-signature`     | 500 20/1.28 | 22/1.25     | Alegreya        | footer, the authors' names           |
 
 The identifiers are English because _Language conventions_ covers identifiers, not only comments:
 the first pass shipped them as `.t-titular`, `.t-entradilla`, `.t-epigrafe-grilla` and friends, and
 T6 renamed them. `.t-caption-grid` is deliberately a family name, so the photo page's own caption
-role lands as `.t-caption-photo` in T7.
+role lands as `.t-caption-photo` in T7 — which it did, and it brought `.t-note` with it.
+
+That note is the only italic on the site, and it is why Alegreya is loaded twice: a second
+`next/font` instance declared `preload: false`, so the italic file is fetched on the twelve pages
+that carry a note and on no other. Both instances resolve to the same family name, so what the
+second one actually buys is the italic face registered without a preload link.
 
 ### Grid
 
@@ -504,9 +511,16 @@ both, and the reader disambiguates instantly.
   production.
 - **Neon connection string**: server only, never in a client component.
 - **Admin allowlist in the database**, not in code: adding a brother must not require a deploy.
-- **Secret detection in CI**: GitLab ships Secret Detection; plus a local `gitleaks` pre-commit
-  hook, wired through git's native `core.hooksPath` so it needs no dependency.
+- **Secret detection, two layers**: GitHub secret scanning with **push protection** is free on
+  public repositories and enabled by default, so a detected secret is refused server-side at push
+  time — a stronger guarantee than any local check, because it also covers pushes from a machine
+  with no hooks installed. On top of that, the local `gitleaks` pre-commit hook wired through
+  git's native `core.hooksPath` catches things before they even become a commit.
 - **If a secret leaks, rotate it — do not rewrite history.** Assume it has already been copied.
+  This matters more than usual here: the repository is **public**, so anything committed is
+  readable by anyone the moment it is pushed. Nothing in the repo is sensitive today — the authors'
+  names and contact address are already published on the current site — but the margin for error
+  with credentials is zero.
 
 Security beyond keys:
 
