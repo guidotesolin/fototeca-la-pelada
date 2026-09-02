@@ -63,6 +63,10 @@ npm run dev
 | `npm run images:smoke` | Check the derivative pipeline and R2     |
 | `npm run url:smoke`    | Check the URL guards on `site_text`      |
 | `npm run search:smoke` | Check search against a live database     |
+| `npm run auth:smoke`   | Check the panel's boundary (app running) |
+| `npm run admin:add`    | Put an email address on the allowlist    |
+| `npm run admin:list`   | Show who can enter the panel             |
+| `npm run admin:remove` | Take an email address off the allowlist  |
 
 ## Workflow
 
@@ -74,6 +78,54 @@ npm run dev
   that works. Deliberate shortcuts carry a `ponytail:` comment with their ceiling and way out.
 - Code, identifiers, commits and documentation in English. The admin panel is in Spanish, never
   translated.
+
+## Admin panel access
+
+The panel lives at `/admin`, signs in with Google and is in Spanish. Two things gate it, and they
+are different: Google says **who you are**, and a row in `app_user` says **whether you get in**.
+There is no role column — everyone on that list is an administrator.
+
+**The Google OAuth client**, once per environment, at
+[console.cloud.google.com](https://console.cloud.google.com) → **Google Auth Platform**. Google
+reorganised this in 2025: what used to be one "OAuth consent screen" wizard is now four sections in
+the left nav, and scopes are no longer part of creating the app.
+
+1. _Branding_: app name `Fototeca La Pelada`, support and contact email `fototecalp@gmail.com`.
+2. _Audience_: **External**, left in **Testing**, with the four archive accounts added as test
+   users. Internal is not an option: it requires the project to belong to a Google Cloud
+   organization, and these are personal Gmail accounts. Testing is the closest equivalent — only a
+   listed test user can even reach the consent screen, which puts a second gate in front of the
+   database allowlist. Its usual cost does not apply here: authorizations in Testing expire after
+   seven days **except** for apps requesting only basic profile scopes over OIDC, which is this one,
+   and Auth.js's Google provider never asks for `access_type: offline`, so no refresh token is
+   issued at all. The price is the "Google hasn't verified this app" screen, once per account.
+3. _Data access_: nothing to add. Sign-in uses `openid`, `email` and `profile`, the three Auth.js
+   asks for by default over OIDC, and they need no declaration. If a consent screen ever refuses
+   them, add the three there and nowhere else. Drive is **not** requested: T12 reads it through a
+   service account instead.
+4. _Clients_ → Create client → Application type **Web application**.
+5. Authorized JavaScript origins: `http://localhost:3000` for development,
+   `https://fototecalapelada.com.ar` for production.
+6. Authorized redirect URIs — the path is Auth.js's and must match exactly:
+   - `http://localhost:3000/api/auth/callback/google`
+   - `https://fototecalapelada.com.ar/api/auth/callback/google`
+7. The client ID and secret become `AUTH_GOOGLE_ID` and `AUTH_GOOGLE_SECRET`. Generate
+   `AUTH_SECRET` with `openssl rand -base64 32`, different in development and production.
+
+**The first administrator** cannot be added from the panel, because nobody can enter a panel whose
+allowlist is empty. Seed it from the command line:
+
+```bash
+npm run admin:add -- someone@gmail.com "Name Surname"
+npm run admin:list
+```
+
+Removal takes effect on the offending account's **next request**: the session cookie is a JWT and
+stays cryptographically valid, but every panel request re-reads `app_user`.
+
+```bash
+npm run admin:remove -- someone@gmail.com
+```
 
 ## Security
 
@@ -158,6 +210,10 @@ npm run dev
 | `npm run images:smoke` | Verifica el pipeline de derivados y R2   |
 | `npm run url:smoke`    | Guards de URL de `site_text`             |
 | `npm run search:smoke` | Verifica la búsqueda en una base real    |
+| `npm run auth:smoke`   | Verifica el límite del panel (app viva)  |
+| `npm run admin:add`    | Agrega un correo a la lista blanca       |
+| `npm run admin:list`   | Muestra quién puede entrar al panel      |
+| `npm run admin:remove` | Saca un correo de la lista blanca        |
 
 ## Flujo de trabajo
 
@@ -169,6 +225,56 @@ npm run dev
   funcione. Los atajos deliberados llevan un comentario `ponytail:` con su techo y su salida.
 - Código, identificadores, commits y documentación en inglés. El panel de administración, en
   español sin traducir.
+
+## Acceso al panel
+
+El panel vive en `/admin`, entra con Google y está en español. Lo cuidan dos cosas distintas:
+Google dice **quién sos**, y una fila en `app_user` dice **si entrás**. No hay columna de rol: todo
+el que está en esa lista es administrador.
+
+**El cliente OAuth de Google**, una vez por entorno, en
+[console.cloud.google.com](https://console.cloud.google.com) → **Google Auth Platform**. Google lo
+reorganizó en 2025: lo que era un solo asistente de "pantalla de consentimiento" ahora son cuatro
+secciones de la barra lateral, y los scopes ya no forman parte de crear la app.
+
+1. _Información de la marca_: nombre `Fototeca La Pelada`, correo de asistencia y de contacto
+   `fototecalp@gmail.com`.
+2. _Público_: **External**, en estado **Testing**, con las cuatro cuentas del archivo cargadas como
+   usuarios de prueba. Internal no es una opción: exige que el proyecto pertenezca a una
+   organización de Google Cloud, y estas son cuentas de Gmail personales. Testing es lo más parecido
+   — solo un usuario de prueba listado llega siquiera a la pantalla de consentimiento, lo que pone
+   un segundo cerrojo delante de la lista blanca de la base. Su costo habitual no aplica acá: las
+   autorizaciones en Testing vencen a los siete días **salvo** para apps que piden solo scopes
+   básicos de perfil por OIDC, que es esta, y el provider de Google de Auth.js nunca pide
+   `access_type: offline`, así que no se emite ningún refresh token. El precio es la pantalla de
+   "Google no verificó esta app", una vez por cuenta.
+3. _Acceso a los datos_: no hay nada que agregar. El login usa `openid`, `email` y `profile`, los
+   tres que Auth.js pide por defecto por OIDC, y no necesitan declararse. Si alguna vez una pantalla
+   de consentimiento los rechaza, se agregan ahí y en ningún otro lado. Drive **no** se pide: T12 lo
+   lee con una cuenta de servicio.
+4. _Clientes_ → Crear cliente → Tipo **Aplicación web**.
+5. Orígenes de JavaScript autorizados: `http://localhost:3000` en desarrollo,
+   `https://fototecalapelada.com.ar` en producción.
+6. URIs de redirección autorizados — la ruta es la de Auth.js y tiene que coincidir exacto:
+   - `http://localhost:3000/api/auth/callback/google`
+   - `https://fototecalapelada.com.ar/api/auth/callback/google`
+7. El ID y el secreto van a `AUTH_GOOGLE_ID` y `AUTH_GOOGLE_SECRET`. `AUTH_SECRET` se genera con
+   `openssl rand -base64 32`, distinto en desarrollo y en producción.
+
+**El primer administrador** no se puede agregar desde el panel, porque nadie entra a un panel con
+la lista blanca vacía. Se siembra desde la línea de comandos:
+
+```bash
+npm run admin:add -- alguien@gmail.com "Nombre Apellido"
+npm run admin:list
+```
+
+Sacar a alguien tiene efecto en su **request siguiente**: la cookie de sesión es un JWT y sigue
+siendo válida, pero cada request del panel vuelve a leer `app_user`.
+
+```bash
+npm run admin:remove -- alguien@gmail.com
+```
 
 ## Seguridad
 

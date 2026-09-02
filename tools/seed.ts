@@ -16,6 +16,7 @@ import { join } from 'node:path'
 import { eq, isNull, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
+import { POSTGRES_OPTIONS } from '../src/db/connect'
 import {
   category,
   categoryTranslation,
@@ -81,7 +82,7 @@ if (!url) {
   console.error('DATABASE_URL is not set: copy .env.example to .env.local and fill it in.')
   process.exit(1)
 }
-const client = postgres(url, { max: CONCURRENCY, prepare: false })
+const client = postgres(url, { ...POSTGRES_OPTIONS, max: CONCURRENCY })
 const db = drizzle(client)
 
 const empty = (s: string) => (s.trim() ? s.trim() : null)

@@ -15,17 +15,23 @@
     "images:smoke": "tsx tools/images-smoke.ts",
     "url:smoke": "tsx tools/url-smoke.ts",
     "search:smoke": "tsx tools/search-smoke.ts",
+    "auth:smoke": "tsx tools/auth-smoke.ts",
     "icons": "tsx tools/make-icons.ts",
     "db:seed": "tsx tools/seed.ts",
-    "db:seed:verify": "tsx tools/seed.ts --verify"
+    "db:seed:verify": "tsx tools/seed.ts --verify",
+    "admin:add": "tsx tools/admin.ts add",
+    "admin:list": "tsx tools/admin.ts list",
+    "admin:remove": "tsx tools/admin.ts remove"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1120.0",
     "drizzle-orm": "^0.45.2",
     "next": "16.3.3",
+    "next-auth": "^5.0.0-beta.32",
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
     "sharp": "^0.35.4",
     "swiper": "^14.2.0"
   },

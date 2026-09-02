@@ -11,6 +11,7 @@ import assert from 'node:assert/strict'
 import { and, eq, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
+import { POSTGRES_OPTIONS } from '../src/db/connect'
 import {
   category,
   categoryTranslation,
@@ -32,7 +33,7 @@ if (!url) {
 }
 
 // This script owns its connection and closes it, unlike the app's long-lived one.
-const client = postgres(url, { max: 1, prepare: false })
+const client = postgres(url, POSTGRES_OPTIONS)
 const db = drizzle(client)
 
 const CATEGORY = 'smoke-test-category'
