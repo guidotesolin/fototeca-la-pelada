@@ -1,7 +1,14 @@
 import { and, asc, eq, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 import { db } from '@/db'
-import { category, categoryTranslation, photo, photoCategory, photoTranslation } from '@/db/schema'
+import {
+  category,
+  categoryTranslation,
+  photo,
+  photoCategory,
+  photoTranslation,
+  siteText,
+} from '@/db/schema'
 import { REVALIDATE, SOURCE_LOCALE } from './gallery'
 
 /**
@@ -167,17 +174,20 @@ export async function listPhotos(options: {
 
 /** The sections, for the filter and for showing which ones a photograph sits in. */
 export async function listCategories() {
-  return db
-    .select({ id: category.id, slug: category.slug, name: categoryTranslation.name })
-    .from(category)
-    .innerJoin(
-      categoryTranslation,
-      and(
-        eq(categoryTranslation.categoryId, category.id),
-        eq(categoryTranslation.locale, SOURCE_LOCALE),
-      ),
-    )
-    .orderBy(asc(category.position))
+  return (
+    db
+      .select({ id: category.id, slug: category.slug, name: categoryTranslation.name })
+      .from(category)
+      .innerJoin(
+        categoryTranslation,
+        and(
+          eq(categoryTranslation.categoryId, category.id),
+          eq(categoryTranslation.locale, SOURCE_LOCALE),
+        ),
+      )
+      // Same tiebreak as `listSections`: `position` is not unique.
+      .orderBy(asc(category.position), asc(category.slug))
+  )
 }
 
 export type AdminPhoto = NonNullable<Awaited<ReturnType<typeof getPhotoForEdit>>>
@@ -232,7 +242,7 @@ export async function getPhotoForEdit(slug: string) {
       ),
     )
     .where(eq(photoCategory.photoId, row.id))
-    .orderBy(asc(category.position))
+    .orderBy(asc(category.position), asc(category.slug))
 
   return { ...row, sections }
 }
@@ -264,3 +274,142 @@ export const listGoneSlugs = unstable_cache(
   ['gone-slugs'],
   { tags: [TAKEDOWN_TAG], revalidate: REVALIDATE },
 )
+
+/**
+ * Every section, hidden ones included, in the order the home page lays them out.
+ * `listSections()` in `gallery.ts` cannot serve this screen: it filters
+ * `visible = true`, which is exactly the state this screen exists to change, and
+ * it is cached for a day while this is the screen you open to see what is there
+ * now.
+ */
+export async function listCategoriesForHome() {
+  return (
+    db
+      .select({
+        id: category.id,
+        slug: category.slug,
+        name: categoryTranslation.name,
+        position: category.position,
+        visible: category.visible,
+        coverThumbKey: photo.thumbKey,
+        /**
+         * **Published only, because this screen is a preview of the portada** and
+         * that is the figure the section's card carries there -- `listSections`
+         * counts with the same join. Counting every relation row instead made the
+         * panel read 27 where the site read 26 the moment one photograph was taken
+         * down, on a screen whose first line says "así queda la portada".
+         */
+        photos: sql<number>`(
+        select count(*)::int from ${photoCategory}
+        join ${photo} on ${photo.id} = ${photoCategory.photoId}
+        where ${photoCategory.categoryId} = ${category.id} and ${photo.published}
+      )`,
+        /** Stated separately, so an empty-looking section that refuses to be deleted explains itself. */
+        unpublished: sql<number>`(
+        select count(*)::int from ${photoCategory}
+        join ${photo} on ${photo.id} = ${photoCategory.photoId}
+        where ${photoCategory.categoryId} = ${category.id} and not ${photo.published}
+      )`,
+      })
+      .from(category)
+      .innerJoin(
+        categoryTranslation,
+        and(
+          eq(categoryTranslation.categoryId, category.id),
+          eq(categoryTranslation.locale, SOURCE_LOCALE),
+        ),
+      )
+      // The cover as the home page resolves it: an unpublished one has no
+      // derivatives, so it shows there as no cover and must show here the same way.
+      .leftJoin(photo, and(eq(photo.id, category.coverPhotoId), eq(photo.published, true)))
+      .orderBy(asc(category.position), asc(category.slug))
+  )
+}
+
+export type AdminCategory = NonNullable<Awaited<ReturnType<typeof getCategoryForEdit>>>
+
+/**
+ * One section and the photographs that may represent it. The cover picker is
+ * restricted to the section's own published photographs, because those are the
+ * only ones the home page can actually draw: it joins on `published` and needs
+ * the derivatives that a takedown deletes.
+ */
+export async function getCategoryForEdit(slug: string) {
+  const [row] = await db
+    .select({
+      id: category.id,
+      slug: category.slug,
+      position: category.position,
+      visible: category.visible,
+      coverPhotoId: category.coverPhotoId,
+      name: categoryTranslation.name,
+      intro: categoryTranslation.intro,
+    })
+    .from(category)
+    .innerJoin(
+      categoryTranslation,
+      and(
+        eq(categoryTranslation.categoryId, category.id),
+        eq(categoryTranslation.locale, SOURCE_LOCALE),
+      ),
+    )
+    .where(eq(category.slug, slug))
+    .limit(1)
+
+  if (!row) return null
+
+  const candidates = await db
+    .select({
+      id: photo.id,
+      slug: photo.slug,
+      caption: photoTranslation.caption,
+      thumbKey: photo.thumbKey,
+    })
+    .from(photoCategory)
+    .innerJoin(photo, eq(photo.id, photoCategory.photoId))
+    .leftJoin(photoTranslation, and(eq(photoTranslation.photoId, photo.id), spanish))
+    .where(and(eq(photoCategory.categoryId, row.id), eq(photo.published, true)))
+    .orderBy(asc(photoCategory.position))
+
+  // A photograph with no thumbnail cannot be shown in the picker, and the home
+  // page could not draw it either. Narrowed here rather than asserted at the call.
+  return {
+    ...row,
+    candidates: candidates.flatMap((c) => (c.thumbKey ? [{ ...c, thumbKey: c.thumbKey }] : [])),
+  }
+}
+
+/**
+ * The highlights as the panel shows them: same order as the public strip, but
+ * uncached and carrying the unpublished ones too, so a photograph that is
+ * flagged and invisible can be seen to be both.
+ */
+export async function listFeaturedForAdmin() {
+  const rows = await db
+    .select({
+      slug: photo.slug,
+      caption: photoTranslation.caption,
+      thumbKey: photo.thumbKey,
+      published: photo.published,
+    })
+    .from(photo)
+    .leftJoin(photoTranslation, and(eq(photoTranslation.photoId, photo.id), spanish))
+    .leftJoin(photoCategory, eq(photoCategory.photoId, photo.id))
+    .leftJoin(category, and(eq(category.id, photoCategory.categoryId), eq(category.visible, true)))
+    .where(eq(photo.featured, true))
+    .orderBy(asc(category.position), asc(photoCategory.position), asc(photo.slug))
+
+  // A photograph in two sections joins twice. It is one highlight either way, and
+  // nothing category-dependent is selected, so which of the duplicate rows the map
+  // keeps cannot matter -- see the same note on `listFeatured`.
+  return [...new Map(rows.map((r) => [r.slug, r])).values()]
+}
+
+/** Every word of the site, for the editor. Uncached, for the same reason as the rest. */
+export async function listSiteTextForEdit(): Promise<Record<string, string>> {
+  const rows = await db
+    .select({ key: siteText.key, value: siteText.value })
+    .from(siteText)
+    .where(eq(siteText.locale, SOURCE_LOCALE))
+  return Object.fromEntries(rows.map((r) => [r.key, r.value]))
+}

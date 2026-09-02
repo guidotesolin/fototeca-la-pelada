@@ -127,7 +127,11 @@ export const listSections = unstable_cache(
       .leftJoin(photo, and(eq(photo.id, category.coverPhotoId), eq(photo.published, true)))
       .leftJoin(photoTranslation, and(eq(photoTranslation.photoId, photo.id), spanish))
       .where(eq(category.visible, true))
-      .orderBy(asc(category.position))
+      // `position` is typed by hand in the panel and nothing makes it unique, so a
+      // tie has to break somewhere: without this Postgres may return two sections
+      // in a different order on each revalidation, and the panel -- which orders by
+      // the same pair -- would be previewing an order the site does not keep.
+      .orderBy(asc(category.position), asc(category.slug))
 
     const counts = await db
       .select({ slug: category.slug, n: sql<number>`count(*)::int` })
@@ -157,6 +161,61 @@ export const listSections = unstable_cache(
     }))
   },
   ['sections'],
+  { tags: [GALLERY_TAG], revalidate: REVALIDATE },
+)
+
+/**
+ * The home page's highlights. `photo.featured` is the only field behind it, and
+ * the order is not its own: sections first, then curatorial order inside each --
+ * which is ARCHITECTURE's decision that a `featured_position` gets added when
+ * that default becomes annoying, and not before.
+ *
+ * A photograph in two sections joins twice and is still one highlight, so the
+ * list is deduplicated by slug. `new Map` keeps each key's **last** row and its
+ * first position, which is safe only because every column selected here comes
+ * from `photo` or `photo_translation`, so the duplicate rows are identical.
+ * Anything category-dependent added to this select would silently take its value
+ * from the photograph's worst-placed section.
+ *
+ * ponytail: capped at twelve. It is a strip on the index, not a gallery, and a
+ * home page that grows without limit is how an archive of 592 ends up with all
+ * of them on the front. Raise the constant if they ever ask.
+ */
+export const FEATURED_LIMIT = 12
+
+export const listFeatured = unstable_cache(
+  async (): Promise<PhotoCard[]> => {
+    const rows = await db
+      .select({
+        slug: photo.slug,
+        caption: photoTranslation.caption,
+        credit: photo.credit,
+        sensitive: photo.sensitive,
+        webKey: photo.webKey,
+        webWidth: photo.webWidth,
+        webHeight: photo.webHeight,
+      })
+      .from(photo)
+      .leftJoin(photoTranslation, and(eq(photoTranslation.photoId, photo.id), spanish))
+      .leftJoin(photoCategory, eq(photoCategory.photoId, photo.id))
+      .leftJoin(
+        category,
+        and(eq(category.id, photoCategory.categoryId), eq(category.visible, true)),
+      )
+      .where(and(eq(photo.featured, true), eq(photo.published, true)))
+      .orderBy(asc(category.position), asc(photoCategory.position), asc(photo.slug))
+
+    const unique = [...new Map(rows.map((r) => [r.slug, r])).values()]
+    // Same rule as the gallery: without derivatives there is nothing to show.
+    return unique
+      .flatMap((r) =>
+        r.webKey && r.webWidth && r.webHeight
+          ? [{ ...r, webKey: r.webKey, webWidth: r.webWidth, webHeight: r.webHeight }]
+          : [],
+      )
+      .slice(0, FEATURED_LIMIT)
+  },
+  ['featured'],
   { tags: [GALLERY_TAG], revalidate: REVALIDATE },
 )
 
@@ -279,7 +338,7 @@ export const getPhoto = unstable_cache(
         ),
       )
       .where(and(eq(photo.slug, slug), eq(photo.published, true)))
-      .orderBy(asc(category.position))
+      .orderBy(asc(category.position), asc(category.slug))
 
     const first = rows[0]
     // Same rule as the gallery: without derivatives there is nothing to show.

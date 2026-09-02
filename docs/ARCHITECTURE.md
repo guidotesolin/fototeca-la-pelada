@@ -386,6 +386,11 @@ photo_category                   app_user
   photo_id ─────┐ pk               id
   category_id ──┘                  email unique
   position                         name
+
+site_text                        -- every word the site says about itself
+  key ──────────┐ pk               home_title, home_intro, rights_notice, thanks,
+  locale ───────┘                  authors, contact, town_title, town_intro,
+  value                            map_embed_url + the three network addresses
 ```
 
 Details that matter:
@@ -546,7 +551,7 @@ so two seconds is the ceiling rather than ten. Measured end to end: 1.9 s of the
 just been republished must never be declared permanently gone, so the proxy re-reads the list before
 it answers 410, a cost charged only to requests for photographs that are already down.
 
-**Revalidation after a write takes two profiles, and the difference is not cosmetic.** The public
+**Revalidation after a write takes two profiles, and the difference is not cosmetic.** The photo
 pages are pre-rendered with `dynamicParams = false`, which means the pre-rendered copy is the only
 copy: expiring it with `revalidateTag(tag, { expire: 0 })` leaves nothing to serve and nothing to
 regenerate it from, and `next start` then answers **404 for every photograph and every gallery**
@@ -568,7 +573,20 @@ changed. Turning the window down globally (`experimental.staleTimes`) was reject
 every reader the instant back-and-forth the galleries were built for, to fix a case only the two
 editors hit.
 
-**Two consequences of `dynamicParams = false` that anyone touching these routes needs.** They are
+**The two gallery routes are `dynamicParams = true`, and `/foto/[slug]` is not.** T11 is where the
+difference appeared, and it is not a preference: the panel can create a section now, and a slug that
+did not exist when the site was built has no entry in `generateStaticParams` and therefore no route
+at all -- the panel would report success and `/categoria/<slug>` would answer 404 until somebody
+deployed. `/foto/[slug]` avoids that by listing every photograph, published or not, because the set
+of slugs is fixed by the archive; there is no equivalent list to widen for a section that does not
+exist yet, so `/categoria/[slug]` and `/categoria/[slug]/[page]` render an unknown slug on demand
+instead. It costs nothing the prerendered path was buying -- `listSections()` is cached and tagged,
+so Neon stays out of the request path -- and it makes revalidation safer rather than riskier, since
+a route that can regenerate cannot be left with nothing to serve. An unknown section still answers
+404; the price is that a made-up slug now costs a function invocation, which is the same exposure
+`/buscar` already has and which F31's rate limiting covers.
+
+**Two consequences of `dynamicParams = false` that anyone touching `/foto/[slug]` needs.** They are
 the same fact seen twice: the pre-rendered copy is the only copy, and nothing can make another one
 until the next build.
 
@@ -658,18 +676,19 @@ The rule that organizes the whole design: **whatever is content lives in the dat
 from the panel; only behavior and layout live in code.** The Campo notice is the perfect example of
 something that _looks_ like prose and is really structured data.
 
-| Change                                            | How                                                                                                    |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Fix a caption, a year, a credit                   | Panel → the photo → save. Revalidates its detail page and the galleries it appears in.                 |
-| Flag a photo as sensitive                         | Panel → the sensitive checkbox.                                                                        |
-| Add, rename, hide or reorder a category           | Panel → categories. The public route appears or disappears on its own.                                 |
-| Move a photo between categories, or put it in two | Panel → the photo. The relation is N:N.                                                                |
-| Reorder photos within a category                  | Panel → drag (`photo_category.position`).                                                              |
-| Organize the home page                            | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured. |
-| Change a section's intro text                     | Panel → category → intro, per language.                                                                |
-| Add new photos                                    | Panel → import from Drive.                                                                             |
-| Attach an AI restoration                          | Panel → the photo → restored version.                                                                  |
-| Translate to English, French or Italian           | Panel → translations, which also lists what is missing.                                                |
+| Change                                            | How                                                                                                         |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Fix a caption, a year, a credit                   | Panel → the photo → save. Revalidates its detail page and the galleries it appears in.                      |
+| Flag a photo as sensitive                         | Panel → the sensitive checkbox.                                                                             |
+| Add, rename, hide or reorder a category           | Panel → categories. The public route appears or disappears on its own.                                      |
+| Move a photo between categories, or put it in two | Panel → the photo. The relation is N:N.                                                                     |
+| Reorder photos within a category                  | Panel → drag (`photo_category.position`).                                                                   |
+| Organize the home page                            | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.      |
+| Change a section's intro text                     | Panel → category → intro, per language.                                                                     |
+| Change any of the site's own words                | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the map, the networks. |
+| Add new photos                                    | Panel → import from Drive.                                                                                  |
+| Attach an AI restoration                          | Panel → the photo → restored version.                                                                       |
+| Translate to English, French or Italian           | Panel → translations, which also lists what is missing.                                                     |
 
 These require touching code, and that is as it should be: visual design, viewer behavior, the
 structure of the detail page, and adding a new language to the list.

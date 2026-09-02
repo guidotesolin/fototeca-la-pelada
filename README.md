@@ -64,6 +64,7 @@ npm run dev
 | `npm run url:smoke`      | Check the URL guards on `site_text`        |
 | `npm run search:smoke`   | Check search against a live database       |
 | `npm run takedown:smoke` | Check the takedown against the real bucket |
+| `npm run home:smoke`     | Check T11's acceptance (app running)       |
 | `npm run auth:smoke`     | Check the panel's boundary (app running)   |
 | `npm run admin:add`      | Put an email address on the allowlist      |
 | `npm run admin:list`     | Show who can enter the panel               |
@@ -232,6 +233,7 @@ npm run dev
 | `npm run url:smoke`      | Guards de URL de `site_text`                    |
 | `npm run search:smoke`   | Verifica la búsqueda en una base real           |
 | `npm run takedown:smoke` | Verifica la baja de fotos contra el bucket real |
+| `npm run home:smoke`     | Verifica portada, secciones y textos (app viva) |
 | `npm run auth:smoke`     | Verifica el límite del panel (app viva)         |
 | `npm run admin:add`      | Agrega un correo a la lista blanca              |
 | `npm run admin:list`     | Muestra quién puede entrar al panel             |

@@ -1,0 +1,190 @@
+import type { ReactNode } from 'react'
+
+/**
+ * The panel's shared parts: the two class strings every control uses, the field
+ * wrappers, and what a write reports back.
+ *
+ * It exists because T11 added three screens to T10's two and every one of them
+ * draws the same form. The alternative was five copies of `FIELD`, of the
+ * checkbox layout and of the outcome banner, which is the sort of thing that
+ * drifts one screen at a time until the panel looks assembled from parts.
+ *
+ * Spanish, and never translated: only the two of them use it, so there is no
+ * i18n machinery here -- `next-intl` wraps the public routes only.
+ */
+
+export const FIELD =
+  'bg-surface border-rule text-text focus-visible:outline-focus w-full border px-3 py-2 font-sans text-[15px] focus-visible:outline-2 focus-visible:outline-offset-1'
+
+export const BUTTON =
+  'border-rule bg-surface hover:border-accent focus-visible:outline-focus t-label inline-flex h-10 cursor-pointer items-center justify-center border px-4 focus-visible:outline-2 focus-visible:outline-offset-2'
+
+/**
+ * For a row where controls sit side by side and their heights show: each one
+ * sizes from its own font otherwise -- selects at 39px, a search box at 40, a
+ * button at 33 -- so the row gets one height and they all take it.
+ */
+export const CONTROL = `${FIELD} h-10`
+
+/** A repeated search param is an array; the panel reads none of them that way. */
+export function one(value: string | string[] | undefined): string {
+  return typeof value === 'string' ? value : ''
+}
+
+/**
+ * What a write can report back, as codes rather than as prose in the address bar.
+ *
+ * The wording is the archive's, not the storage's: two history teachers use this
+ * screen, and "derivadas", "R2" and "410" name things they have no reason to have
+ * heard of. What they need to know is whether the photograph is on the site and
+ * whether anything was lost.
+ *
+ * The panel's actions redirect to `?ok=` or `?error=`, which is what makes them
+ * work with JavaScript off -- a form post answers 303 and the next page renders
+ * the outcome. Codes, because anything reflected out of a query string is text an
+ * administrator would read as ours; the sign-in screen keeps its messages the
+ * same way.
+ */
+export const DONE: Record<string, string> = {
+  guardado: 'Cambios guardados.',
+  publicado: 'Se publicó: ya está en el sitio.',
+  despublicado: 'Se despublicó: salió del sitio y su imagen ya no está disponible.',
+  restaurada: 'Se adjuntó la versión restaurada.',
+  'restauracion-quitada': 'Se quitó la versión restaurada.',
+  orden: 'Se guardó el orden de la sección.',
+  portada: 'Se guardó el orden y qué secciones se ven.',
+  'seccion-creada': 'Se creó la sección. Ya tiene su página en el sitio.',
+  'seccion-guardada': 'Se guardó la sección.',
+  'seccion-borrada': 'Se borró la sección.',
+  textos: 'Se guardaron los textos del sitio.',
+}
+
+export const FAILED: Record<string, string> = {
+  'no-existe': 'Esa fotografía no está en el archivo.',
+  anios:
+    'Los años no son válidos: revisá que sean números y que el desde no sea posterior al hasta.',
+  largo: 'Alguno de los textos supera el largo permitido.',
+  archivo: 'El archivo no es una imagen que podamos procesar, o pesa más de 3,5 MB.',
+  'sin-archivo': 'Elegí un archivo antes de adjuntarlo.',
+  // The one case where the panel cannot do the job by itself, and it says why in
+  // terms of the archive rather than of the storage underneath it.
+  'sin-master':
+    'No se puede publicar: falta la copia original de esta fotografía en el archivo. Va a poder hacerse cuando esté la importación desde Drive.',
+  orden: 'El orden recibido no es válido.',
+
+  // --- sections ---
+  'seccion-no-existe': 'Esa sección no existe.',
+  nombre: 'Escribí un nombre para la sección.',
+  direccion:
+    'La dirección de la sección sólo puede llevar minúsculas, números y guiones: por ejemplo, fiestas-patronales.',
+  'direccion-repetida': 'Ya hay una sección con esa dirección.',
+  // Deliberately not a bulk reassignment flow: hiding does the job without
+  // risking a photograph that ends up in no section and therefore in no gallery.
+  'con-fotos':
+    'Esa sección todavía tiene fotografías, así que no se puede borrar. Ocultala: sale del menú y de la portada, y no se pierde ninguna.',
+  portada:
+    'Esa fotografía no sirve como portada: tiene que estar en esta sección y estar publicada.',
+
+  // --- site text ---
+  'url-mapa':
+    'La dirección del mapa no es válida. Tiene que ser un enlace https de Google Maps, el que sale de "Compartir → Insertar un mapa".',
+  'url-red': 'Ese enlace de red social no es válido: tiene que empezar con https://',
+  email: 'Esa dirección de correo no es válida.',
+
+  interno: 'No se pudo completar la operación. Probá de nuevo.',
+}
+
+/**
+ * Own properties only. `DONE['__proto__']` is `Object.prototype` and
+ * `DONE['toString']` is a function -- both truthy, both handed to React as a
+ * child, which throws. The code comes from the address bar, so it is not ours.
+ */
+export function messageFor(map: Record<string, string>, code: string): string | null {
+  return Object.hasOwn(map, code) ? map[code] : null
+}
+
+/**
+ * The outcome of the last write, in two shapes for two different things: a save
+ * announces itself over the screen and leaves after five seconds, a failure stays
+ * in the flow until it is dealt with.
+ *
+ * The disappearing is a CSS animation and not a timer, so it works with
+ * JavaScript off like the rest of the panel; `prefers-reduced-motion` drops the
+ * movement and keeps it.
+ */
+export function Notice({ params }: { params: Record<string, string | string[] | undefined> }) {
+  const failure = messageFor(FAILED, one(params.error))
+  const message = failure ?? messageFor(DONE, one(params.ok))
+  if (!message) return null
+
+  return failure ? (
+    <p role="alert" className="bg-surface border-accent t-credit mt-6 border p-4">
+      {message}
+    </p>
+  ) : (
+    <p
+      role="status"
+      className="snackbar bg-surface border-rule t-credit fixed inset-x-4 bottom-6 z-50 mx-auto w-fit max-w-lg border px-5 py-3"
+    >
+      {message}
+    </p>
+  )
+}
+
+export function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string
+  hint?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <label className="block">
+      <span className="t-label block pb-1.5">{label}</span>
+      {children}
+      {hint && <span className="t-meta mt-1 block">{hint}</span>}
+    </label>
+  )
+}
+
+export function Check({
+  name,
+  label,
+  hint,
+  value,
+  defaultChecked,
+}: {
+  name: string
+  label: string
+  hint: string
+  /** Set it to carry an id: an unchecked box sends nothing, so a bulk form reads the checked set. */
+  value?: string
+  defaultChecked: boolean
+}) {
+  return (
+    <label className="flex items-start gap-3">
+      <input
+        type="checkbox"
+        name={name}
+        value={value}
+        defaultChecked={defaultChecked}
+        className="accent-accent focus-visible:outline-focus mt-1 h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+      />
+      <span>
+        <span className="t-label block">{label}</span>
+        <span className="t-meta mt-0.5 block">{hint}</span>
+      </span>
+    </label>
+  )
+}
+
+export function Row({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="border-rule flex flex-col gap-1 border-b py-3 sm:flex-row sm:gap-8">
+      <dt className="t-label sm:w-36 sm:shrink-0 sm:pt-1">{label}</dt>
+      <dd className="t-meta">{children}</dd>
+    </div>
+  )
+}

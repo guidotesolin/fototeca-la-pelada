@@ -1,8 +1,13 @@
 /**
  * Guards for URLs that come out of the database. Every one of these ends up in an
- * `href` or an `src`, and `site_text` is editable from the panel (T11), so this is
- * a trust boundary however friendly the editor. A value that does not pass is not
- * repaired or escaped -- it simply does not render.
+ * `href` or an `src`, and `site_text` is edited from the panel, so this is a trust
+ * boundary however friendly the editor. A value that does not pass is not repaired
+ * or escaped -- it simply does not render.
+ *
+ * They run twice, on purpose. `/admin/site-text` puts a typed value through the
+ * matching guard **before storing it**, so what is in the database has passed; the
+ * public side runs the same guard on the way out, because the rows predate that
+ * screen and a database is not only written by one form.
  *
  * The check is an exact hostname match, never `endsWith`: `maps.google.com.evil.com`
  * ends with the right string and is a different site. `new URL` also normalises the

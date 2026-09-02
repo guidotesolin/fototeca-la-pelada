@@ -1,7 +1,8 @@
 /**
  * Smoke test for the URL guards in `src/lib/url.ts`. They stand between
- * `site_text` -- which the panel will make editable in T11 -- and an `href` or an
- * `<iframe src>`, so the cases that matter are the ones that fool a naive check:
+ * `site_text` -- which the panel edits, and validates through these same two
+ * functions before storing -- and an `href` or an `<iframe src>`, so the cases
+ * that matter are the ones that fool a naive check:
  * a hostname that merely ends with the right string, userinfo before the real
  * host, and a scheme that executes.
  *

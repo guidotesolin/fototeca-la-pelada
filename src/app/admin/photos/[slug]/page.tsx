@@ -1,12 +1,11 @@
-import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPhotoForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { keyFor, publicUrl } from '@/lib/photo'
+import { BUTTON, Check, FIELD, Field, Notice, Row, one } from '../../ui'
 import { attachRestoration, removeRestoration, saveDetails, setPublished } from '../actions'
 import { FilePicker } from '../file-picker'
-import { DONE, FAILED, messageFor } from '../messages'
 
 /**
  * One photograph: everything about it that is content, and the two operations
@@ -17,16 +16,6 @@ import { DONE, FAILED, messageFor } from '../messages'
  * check is never left to the screen.
  */
 
-const FIELD =
-  'bg-surface border-rule text-text focus-visible:outline-focus w-full border px-3 py-2 font-sans text-[15px] focus-visible:outline-2 focus-visible:outline-offset-1'
-
-const BUTTON =
-  'border-rule bg-surface hover:border-accent focus-visible:outline-focus t-label inline-flex h-10 cursor-pointer items-center justify-center border px-4 focus-visible:outline-2 focus-visible:outline-offset-2'
-
-function one(value: string | string[] | undefined): string {
-  return typeof value === 'string' ? value : ''
-}
-
 export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>) {
   await requireAdmin()
   const { slug } = await props.params
@@ -34,8 +23,6 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
   if (!photo) notFound()
 
   const params = await props.searchParams
-  const message = messageFor(DONE, one(params.ok)) ?? messageFor(FAILED, one(params.error))
-  const failed = messageFor(FAILED, one(params.error)) !== null
 
   /**
    * The web copy when there is one, the master when there is not -- which is what
@@ -79,21 +66,7 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         )}
       </div>
 
-      {/* Two shapes for two different things: a save announces itself over the
-          screen and leaves, a failure stays in the flow until it is dealt with. */}
-      {message &&
-        (failed ? (
-          <p role="alert" className="bg-surface border-accent t-credit mt-6 border p-4">
-            {message}
-          </p>
-        ) : (
-          <p
-            role="status"
-            className="snackbar bg-surface border-rule t-credit fixed inset-x-4 bottom-6 z-50 mx-auto w-fit max-w-lg border px-5 py-3"
-          >
-            {message}
-          </p>
-        ))}
+      <Notice params={params} />
 
       {preview && (
         <figure className="mt-8">
@@ -183,7 +156,7 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
             name="featured"
             defaultChecked={photo.featured}
             label="Destacada"
-            hint="Queda anotada para la franja de destacadas de la portada, que todavía no existe."
+            hint="Aparece en la franja de destacadas de la portada, arriba de las secciones."
           />
         </div>
 
@@ -303,51 +276,5 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         </dl>
       </section>
     </>
-  )
-}
-
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className="t-label block pb-1.5">{label}</span>
-      {children}
-      {hint && <span className="t-meta mt-1 block">{hint}</span>}
-    </label>
-  )
-}
-
-function Check({
-  name,
-  label,
-  hint,
-  defaultChecked,
-}: {
-  name: string
-  label: string
-  hint: string
-  defaultChecked: boolean
-}) {
-  return (
-    <label className="flex items-start gap-3">
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked={defaultChecked}
-        className="accent-accent focus-visible:outline-focus mt-1 h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2"
-      />
-      <span>
-        <span className="t-label block">{label}</span>
-        <span className="t-meta mt-0.5 block">{hint}</span>
-      </span>
-    </label>
-  )
-}
-
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="border-rule flex flex-col gap-1 border-b py-3 sm:flex-row sm:gap-8">
-      <dt className="t-label sm:w-36 sm:shrink-0 sm:pt-1">{label}</dt>
-      <dd className="t-meta">{children}</dd>
-    </div>
   )
 }
