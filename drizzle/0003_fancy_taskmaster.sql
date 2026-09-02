@@ -1,0 +1,1 @@
+ALTER TABLE "photo" ADD COLUMN "restored_master_key" text;

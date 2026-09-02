@@ -13,6 +13,17 @@
  * It calls `runSearch` rather than the cached `search`: `unstable_cache` needs a
  * Next request context and there is none in a CLI.
  *
+ * **The `--conditions=react-server` in the npm script is load-bearing.** This is
+ * the one tool that reaches the query modules, and those import `@/db`, which
+ * imports the `server-only` marker package -- whose default export throws on
+ * import, by design, so that a client component reaching the database fails the
+ * build (F8, closed in T9). The marker resolves to an empty module under the
+ * `react-server` export condition, which is what the App Router sets and what a
+ * plain `tsx` process does not, so the flag is how a CLI says it is the server.
+ * Without it this script dies before its first check. The alternative was
+ * threading a client through `search.ts` for the benefit of one test, which is
+ * more code in the query path than the flag is anywhere.
+ *
  *   npm run search:smoke
  */
 import assert from 'node:assert/strict'
