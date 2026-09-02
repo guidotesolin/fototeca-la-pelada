@@ -9,6 +9,29 @@ const nextConfig: NextConfig = {
     // ponytail: experimental flag. If it is ever dropped, the cost is one round trip.
     inlineCss: true,
   },
+
+  /**
+   * `/buscar` is the one route rendered per request -- it reads `searchParams`,
+   * which Next 16 documents as a request-time API -- and Next puts
+   * `private, no-cache, no-store` on a dynamically rendered page. So the CDN gets
+   * told here instead: results are identical for every reader, and a query that
+   * two people send in the same hour should reach Neon once.
+   *
+   * An hour, not a day: `revalidateTag` cannot reach a CDN entry for a route that
+   * is not ISR, so this window is how long a caption fixed in the panel can take
+   * to show up in search. `stale-while-revalidate` keeps the page instant while
+   * that happens.
+   */
+  async headers() {
+    return [
+      {
+        source: '/buscar',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig

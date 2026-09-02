@@ -21,14 +21,14 @@ import {
  */
 
 /** A day. Publishing revalidates by tag, so this is only the floor. */
-const REVALIDATE = 86_400
+export const REVALIDATE = 86_400
 
 export const GALLERY_TAG = 'gallery'
 
 /** Photos per page. Twenty-four is two full screens on a phone, not twenty. */
 export const PER_PAGE = 24
 
-const SOURCE_LOCALE = 'es' as const
+export const SOURCE_LOCALE = 'es' as const
 
 export type PhotoCard = {
   slug: string

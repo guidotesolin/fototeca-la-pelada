@@ -61,6 +61,8 @@ npm run dev
 | `npm run db:migrate`   | Apply pending migrations                 |
 | `npm run db:smoke`     | Check the schema against a live database |
 | `npm run images:smoke` | Check the derivative pipeline and R2     |
+| `npm run url:smoke`    | Check the URL guards on `site_text`      |
+| `npm run search:smoke` | Check search against a live database     |
 
 ## Workflow
 
@@ -154,6 +156,8 @@ npm run dev
 | `npm run db:migrate`   | Aplica las migraciones pendientes        |
 | `npm run db:smoke`     | Verifica el esquema contra una base real |
 | `npm run images:smoke` | Verifica el pipeline de derivados y R2   |
+| `npm run url:smoke`    | Guards de URL de `site_text`             |
+| `npm run search:smoke` | Verifica la búsqueda en una base real    |
 
 ## Flujo de trabajo
 
