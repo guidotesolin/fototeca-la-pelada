@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { SectionDeck } from '@/components/section-deck'
 import { PhotoImage } from '@/components/photo-image'
-import { archiveFacts, listSections, listSiteText } from '@/db/queries/gallery'
+import { PhotoWall } from '@/components/photo-wall'
+import { archiveFacts, listFeatured, listSections, listSiteText } from '@/db/queries/gallery'
 import { mapEmbedUrl } from '@/lib/url'
 import type { Section } from '@/db/queries/gallery'
 
@@ -19,10 +20,11 @@ const CARD_RATIO = '4 / 3'
 const CARD_SIZES = '(min-width: 1280px) 288px, (min-width: 640px) 33vw, 50vw'
 
 export default async function Home() {
-  const [sections, facts, text] = await Promise.all([
+  const [sections, facts, text, featured] = await Promise.all([
     listSections(),
     archiveFacts(),
     listSiteText(),
+    listFeatured(),
   ])
   const mapUrl = mapEmbedUrl(text.map_embed_url)
 
@@ -82,6 +84,17 @@ export default async function Home() {
           )}
         </div>
       </section>
+
+      {/* The highlights, which are `photo.featured` and nothing else: no order of
+          their own, no second table, and the strip is simply not there while
+          nothing is marked. It reuses the gallery's wall rather than inventing a
+          row of its own -- same mounted prints, same blur over a sensitive one. */}
+      {featured.length > 0 && (
+        <section className="mt-14 sm:mt-20" id="destacadas">
+          <h2 className="t-label border-rule border-b pb-3">Destacadas</h2>
+          <PhotoWall photos={featured} />
+        </section>
+      )}
 
       <section className="mt-14 sm:mt-20" id="secciones">
         {/* The list, which on a phone is all there is, and on desktop sits below.

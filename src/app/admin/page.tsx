@@ -12,8 +12,7 @@ import { requireAdmin } from '@/lib/auth'
  * The figures are the panel's own and not the footer's: `archiveFacts()` counts
  * published photographs and is cached for a day, which is right for a public
  * page and wrong for the screen you open to find out what is waiting to be
- * published. Photo editing arrives in T10, sections and home in T11, the Drive
- * import in T12.
+ * published. The Drive import arrives in T12.
  */
 export default async function AdminHome() {
   const admin = await requireAdmin()
@@ -53,18 +52,23 @@ export default async function AdminHome() {
         ))}
       </dl>
 
-      <p className="mt-10">
-        <Link
-          href="/admin/photos"
-          className="t-credit link hover:text-text focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
-        >
-          Editar fotografías →
-        </Link>
-      </p>
+      <nav aria-label="Secciones del panel" className="mt-10 flex flex-col gap-3">
+        {[
+          ['/admin/photos', 'Editar fotografías'],
+          ['/admin/categories', 'Organizar la portada y las secciones'],
+          ['/admin/site-text', 'Editar los textos del sitio'],
+        ].map(([href, label]) => (
+          <Link
+            key={href}
+            href={href}
+            className="t-credit link hover:text-text focus-visible:outline-focus w-fit focus-visible:outline-2 focus-visible:outline-offset-2"
+          >
+            {label} →
+          </Link>
+        ))}
+      </nav>
 
-      <p className="t-intro text-muted mt-6">
-        Organizar las secciones y la portada, e importar desde Drive, son las próximas tareas.
-      </p>
+      <p className="t-intro text-muted mt-8">Importar desde Drive es la próxima tarea.</p>
     </>
   )
 }

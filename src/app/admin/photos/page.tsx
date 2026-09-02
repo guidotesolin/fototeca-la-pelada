@@ -2,8 +2,8 @@ import Link from 'next/link'
 import { ADMIN_PER_PAGE, FILTERS, isFilter, listCategories, listPhotos } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { publicUrl } from '@/lib/photo'
+import { BUTTON, CONTROL, FIELD, Notice, one } from '../ui'
 import { saveOrder } from './actions'
-import { DONE, FAILED, messageFor } from './messages'
 
 /**
  * The archive as a working list: 592 rows is too many to scroll, so the screen is
@@ -13,23 +13,6 @@ import { DONE, FAILED, messageFor } from './messages'
  *
  * Spanish, and never translated: only the two of them use it.
  */
-
-const FIELD =
-  'bg-surface border-rule text-text focus-visible:outline-focus w-full border px-3 py-2 font-sans text-[15px] focus-visible:outline-2 focus-visible:outline-offset-1'
-
-const BUTTON =
-  'border-rule bg-surface hover:border-accent focus-visible:outline-focus t-label inline-flex h-10 cursor-pointer items-center justify-center border px-4 focus-visible:outline-2 focus-visible:outline-offset-2'
-
-/**
- * The filter row, where the controls sit side by side and their heights show. Each
- * one sizes from its own font otherwise -- the selects come out at 39px, the search
- * box at 40 and the button at 33 -- so the row gets one height and they all take it.
- */
-const CONTROL = `${FIELD} h-10`
-
-function one(value: string | string[] | undefined): string {
-  return typeof value === 'string' ? value : ''
-}
 
 export default async function AdminPhotos(props: PageProps<'/admin/photos'>) {
   await requireAdmin()
@@ -50,9 +33,6 @@ export default async function AdminPhotos(props: PageProps<'/admin/photos'>) {
 
   // A section is listed whole so its order can be saved in one form: no pages.
   const pages = sectionExists ? 1 : Math.max(1, Math.ceil(total / ADMIN_PER_PAGE))
-  const message = messageFor(DONE, one(params.ok)) ?? messageFor(FAILED, one(params.error))
-  const failed = messageFor(FAILED, one(params.error)) !== null
-
   /** Keeps the filters when paging, without carrying the outcome of the last write. */
   const href = (to: number) => {
     const query = new URLSearchParams()
@@ -68,22 +48,7 @@ export default async function AdminPhotos(props: PageProps<'/admin/photos'>) {
     <>
       <h1 className="t-section">Fotografías</h1>
 
-      {/* Two shapes for two different things: a save announces itself over the
-          screen and leaves, a failure stays in the flow until it is dealt with. */}
-      {message &&
-        (failed ? (
-          <p role="alert" className="bg-surface border-accent t-credit mt-6 border p-4">
-            {message}
-          </p>
-        ) : (
-          <p
-            role="status"
-            className="snackbar bg-surface border-rule t-credit fixed inset-x-4 bottom-6 z-50 mx-auto w-fit max-w-lg border px-5 py-3"
-          >
-            {message}
-          </p>
-        ))}
-
+      <Notice params={params} />
       <form method="get" className="mt-8 flex flex-wrap items-end gap-3">
         <label className="grow basis-56">
           <span className="t-label block pb-1.5">Buscar</span>

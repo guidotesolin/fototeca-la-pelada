@@ -1,17 +1,15 @@
 'use server'
 
 import { eq, sql } from 'drizzle-orm'
-import { revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { db } from '@/db'
-import { TAKEDOWN_TAG } from '@/db/queries/admin'
-import { GALLERY_TAG } from '@/db/queries/gallery'
 import { category, photo, photoTranslation } from '@/db/schema'
 import { requireAdmin } from '@/lib/auth'
 import { dropDerivatives, dropRestoredMaster, generate } from '@/lib/derivatives'
 import { read } from '@/lib/images'
 import { masterKeyFor } from '@/lib/photo'
 import { getBytes, newPrefix, put } from '@/lib/r2'
+import { Invalid, outcome } from '../write'
 
 /**
  * Every write the photo screens make. Two rules hold across all of them:
@@ -29,9 +27,6 @@ import { getBytes, newPrefix, put } from '@/lib/r2'
  * loud, and retrying finishes the job. The other order can null the keys while the
  * files stay, and then the takedown is a lie nobody can see.
  */
-
-/** A message code from `messages.ts`, thrown where the mistake is found. */
-class Invalid extends Error {}
 
 /** Longest we accept per kind of field. A caption can be a paragraph; a credit cannot. */
 const LIMITS = { caption: 4000, notes: 4000, line: 300, method: 200 }
@@ -81,43 +76,13 @@ async function load(slug: string) {
   return row
 }
 
-/**
- * Runs a write and turns its two outcomes into the query string the screen reads.
- * Revalidation happens here rather than in each action, so no write can forget it.
- *
- * **Two tags, two profiles, and both halves were measured.** `GALLERY_TAG` gets
- * `'max'`: the public pages are prerendered with `dynamicParams = false`, so the
- * prerendered copy is the only copy, and `{ expire: 0 }` throws it away and leaves
- * nothing to regenerate it from -- `next start` then answers **404 for every
- * photograph and every gallery** with `NoFallbackError`, until the process is
- * restarted. `'max'` never misses: it serves the old page while the new one
- * renders behind it.
- *
- * `TAKEDOWN_TAG` gets `{ expire: 0 }`, because stale is exactly what a takedown
- * cannot be -- with `'max'` the first read of `/api/gone` after unpublishing still
- * came back empty, so the page answered 404 instead of 410. It is a route handler
- * and regenerates on demand, so expiring it costs one query and risks nothing.
- */
-async function outcome(done: string, work: () => Promise<void>): Promise<string> {
-  try {
-    await work()
-  } catch (error) {
-    if (error instanceof Invalid) return `error=${error.message}`
-    console.error('[admin/photos] the write failed:', error)
-    return 'error=interno'
-  }
-  revalidateTag(GALLERY_TAG, 'max')
-  revalidateTag(TAKEDOWN_TAG, { expire: 0 })
-  return `ok=${done}`
-}
-
 /** Caption, credit, the research fields and the two flags. No file ever moves here. */
 export async function saveDetails(form: FormData) {
   await requireAdmin()
   const slug = form.get('slug')
   if (typeof slug !== 'string' || !SLUG.test(slug)) redirect('/admin/photos?error=no-existe')
 
-  const result = await outcome('guardado', async () => {
+  const result = await outcome('photos', 'guardado', async () => {
     const row = await load(slug)
     const { yearFrom, yearTo } = years(form)
     const caption = line(form, 'caption', LIMITS.caption)
@@ -170,7 +135,7 @@ export async function setPublished(form: FormData) {
   if (typeof slug !== 'string' || !SLUG.test(slug)) redirect('/admin/photos?error=no-existe')
   const publishing = form.get('published') === 'true'
 
-  const result = await outcome(publishing ? 'publicado' : 'despublicado', async () => {
+  const result = await outcome('photos', publishing ? 'publicado' : 'despublicado', async () => {
     const row = await load(slug)
 
     if (!publishing) {
@@ -253,7 +218,7 @@ export async function attachRestoration(form: FormData) {
   const slug = form.get('slug')
   if (typeof slug !== 'string' || !SLUG.test(slug)) redirect('/admin/photos?error=no-existe')
 
-  const result = await outcome('restaurada', async () => {
+  const result = await outcome('photos', 'restaurada', async () => {
     const row = await load(slug)
     const method = line(form, 'method', LIMITS.method)
 
@@ -327,7 +292,7 @@ export async function removeRestoration(form: FormData) {
   const slug = form.get('slug')
   if (typeof slug !== 'string' || !SLUG.test(slug)) redirect('/admin/photos?error=no-existe')
 
-  const result = await outcome('restauracion-quitada', async () => {
+  const result = await outcome('photos', 'restauracion-quitada', async () => {
     const row = await load(slug)
     await dropDerivatives(row.restoredWebKey)
     await dropRestoredMaster(row.restoredMasterKey)
@@ -364,7 +329,7 @@ export async function saveOrder(form: FormData) {
   const page = form.get('page')
   const back = `/admin/photos?seccion=${section}${typeof page === 'string' && /^\d{1,4}$/.test(page) ? `&p=${page}` : ''}`
 
-  const result = await outcome('orden', async () => {
+  const result = await outcome('photos', 'orden', async () => {
     const [found] = await db
       .select({ id: category.id })
       .from(category)
