@@ -193,9 +193,26 @@ as real server-rendered links.
 touchscreen fights with page scrolling.
 
 **Search runs on the server**, with results rendered and cached per query at the CDN. That avoids
-shipping a ~90 KB search index paid for with mobile data, and the result gets a shareable,
-indexable URL. It is also the only place the database is touched per visit, so if Neon's limit
-ever bites, this is where to look.
+shipping a ~90 KB search index paid for with mobile data, and the result gets a shareable URL. It
+is also the only place the database is touched per visit, so if Neon's limit ever bites, this is
+where to look.
+
+T8 built it, and it is literally the one exception: 631 routes and `/buscar` is the only dynamic
+one, because reading `searchParams` is a request-time API in Next 16. The page adds **no JavaScript
+of its own** — the same seven chunks as a gallery — and the filters are a GET form of native
+`<select>`s, so the whole screen works with script disabled. Two caches sit under it: `unstable_cache`
+per query, and a `Cache-Control` set for `/buscar` in `next.config.ts`, which is needed because Next
+puts `private, no-cache, no-store` on a dynamically rendered page. The docs do not say which of the
+two wins, so it was measured: the `headers()` entry does. An hour of `s-maxage`, because
+`revalidateTag` cannot reach a CDN entry for a route that is not ISR, and that hour is how long a
+caption fixed in the panel can take to appear in search.
+
+The filters offer only what the search reaches — each one computed without its own value and with
+the other two applied. A dropdown that lists a decade holding nothing is a dead end, and on an
+archive where 460 of the 592 photographs carry no year at all, most decades are empty most of the
+time. Each option states how many photographs it holds, which is what lets a reader decide before
+spending a request — and the request is why the filters do not apply on change: a navigation costs
+a median 677 ms at 562 ms RTT, so the button gathers three choices into one of them.
 
 **Typography**: a single display family for headings, subset to Latin, with `font-display: swap`;
 body text on the system stack.
@@ -399,6 +416,16 @@ Details that matter:
   altered, and **fills `search_vector` from a trigger rather than from application code**: a
   generated column cannot pick its configuration from the row's `locale`, and a trigger means the
   seed, the panel and the translation editor cannot forget.
+- **What is searched is the caption plus two things that are not text of the photograph**: its
+  credit and the names of its sections. T8 found that the column alone answers neither acceptance
+  criterion on this archive — 61 of the 62 Tesolín photographs carry the surname only in `credit`,
+  and "Educación" is a section name that appears in no caption. Both are **composed into the
+  document at query time and not folded into `search_vector`**, because neither belongs to the
+  translation row: a credit lives on `photo` and a section on `photo_category`, so a trigger on
+  `photo_translation` cannot see either change and the column would go quietly stale the first time
+  the panel edits a credit. The cost is that the GIN index does not serve the query — 5.5 ms over
+  592 rows, and the way out, if the archive ever outgrows it, is in a `ponytail:` comment in
+  `src/db/queries/search.ts`.
 
 ### Ponytail pass
 
@@ -485,6 +512,10 @@ Two technical consequences that must be decided before writing code, not after:
 
 The `/sobre` page carries the contact address (fototecalp@gmail.com) with an explicit line on how
 to request a correction or a takedown.
+
+**A result set is not a page of the archive.** Everything above is about the photographs, which are
+indexed. `/buscar` itself carries `noindex, follow`: an open search box is unbounded URL space, and
+what should be found is the photograph, not the query that reached it.
 
 **No people table: search is enough.** Names live inside captions as loose text, and people and
 places coexist there — "María Luisa" is a locality, not a person. A `person` table built from

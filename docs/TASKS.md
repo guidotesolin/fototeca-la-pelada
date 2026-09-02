@@ -185,7 +185,7 @@ rendition. `width=device-width, initial-scale=1` and nothing else, so pinch zoom
 - **`photo.source` and `photo.place` are not shown.** They are empty for all 592 (F4), so the query
   does not read them either.
 
-### T8 — Search and filters
+### T8 — Search and filters ✅ done
 
 Postgres full-text search with `unaccent`, filters by decade, credit and category, all
 server-rendered with shareable URLs and CDN caching.
@@ -193,6 +193,78 @@ server-rendered with shareable URLs and CDN caching.
 _Acceptance_: "Tesolin" finds "Tesolín" and "educacion" finds "Educación"; filters work without
 JavaScript; results have their own URL.
 _Commit_: `feat(public): add server-rendered full-text search with filters`
+
+**Measured on delivery**: 631 routes, of which **exactly one is dynamic** — `/buscar`, which is the
+trade ARCHITECTURE makes on purpose. Both acceptance criteria hold against the live archive:
+"Tesolin", "Tesolín" and "TESOLIN" all return the same 62; "educacion" and "Educación" both return
+43, which is the whole Educación section. "carneada" returns 10, nine of them blurred — the tenth
+is `campo-067`, whose caption still carries the stale notice (F2). The page ships the **same seven
+JavaScript chunks as the gallery and the photo page**, none of its own; over 24 results the document
+is 35.9 KB gzipped against a gallery's 35.6 KB for the same 24. CLS 0 with all 24 cells declaring
+their `aspect-ratio`, 2 eager and 22 lazy. Every control clears WCAG 2.2 SC 2.5.8: the field and the button 42 px, the
+three selects 37. Driven with **JavaScript disabled** end to end: typing, picking a filter,
+submitting, paging to results 25–43, and following a result to its photograph all work, and the
+sensitive results stay blurred. `tsc`, `eslint`, `prettier`, `npm run url:smoke`, `npm run db:smoke`
+and the new `npm run search:smoke` (74 checks) clean.
+
+#### Where it departed from the plan
+
+- **The searchable document is not only `search_vector`.** T2's trigger indexes the caption and the
+  notes, and on this archive that is not enough for either acceptance criterion: only one of the 62
+  Tesolín photographs names a Tesolín in its caption — the other 61 are `credit` — and "Educación"
+  appears in no caption at all, only as a section name. So the query composes the trigger's vector
+  with the credit and the section names. Why not fold them into the column instead is in _Data
+  model_ in ARCHITECTURE: neither belongs to the translation row, so a trigger on
+  `photo_translation` cannot see them change.
+- **The CDN header is set in `next.config.ts`, and who wins was verified rather than read.** Next
+  puts `private, no-cache, no-store` on a dynamically rendered page and the bundled docs do not say
+  what happens when a `headers()` entry collides with that. Measured against `next start`: the
+  `headers()` entry wins, and `/buscar` answers `public, s-maxage=3600, stale-while-revalidate=86400`.
+- **Search results are `noindex, follow`.** _Exposure_ says everything is indexed, and the
+  photographs still are — a result set is not a page of the archive, and an open search box is
+  unbounded URL space.
+- **The wall and its pagination moved to `src/components/photo-wall.tsx`**, shared with the section
+  gallery, so the search results blur a sensitive photograph through the same component rather than
+  a second treatment. `Pagination` took an `href` builder in place of a section slug: a section
+  paginates in the path and prerenders, a search paginates in the query string.
+- **Filters accept only values the archive actually has.** Anything else is dropped rather than
+  answered with an empty page — which is also what stops `?credito=<anything>` from minting a cache
+  entry per request. The lists are read from the data, so a credit that arrives with the next import
+  appears on its own.
+- **A search with no words is a browse.** The same query with one predicate fewer, so a decade or a
+  credit alone lists what it holds. It cost nothing and it is what the filter labels promise.
+- **`websearch_to_tsquery`, not `to_tsquery`**: it takes whatever a person types, quotes and stray
+  operators included, and never raises. Phrase search comes free with it — `"escuela primaria"`
+  returns 5 rather than the 25 the two words return apart.
+- **The three filters offer only what the search reaches.** A menu listing the 1870s to a reader
+  who searched "tesolin" is a dead end, and the first version did exactly that. Each filter is now
+  computed from the matching set **without its own value and with the other two applied**, which is
+  the only variant that does not trap anyone: "tesolin" narrows the decades from fourteen to two and
+  the credits from thirty-five to one, while the section menu stays whole so a chosen section can
+  still be changed. The chosen value is always kept in its own list, so a combination that finds
+  nothing still shows what produced it, at zero.
+- **Every option carries its count**: "Deporte (4)", not "Deporte". It is exact, not an estimate —
+  taken with the other filters already applied, so choosing an option returns the number it
+  advertised. It costs nothing: the counts fall out of the same rows that decide which options to
+  offer. The smoke test asserts the property rather than the numbers, for every option of every
+  filter and again with a second filter narrowing it: the count must equal the result total.
+- **The filters do not apply on change; the button stays.** Asked for and measured rather than
+  assumed. It is not a backend question at all — the page is already a plain GET — and it is about
+  ten lines of client, the same shape as `MenuDismiss`. Two measurements decided it against:
+  arrowing through a closed `<select>` fires one `change` per key, so reaching the fourth option
+  would cost four navigations and the 35-credit menu would be unusable from a keyboard; and a
+  filter navigation costs a median 677 ms at the 562 ms RTT this archive is read over (105 ms
+  locally), so three filters would be three waits instead of one. The counts are what that
+  suggestion was really after: they answer "is this worth a round trip" before it costs one.
+- **The facets are one query and then arithmetic in memory.** The matching set comes back reduced to
+  the three filterable fields and the three lists are derived from it, instead of three more grouped
+  queries — one cache entry per query serves all of its pages, and the derivation is a pure function
+  the smoke test covers with no database. Its ceiling is a `ponytail:` comment in `search.ts`.
+- **`color-scheme: dark` sits on the root, not on `.field`.** It was tried on the control first and
+  the menu still opened as a white sheet: Chromium themes a `<select>`'s popup from the document's
+  scheme, not the element's. On the root it also darkens the scrollbars and the clear button inside
+  a `type="search"`. The rows carry an explicit background besides, because Firefox paints the menu
+  with the control's own, and the control is transparent here on purpose.
 
 ### T9 — Auth and admin shell
 
@@ -298,3 +370,7 @@ out: `grep -rn "ponytail:" src tools` lists those.
 | F27    | There is no "show sensitive images unblurred" preference                                                                                                       | ARCHITECTURE describes one kept in `localStorage`; the card scoped the per-page card, and a researcher clicking twelve times is not yet a complaint                                                                                                      | unassigned                                                    |
 | F28    | The restored copy is rendered at the original's dimensions                                                                                                     | The schema has no `restored_web_width`/`height`. True while a restoration is a re-render of the same scan, which is what T10 will produce                                                                                                                | if a restoration ever changes the pixel size                  |
 | F29    | An unpublished photograph's page answers 404, and _Exposure_ asks for 410                                                                                      | `/foto/[slug]` sets `dynamicParams = false`, so a slug outside `generateStaticParams` never reaches the page and cannot choose its status code. T10 needs either `dynamicParams = true` with an explicit published check, or a route handler ahead of it | T10, whose card owns the 410                                  |
+| F30    | `text-*` utilities do nothing on a `.t-credit` element                                                                                                         | Measured, not guessed: `.t-credit` is unlayered author CSS and Tailwind 4's utilities sit in `@layer utilities`, which loses whatever the specificity. T6 and T7 pair the two all over, and every one of those renders accent                            | whoever revisits the T6 palette                               |
+| F31    | Search has no rate limiting                                                                                                                                    | _Security_ asks for it on search. The CDN entry and the per-query cache absorb repetition, but a stream of distinct queries reaches Neon once each, and the project has no KV store to count against yet                                                 | T14, with the rest of the hardening                           |
+| F32    | A submitted form leaves the empty filters in the address: `?q=x&seccion=y&decada=&credito=`                                                                    | How an HTML GET form works, and the fix is script or a redirect. A redirect costs a round trip on every search, which at 562 ms RTT is the one thing this design spends its budget avoiding                                                              | when the page runs script anyway                              |
+| F33    | Search reads the Spanish translation row only                                                                                                                  | `SEARCH_CONFIG` is `es_unaccent` and the join is pinned to `es`. T2 built all four configurations and the trigger already picks by locale, so this is one constant and one join condition                                                                | T13                                                           |

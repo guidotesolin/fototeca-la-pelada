@@ -28,8 +28,16 @@
   --spacing-content: 1248px;
 }
 
+/*
+ * `color-scheme` on the root and not on the control: Chromium themes the menu a
+ * `<select>` opens from the document's scheme, not the element's, so setting it
+ * on `.field` left the menu opening as a white sheet in the middle of the dark
+ * page. On the root it also darkens the scrollbars and the clear button inside a
+ * `type="search"`, which is what a page on this ground wants anyway.
+ */
 html {
   background-color: var(--color-ground);
+  color-scheme: dark;
 }
 
 body {
@@ -738,6 +746,14 @@ body > header {
   transition:
     border-color 200ms ease,
     background-color 200ms ease;
+}
+
+/* The rows of an open `<select>`. The root's `color-scheme` covers Chromium;
+   Firefox paints the menu with the control's own background, and the control is
+   transparent here on purpose, so the rows carry it themselves. */
+.field option {
+  background-color: var(--color-surface);
+  color: var(--color-text);
 }
 
 .field:hover {
