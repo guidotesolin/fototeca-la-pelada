@@ -19,7 +19,30 @@ import { keyFor, publicUrl } from '@/lib/photo'
  * next-intl, so the Spanish sits inline here rather than in a message file that
  * does not exist yet.
  */
-export const dynamicParams = false
+/**
+ * **`true` since T12, and the premise it was `false` under is what changed.** The
+ * reasoning ARCHITECTURE recorded for pre-rendering this route and nothing else
+ * was that "the set of slugs is fixed by the archive" -- true while the only way
+ * a photograph entered was the seed, which runs before a build. The Drive import
+ * mints new slugs from the panel, so with `false` a photograph imported today has
+ * no entry in `generateStaticParams`, therefore no route, and its page answers
+ * **404 until somebody deploys** -- while the galleries, which are already
+ * `dynamicParams = true`, list it and link to it. The panel would report success
+ * and produce a broken link on the public site.
+ *
+ * This is T11's fix for `/categoria/[slug]` one level down, for the same reason
+ * and at the same price: an invented slug now costs a function invocation, which
+ * is the exposure `/buscar` and both gallery routes already have and which F31's
+ * rate limiting covers. `generateStaticParams` still pre-renders every
+ * photograph at build time, so nothing the archive already holds gets slower, and
+ * `getPhoto()` returns null for a slug that is not there, which is `notFound()`
+ * exactly as before. The takedown still answers 410 through the proxy.
+ *
+ * It also retires the landmine that came with `false`: a route that can
+ * regenerate cannot be left with nothing to serve, so `revalidatePath` on this
+ * path is no longer the one-way door T10 measured. Nothing calls it either way.
+ */
+export const dynamicParams = true
 
 /** Twelve of the 592, and the wording describes rather than judges. */
 const WARNING = 'Contiene imágenes de faena de animales.'
@@ -68,8 +91,13 @@ export async function generateMetadata(props: PageProps<'/foto/[slug]'>): Promis
         ? {}
         : {
             // ponytail: WebP, which is what the site already serves and what the
-            // scrapers document support for. AVIF they do not read; if one ever
-            // refuses WebP too, `photo.master_key` is the same image as JPEG.
+            // scrapers document support for. AVIF they do not read. This used to
+            // name `photo.master_key` as the JPEG fallback if one ever refused
+            // WebP; **it is not one any more.** A photograph imported from Drive
+            // has `master_key` null by design and its master is not servable at
+            // all, so that fallback would work for the 592 rescued from Sites
+            // and hand `publicUrl` a null for every newer photograph. If a
+            // scraper ever needs JPEG, encode one into the derivative set.
             images: [
               {
                 url: publicUrl(keyFor(photo.webKey, photo.webWidth, 'webp')),

@@ -574,6 +574,144 @@ _Acceptance_: importing a test folder creates records with their derivatives in 
 `drive_file_id`; re-importing does not duplicate.
 _Commit_: `feat(admin): add Google Drive import for preservation masters`
 
+**Four decisions carry this card**, and three of them were forced by something the card did not say.
+
+- **One photograph per request.** A master download plus six encodes plus six uploads is seconds
+  each, so a folder in one request does not finish inside the function's duration limit — 60 s on
+  Hobby, declared as `maxDuration` on the page, which the route segment config extends to the
+  actions the page invokes. The action imports the _first pending_ file and returns; the screen
+  decides whether to ask for another. That makes it resumable for nothing — what is pending is
+  derived from the database on every render — and it needs no queue and no job system, because Drive
+  holds the work list and `drive_file_id` holds the progress. The loop is a hidden submit button
+  that presses itself once per render, guarded by a counter that only rises on a real success; with
+  script off the two real buttons remain and each click brings one photograph.
+- **Idempotency is Postgres's, not the application's.** `drive_file_id` had no index at all.
+  `drizzle/0005` adds a **partial unique index** (`where drive_file_id is not null`). The import
+  still reads the imported set first, but only so the screen can say which photograph a file became:
+  a read before a write is a race, and two administrators pressing the button in the same second is
+  precisely what an application check cannot cover. Verified against the real database inside a
+  probe that rolls itself back: the duplicate is refused, and many nulls are still allowed.
+- **A Drive filename is not a permalink**, so an imported photograph gets `<section>-NNN` — the
+  chosen section plus the next free number, T1's own convention, which all 592 existing slugs follow
+  with no exceptions. Counted over `photo.slug` rather than the section's membership, because a
+  photograph keeps its slug when it moves and reusing a number freed that way would collide with a
+  permalink somebody already shared.
+- **No `googleapis` dependency.** Two REST endpoints and an RS256 signature, which Node signs in the
+  standard library. `src/lib/drive.ts` is 200 lines against tens of megabytes of generated clients.
+
+#### The latent bug this card had to close
+
+`setPublished` asked `if (!row.webKey && !row.masterKey) throw new Invalid('sin-master')` and then
+regenerated with `getBytes(row.masterKey!)`. Both assume the master is in R2, which was true of all
+592 and is **false by design** for anything imported here: a Drive master leaves `master_key` null
+and `drive_file_id` set, permanently, because 600 high-resolution scans do not fit in R2's free
+10 GB. So the first photograph ever imported could have been unpublished and **never published
+again**, with a perfectly good master sitting in Drive.
+
+Fixed where every caller passes rather than at the one call the symptom names: `readMaster(row)` in
+`src/lib/derivatives.ts` is the one door to a master's bytes and reads from either place,
+`hasMaster(row)` is exactly its negation, and `setPublished` uses both. Copying masters into R2 was
+the other way out and is the wrong one — it breaks the storage split the whole plan rests on.
+`FAILED['sin-master']` no longer promises the import as the fix, because for a Drive master it is no
+longer reachable.
+
+#### The second thing T12 broke, found by running it
+
+Importing works and the photograph's page answers **404**. `/foto/[slug]` was `dynamicParams = false`
+with `generateStaticParams` running at build time, and the reason ARCHITECTURE recorded for it was
+that "the set of slugs is fixed by the archive" -- true while the only way in was the seed, which
+runs before a build. The import mints slugs from the panel, so a photograph imported today has no
+route, and the galleries -- already `dynamicParams = true` since T11 -- list it and link to it:
+`/categoria/campo/4` showed the three imported photographs and every link answered 404.
+
+Fixed the way T11 fixed it for sections, which is one line and the same trade: a made-up slug costs
+a function invocation, the exposure `/buscar` and both gallery routes already have. Verified by
+importing a photograph **after** the build and loading its page.
+
+#### Verified on delivery
+
+`npm run drive:smoke` (new, 33 checks, and 37 once a photograph has been imported): the id guard
+refuses the shapes that would escape Drive's
+`q` parameter; `hasMaster` is true for a Drive-shaped row, which is the regression assertion;
+`readMaster` pulls a real master out of R2 and its SHA-256 matches the row; and `nextPhotoSlug`
+gives the right next number for all eleven sections, `inundacion-78 → inundacion-78-032` included.
+`npm run auth:smoke` grew two cases: `/admin/import` is 307 anonymous and 200 allowlisted, and
+**every exported action in the panel is checked statically to call `requireAdmin()` as its first
+statement** — 11 across 4 files. That check was written twice: the first version passed with the
+call commented out, because a comment contains the string it was looking for. Both were
+negative-tested by removing the gate and watching them fail. `tsc`, `eslint`, `prettier` and the
+production build clean; no Drive or R2 credential anywhere in `.next/static`; the archive left as
+found at 592 rows.
+
+#### What the review pass found
+
+Seven findings on the finished diff, all fixed here. Three had a concrete failure:
+
+- **The screen's own folder listing sat outside the guard that catches Drive.** `mastersFolderId()`
+  and `listFolders()` were wrapped, `listImages()` was not — and an "Importar todas" run re-renders
+  this page once per photograph, so a sixty-image folder makes some hundreds of Drive calls in a
+  couple of minutes and a 429 is a question of when. That answer threw straight out of the page and
+  put the framework's error screen in front of the administrator mid-run, instead of the sentence
+  written for exactly this. Every Drive call on the screen is now inside one `try`, and the message
+  says a failure may be passing and that what already imported is safe.
+- **A section could be created that could never receive a photograph.** `isSectionSlug` admitted 64
+  characters because that is what `category.slug` holds, but an imported photograph's slug is
+  `<section>-NNN` and `photo.slug` is `varchar(64)` too — so a section slug of 61 or more made every
+  import into it fail on the insert, with the panel able to say only "probá de nuevo", for ever.
+  Fixed at the source rather than at the symptom: sections cap at **59**, which leaves room for
+  `-9999` and makes the state unreachable. The longest slug in the archive is `inundacion-78`, at 13.
+- **The static gate check could skip an action in silence.** Its pattern cannot span a parameter
+  list containing a closing paren — a callback type, a default like `= new Date()` — and its only
+  guard was `gated >= 8` against 11 actions, so a skipped one still read green. It now asserts the
+  number parsed equals the number declared, and that was negative-tested by giving `importNext` a
+  second parameter and watching it fail.
+
+Four smaller ones: the cached Drive token was never dropped on a 401, so a slow server clock could
+have left every call failing for minutes with no way back but a restart (it now retries once, on a
+401 and nothing else); `reachable()` listed every subfolder on each import, which is 560 identical
+listings over the vault against the same rate limit the screen competes for (it reads the
+candidate's own `parents` instead); a `ponytail:` note on the Open Graph image still offered
+`photo.master_key` as a JPEG fallback, which is null for an imported photograph and would have
+been a null handed to `publicUrl` for the newest photographs only; and this card cited a check count
+the tool had outgrown.
+
+**The `parents` change broke something on the way in, and `auth:smoke` caught it.** A folder id that
+names nothing gets a 404 from that lookup, which threw where the old listing had simply returned
+false — so a wrong folder reported `error=interno` instead of naming the mistake. Drive's status
+rides on the error now: 404 and 403 are an answer and become `false`, everything else is rethrown,
+because telling somebody their folder is wrong when Drive is merely busy sends them to fix something
+that is not broken.
+
+#### The acceptance criteria, run against the real vault
+
+The Google Cloud Console work was done by hand and the whole cycle was exercised through the panel,
+against the real Drive, the real bucket and the real database. The vault holds **560 images across
+26 folders**, organised by lending family.
+
+- **Import.** `Lelia Lazzroni` (3 images) into Campo, with "Importar todas": the loop ran by itself
+  to `3 imágenes · 3 ya importadas · 0 por importar`, minting `campo-080/081/082` — the slugs
+  `nextPhotoSlug` had predicted. Each row came back `master_source = 'drive'`, `drive_file_id` set,
+  **`master_key` null**, real dimensions read by sharp (1061×670, 1068×676, 1075×698), SHA-256,
+  four renditions apiece in R2, appended at positions 80–82. `masters/campo-080.jpg` answers 404:
+  no master reached R2.
+- **Re-import.** Pointing at the same folder again offers nothing at all — the screen reads 3/3/0
+  and draws no buttons. And with the real `drive_file_id` `campo-080` holds, Postgres refuses a
+  second row. 595 photographs, 3 Drive ids, 3 distinct.
+- **Unpublish and republish, on a Drive master.** `campo-080` unpublished: derivatives 404, keys
+  nulled, leaving exactly the row shape the old code could not recover from — `web_key` null,
+  `master_key` null, only a `drive_file_id`. Republished from the panel: read from **Drive**,
+  four renditions regenerated under a **new** prefix, and the prefix the takedown killed still 404s.
+  This is the latent bug, closed and measured.
+- **`drive:smoke` grew to 37 checks** with a real import in place: `campo-080` has no `master_key`,
+  `hasMaster` says it has a master anyway, and `readMaster` pulls 91,779 bytes out of Drive whose
+  SHA-256 matches the row.
+
+**The archive was left exactly as found.** The four test photographs were unpublished through the
+panel — which is what deletes their derivatives, through the path built for it — and their rows
+deleted: 592 photographs, 592 translations, 592 memberships, Campo back to 79, and
+`npm run db:seed:verify` green at 3,342 R2 objects with none unreferenced. The originals in Drive
+were never touched; nothing in this task writes to Drive.
+
 ### T13 — Public i18n
 
 `next-intl` over the `/[locale]` routes, fallback to Spanish when a translation is missing, and a
@@ -651,3 +789,6 @@ out: `grep -rn "ponytail:" src tools` lists those.
 | F36     | The panel cannot move a photograph between sections                                                                                                            | The N:N relation is in the model and _What can be changed_ promises it, but T10's card scopes the fields, the flags, publishing, reordering and the restoration. T11 is where categories are managed                                                                                                                                                                                                                                                                                                                                                                                                               | T11                                                           |
 | F37     | After a takedown the photograph's page can keep serving for about two seconds                                                                                  | The proxy memoizes the takedown list rather than asking the database on every photograph view, which would undo the decision that keeps Neon out of the request path. Measured: the derivatives are unreachable the moment the panel answers, and the page serves its stale pre-rendered copy for `MEMO_MS` plus one request -- about 1.9 s of 200, then 404, then 410 at ~2.7 s. The opposite direction, a republished photograph still answering 410, is closed: the proxy confirms the list before it says 410                                                                                                  | when there is a store the panel writes and the proxy reads    |
 | ~~F38~~ | ~~`npm run search:smoke` fails before it runs a single check~~                                                                                                 | It imports `@/db`, and the `server-only` guard F8 added in T9 throws the moment a plain `tsx` process loads it. Not introduced by T10 — verified by stashing the branch and running it on `main`. **Closed here**: the marker package resolves to an empty module under the `react-server` export condition, which is what the App Router sets and a CLI does not, so the npm script passes `--conditions=react-server` and the tool says it is the server. 74 checks pass. The alternative was threading a client through `search.ts` for one test                                                                | done                                                          |
+| F39     | An imported photograph with no derivatives yet has nothing to preview on its edit screen                                                                       | It cannot happen today: the import always generates derivatives, so the preview falls back to the web copy. It becomes visible the first time somebody unpublishes an imported photograph, and closing it means proxying a Drive thumbnail through a route of our own — a new public endpoint for a preview                                                                                                                                                                                                                                                                                                        | T13+, or whoever asks                                         |
+| F40     | A restoration still cannot be imported from Drive                                                                                                              | `restored_drive_file_id` has existed since T2 and nothing writes it: T10 attaches a restoration by upload, and T12 imports photographs. A restoration is retouching somebody did by hand, so it arrives as a file rather than as a folder to sweep. `restored_drive_file_id` has no unique index either, for the same reason — nothing mints one                                                                                                                                                                                                                                                                   | Whoever needs it                                              |
+| F41     | Two administrators importing into the same section at the same second collide on the slug                                                                      | The unique index on `photo.slug` refuses the second, so nothing is lost: it costs one retry, and the next click imports it. A sequence per section is the way out. Marked in the code as a `ponytail:` comment on `nextPhotoSlug`                                                                                                                                                                                                                                                                                                                                                                                  | Nobody until it happens                                       |

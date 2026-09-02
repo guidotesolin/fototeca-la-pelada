@@ -16,6 +16,7 @@
     "url:smoke": "tsx tools/url-smoke.ts",
     "search:smoke": "tsx --conditions=react-server tools/search-smoke.ts",
     "takedown:smoke": "tsx tools/takedown-smoke.ts",
+    "drive:smoke": "tsx --conditions=react-server tools/drive-smoke.ts",
     "home:smoke": "tsx tools/home-smoke.ts",
     "auth:smoke": "tsx tools/auth-smoke.ts",
     "icons": "tsx tools/make-icons.ts",

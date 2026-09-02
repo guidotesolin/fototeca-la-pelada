@@ -9,6 +9,7 @@ import {
   photoTranslation,
   siteText,
 } from '@/db/schema'
+import { isSectionSlug } from '@/lib/slug'
 import { REVALIDATE, SOURCE_LOCALE } from './gallery'
 
 /**
@@ -403,6 +404,54 @@ export async function listFeaturedForAdmin() {
   // nothing category-dependent is selected, so which of the duplicate rows the map
   // keeps cannot matter -- see the same note on `listFeatured`.
   return [...new Map(rows.map((r) => [r.slug, r])).values()]
+}
+
+/**
+ * What the Drive import already brought in, as `drive_file_id` -> `slug`. It is
+ * the whole set rather than the folder's own ids: 600 short strings is nothing
+ * to send, and the screen wants to say *which* photograph a file became so the
+ * person can go and caption it.
+ *
+ * The screen uses this to show a folder as "already imported"; it is **not**
+ * what makes re-importing safe. That is the partial unique index on
+ * `drive_file_id`, because a read before a write is a race.
+ */
+export async function importedFromDrive(): Promise<Map<string, string>> {
+  const rows = await db
+    .select({ driveFileId: photo.driveFileId, slug: photo.slug })
+    .from(photo)
+    .where(isNotNull(photo.driveFileId))
+  return new Map(rows.map((r) => [r.driveFileId as string, r.slug]))
+}
+
+/**
+ * The identifier a newly imported photograph gets: the section's own address and
+ * the next free number, zero-padded to three -- `espacios-071`.
+ *
+ * **The convention is T1's and it is kept on purpose.** A Drive filename is not
+ * a permalink: they carry spaces, accents and repeats, and `/foto/Foto 12 (1).jpg`
+ * is neither stable nor shareable. All 592 slugs in the archive are
+ * `<section>-NNN` with no exceptions, so a new one that looks like the rest is
+ * one less thing that has to be explained later.
+ *
+ * Counted over `photo.slug` and **not** over the section's membership, because a
+ * photograph keeps its slug when it moves between sections: reusing a number
+ * freed that way would collide with a permalink that is still out there.
+ *
+ * ponytail: two administrators importing into the same section at the same second
+ * compute the same number, and the unique index on `slug` refuses the second. It
+ * costs one retry -- the next click imports it -- which is cheaper than a
+ * sequence per section. Reach for one if they ever import in parallel.
+ */
+export async function nextPhotoSlug(categorySlug: string): Promise<string> {
+  if (!isSectionSlug(categorySlug)) throw new Error(`not a section slug: ${categorySlug}`)
+  const [{ next }] = await db
+    .select({
+      next: sql<number>`coalesce(max(substring(${photo.slug} from '[0-9]+$')::int), 0) + 1`,
+    })
+    .from(photo)
+    .where(sql`${photo.slug} ~ ${`^${categorySlug}-[0-9]+$`}`)
+  return `${categorySlug}-${String(next).padStart(3, '0')}`
 }
 
 /** Every word of the site, for the editor. Uncached, for the same reason as the rest. */

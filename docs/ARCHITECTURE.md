@@ -117,24 +117,67 @@ Serving photos straight from Drive is not viable, for three independent reasons:
    viewed or downloaded this file recently". On a public site that is an outage.
 3. **The Drive API terms forbid it**: using Drive as a CDN replacement is not permitted.
 
-| Where                          | What it holds                                                                                                                                  |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Drive** — 5 TB, already paid | Preservation masters: scans at maximum quality. Never served to the public. 5 TB fits tens of thousands.                                       |
-| **R2** — 10 GB, free           | The derivatives the site consumes, plus the rescued masters until real scans exist: 242 MB for the current 592, measured after T4 seeded them. |
+| Where                          | What it holds                                                                                                                                                                                                                    |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Drive** — 5 TB, already paid | Preservation masters: scans at maximum quality. Never served to the public. 5 TB fits tens of thousands.                                                                                                                         |
+| **R2** — 10 GB, free           | The derivatives the site consumes, plus the rescued masters until real scans exist: 242 MB for the current 592, measured after T4 seeded them. **An imported master never lands here**: 600 high-resolution scans would not fit. |
 
 ### The bridge: importing from Drive in the admin panel
 
-The same Google OAuth they use to sign in also reads Drive (`drive.readonly` scope), so it is a
-single authorization. For unattended server access, a **service account** with the folder shared
-to its address is preferable: it does not expire and is read-only. Flow:
+The same Google OAuth they use to sign in could also read Drive (`drive.readonly` scope), but T12
+went the other way: a **service account** with the folder shared to its address. It does not expire,
+it is read-only, and it sees exactly the one folder that was shared with it. The key travels as
+base64 in an environment variable and is decoded in memory; the JSON never touches the repository or
+the disk. It needs no `googleapis` dependency either — two REST endpoints and an RS256 signature,
+which Node signs in the standard library.
 
 1. The brothers drop scans into a Drive folder — the gesture they already know.
-2. In the panel they pick the folder; the server lists its files through the Drive API.
+2. In the panel they pick the folder **and the section**; the server lists its files.
 3. For each photo: download the master, generate derivatives with `sharp`, upload them to R2.
 4. The database keeps the master's `drive_file_id`, its hash and its real dimensions.
 
-The master is never lost or duplicated. Drive API egress quota is not a concern because it is only
-used for occasional imports, never to serve traffic.
+The master is never lost or duplicated, and it **never reaches R2**. Drive API egress quota is not a
+concern because it is only used for occasional imports, never to serve traffic.
+
+**One photograph per request, and that is a design constraint rather than an implementation
+detail.** A master download plus six encodes plus six uploads is seconds per photograph, so a folder
+in a single request does not finish inside the function's duration limit — 60 s on Vercel Hobby,
+declared as `maxDuration` on the import page, which the route segment config extends to the server
+actions the page invokes. So the action imports the _first pending_ file and returns, and the screen
+decides whether to ask for another. Two things fall out of it for free. It is **resumable**: what is
+pending is derived from the database on every render, so closing the tab or timing out on photograph
+forty costs the forty-first, not the forty before it. And it needs **no queue and no job system** —
+there is nothing to persist, because Drive holds the work list and `drive_file_id` holds the
+progress. The loop itself is a hidden submit button that presses itself once per render; with script
+off the two real buttons are still there and each click brings one photograph.
+
+**Re-importing a folder is a no-op, and the guarantee is Postgres's.** `drive_file_id` carries a
+**partial unique index** (`where drive_file_id is not null`), added in `drizzle/0005`. The import
+does check the set of already-imported ids before it writes, but only so the screen can say which
+photograph a file became: a read before a write is a race, not a promise, and two administrators
+pressing the button in the same second is exactly the case an application-level check cannot cover.
+Partial because the 592 rescued from Sites all carry null there — Postgres treats nulls as distinct
+in a unique index anyway, so the predicate buys documentation and 592 fewer index entries rather
+than different behaviour.
+
+**A Drive filename is not a permalink.** They carry spaces, accents and repeats, so an imported
+photograph gets the archive's own convention instead: the chosen section's slug plus the next free
+number, `espacios-071`. All 592 existing slugs are `<section>-NNN` with no exceptions, and the next
+number is counted over `photo.slug` rather than over the section's membership, because a photograph
+keeps its slug when it moves between sections and reusing a number freed that way would collide with
+a permalink somebody already shared.
+
+**A file in a shared folder is untrusted input, its declared `mimeType` included.** The real type is
+read from the bytes with `sharp` and never from the extension or from what Drive reported; anything
+sharp cannot decode is refused; and the download stops at 40 MB **as the bytes arrive**, because
+buffering a whole file before objecting to its size is the failure it was supposed to prevent. The
+mimeType filter on the listing is a convenience — it keeps the brothers' `.txt` notes out of the
+count — and never a check.
+
+A photograph arrives **published**, at the end of its section, with no caption and no credit, which
+is the state 73 of the original 592 are in and what the "Sin epígrafe" filter exists for. Published
+because the alternative breaks the archive's one storage invariant: an unpublished photograph has no
+derivatives, since a takedown deletes them. **Despublicar** is one click if it should wait.
 
 ### Cross-cutting decision: the public site is pre-rendered
 
@@ -398,6 +441,21 @@ Details that matter:
 - **`master_source` + `drive_file_id`**: today the best available master is the copy rescued from
   Sites. When the real scan is uploaded, `master_source` becomes `'drive'`, derivatives are
   regenerated, and **not a single metadata field is touched**.
+- **`master_key` and `drive_file_id` are two places, not two states, and T12 is where that stopped
+  being theoretical.** A rescued photograph has `master_key` set and `drive_file_id` null; an
+  imported one has it exactly the other way round, permanently, because the master stays in Drive.
+  Both are legal and a half-migrated row can hold both, with `master_source` naming which one is the
+  document. So **nothing reads `master_key` directly**: `readMaster(row)` in `src/lib/derivatives.ts`
+  is the one door to a master's bytes, and `hasMaster(row)` is exactly its negation — whatever the
+  second calls true, the first can read.
+
+  This was a latent bug rather than a new feature. `setPublished` asked for `!row.masterKey` before
+  it would republish and then dereferenced `row.masterKey!` to regenerate, which was true of all 592
+  and false of the first photograph ever imported: it could have been unpublished and **never
+  published again**, with a perfectly good master sitting in Drive. The fix is not to copy masters
+  into R2 — that breaks the storage split and does not fit in 10 GB — but to make the read
+  polymorphic, once, where every caller passes. `npm run drive:smoke` asserts both shapes.
+
 - **`restored_master_key`, added in T10**, and it is principle 1 applied to the second image.
   The schema shipped with `restored_drive_file_id` and the two derivative keys but no master for
   the restoration, and a takedown deletes derivatives -- so unpublishing a photograph whose
@@ -552,10 +610,12 @@ just been republished must never be declared permanently gone, so the proxy re-r
 it answers 410, a cost charged only to requests for photographs that are already down.
 
 **Revalidation after a write takes two profiles, and the difference is not cosmetic.** The photo
-pages are pre-rendered with `dynamicParams = false`, which means the pre-rendered copy is the only
-copy: expiring it with `revalidateTag(tag, { expire: 0 })` leaves nothing to serve and nothing to
-regenerate it from, and `next start` then answers **404 for every photograph and every gallery**
-with `NoFallbackError` until the process restarts. Measured, on the way to shipping T10. So
+pages are pre-rendered, and while they were also `dynamicParams = false` the pre-rendered copy was
+the only copy: expiring it with `revalidateTag(tag, { expire: 0 })` left nothing to serve and nothing
+to regenerate it from, and `next start` then answered **404 for every photograph and every gallery**
+with `NoFallbackError` until the process restarted. Measured, on the way to shipping T10, and the
+reason the profile below was chosen; T12 made the route dynamic, so the cliff is gone but the
+profile is still the right one -- serving the old page beats regenerating on the reader's request. So
 `GALLERY_TAG` is revalidated with `'max'`, which serves the old page while the new one renders
 behind it. The takedown list is the opposite case -- stale is exactly what it cannot be -- so it
 carries a tag of its own, `TAKEDOWN_TAG`, revalidated with `{ expire: 0 }`. It is read by a route
@@ -573,32 +633,40 @@ changed. Turning the window down globally (`experimental.staleTimes`) was reject
 every reader the instant back-and-forth the galleries were built for, to fix a case only the two
 editors hit.
 
-**The two gallery routes are `dynamicParams = true`, and `/foto/[slug]` is not.** T11 is where the
-difference appeared, and it is not a preference: the panel can create a section now, and a slug that
-did not exist when the site was built has no entry in `generateStaticParams` and therefore no route
-at all -- the panel would report success and `/categoria/<slug>` would answer 404 until somebody
-deployed. `/foto/[slug]` avoids that by listing every photograph, published or not, because the set
-of slugs is fixed by the archive; there is no equivalent list to widen for a section that does not
-exist yet, so `/categoria/[slug]` and `/categoria/[slug]/[page]` render an unknown slug on demand
-instead. It costs nothing the prerendered path was buying -- `listSections()` is cached and tagged,
-so Neon stays out of the request path -- and it makes revalidation safer rather than riskier, since
-a route that can regenerate cannot be left with nothing to serve. An unknown section still answers
-404; the price is that a made-up slug now costs a function invocation, which is the same exposure
-`/buscar` already has and which F31's rate limiting covers.
+**Every public route is `dynamicParams = true`, and it took two tasks to get there.** T11 found it
+first: the panel can create a section, and a slug that did not exist when the site was built has no
+entry in `generateStaticParams` and therefore no route at all -- the panel would report success and
+`/categoria/<slug>` would answer 404 until somebody deployed. So both gallery routes render an
+unknown slug on demand.
 
-**Two consequences of `dynamicParams = false` that anyone touching `/foto/[slug]` needs.** They are
-the same fact seen twice: the pre-rendered copy is the only copy, and nothing can make another one
-until the next build.
+`/foto/[slug]` was left at `false` then, and the reason was written down: it lists every photograph,
+published or not, **because the set of slugs is fixed by the archive**. T12 is what made that
+premise false. The Drive import mints slugs from the panel, so a photograph imported today had no
+entry either -- and the failure was worse than the section's, because the galleries are already
+dynamic and were listing it: measured on delivery, `/categoria/campo/4` showed the three imported
+photographs and every one of their links answered 404. A feature that produces broken links on the
+public site.
 
-- **`revalidatePath('/foto/<slug>')` must not be used.** It evicts that page's only copy, and the
-  photograph then answers 404 **until the next deploy** -- the `{ expire: 0 }` failure narrowed to
-  one page. Tried in T10 to close the window above, and rejected.
-- **`generateStaticParams` lists every photograph, published or not.** It runs at build time and
-  never again, so filtering by `published` meant a photograph taken down before a deploy had no
-  route afterwards: the panel would publish it, regenerate its derivatives, report success, and the
-  page would go on answering 404 until somebody deployed. An unpublished slug costs one build-time
-  render that ends in `notFound()`, and buys a path revalidation can fill. Invented slugs still cost
-  nothing, because the list never leaves the archive.
+So the fix is T11's, one level down, at the same price. `generateStaticParams` still pre-renders
+every photograph at build time, so nothing the archive already holds got slower; `getPhoto()`
+returns null for a slug that is not there, which is `notFound()` exactly as before; and the takedown
+still answers 410 through the proxy. A made-up slug now costs a function invocation, the same
+exposure `/buscar` and both gallery routes already have, which F31's rate limiting covers. Verified
+by importing a photograph **after** the build and loading its page: 200, with its own derivatives,
+while an invented slug still answered 404.
+
+**What `dynamicParams = false` used to cost, kept because it explains the shape of the code.** The
+pre-rendered copy was the only copy, and nothing could make another until the next build:
+
+- **`revalidatePath('/foto/<slug>')` evicted that page's only copy**, and the photograph then
+  answered 404 **until the next deploy** -- the `{ expire: 0 }` failure narrowed to one page. Tried
+  in T10 to close the window above, and rejected. A route that can regenerate cannot be left with
+  nothing to serve, so this is no longer a one-way door. Nothing calls it either way.
+- **`generateStaticParams` lists every photograph, published or not**, and still should. Filtering
+  by `published` meant a photograph taken down before a deploy had no route afterwards: the panel
+  would publish it, regenerate its derivatives, report success, and the page would go on answering 404. That particular trap is gone with `dynamicParams`, but an unpublished slug costs one
+  build-time render that ends in `notFound()` and buys a pre-rendered path, which is still the
+  better trade. Invented slugs cost nothing at build time, because the list never leaves the archive.
 
 Two technical consequences that must be decided before writing code, not after:
 
@@ -822,7 +890,8 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
 - **Takedown**: unpublish and confirm 410, removal from galleries, search and sitemap, and that
   **the R2 URL stops responding**; then republish and verify derivatives are regenerated.
 - **Panel**: sign in with an account outside the allowlist and confirm rejection; import a test
-  Drive folder.
+  Drive folder, re-import it and confirm the counts do not move, and unpublish and republish one of
+  the imported photographs — that last one is what proves the master is readable from Drive.
 - **Security**: grep the generated client files for any key; run `gitleaks` over the full history.
 
 ---

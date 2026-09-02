@@ -57,6 +57,7 @@ export const DONE: Record<string, string> = {
   'seccion-guardada': 'Se guardó la sección.',
   'seccion-borrada': 'Se borró la sección.',
   textos: 'Se guardaron los textos del sitio.',
+  importada: 'Se importó una fotografía desde Drive y ya está en el sitio.',
 }
 
 export const FAILED: Record<string, string> = {
@@ -67,16 +68,18 @@ export const FAILED: Record<string, string> = {
   archivo: 'El archivo no es una imagen que podamos procesar, o pesa más de 3,5 MB.',
   'sin-archivo': 'Elegí un archivo antes de adjuntarlo.',
   // The one case where the panel cannot do the job by itself, and it says why in
-  // terms of the archive rather than of the storage underneath it.
+  // terms of the archive rather than of the storage underneath it. It stopped
+  // being reachable for a photograph imported from Drive when T12 made reading
+  // the master polymorphic; what is left is a row with no master anywhere.
   'sin-master':
-    'No se puede publicar: falta la copia original de esta fotografía en el archivo. Va a poder hacerse cuando esté la importación desde Drive.',
+    'No se puede publicar: no encontramos la copia original de esta fotografía, ni en el archivo ni en Drive.',
   orden: 'El orden recibido no es válido.',
 
   // --- sections ---
   'seccion-no-existe': 'Esa sección no existe.',
   nombre: 'Escribí un nombre para la sección.',
   direccion:
-    'La dirección de la sección sólo puede llevar minúsculas, números y guiones: por ejemplo, fiestas-patronales.',
+    'La dirección de la sección sólo puede llevar minúsculas, números y guiones, y como mucho 59 caracteres: por ejemplo, fiestas-patronales.',
   'direccion-repetida': 'Ya hay una sección con esa dirección.',
   // Deliberately not a bulk reassignment flow: hiding does the job without
   // risking a photograph that ends up in no section and therefore in no gallery.
@@ -90,6 +93,17 @@ export const FAILED: Record<string, string> = {
     'La dirección del mapa no es válida. Tiene que ser un enlace https de Google Maps, el que sale de "Compartir → Insertar un mapa".',
   'url-red': 'Ese enlace de red social no es válido: tiene que empezar con https://',
   email: 'Esa dirección de correo no es válida.',
+
+  // --- Drive import ---
+  carpeta: 'Esa carpeta no es la carpeta de originales de Drive ni una de las que tiene adentro.',
+  'nada-pendiente': 'No quedaba ninguna fotografía por importar en esa carpeta.',
+  // Both name the *first pending* file, because that is the one the import
+  // always takes next: nothing skips past it, so the folder has to be fixed.
+  // The screen's list is anchored on that same file, so it is on screen.
+  imagen:
+    'La primera fotografía por importar de esa carpeta no es una imagen que podamos procesar. Sacala de la carpeta en Drive, o arreglala, para poder seguir con el resto.',
+  'archivo-grande':
+    'La primera fotografía por importar de esa carpeta pasa los 40 MB. Sacala de la carpeta en Drive para poder seguir con el resto.',
 
   interno: 'No se pudo completar la operación. Probá de nuevo.',
 }

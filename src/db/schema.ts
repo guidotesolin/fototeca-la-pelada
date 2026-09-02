@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import {
   boolean,
   customType,
@@ -8,6 +9,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from 'drizzle-orm/pg-core'
 
@@ -54,63 +56,85 @@ export const categoryTranslation = pgTable(
   (t) => [primaryKey({ columns: [t.categoryId, t.locale] })],
 )
 
-export const photo = pgTable('photo', {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  /** Permanent identifier: `/foto/espacios-001` survives the photo changing category. */
-  slug: varchar({ length: 64 }).notNull().unique(),
-  /** "Cortesía: ..." — the family who lent it. Neutral, so never translated. */
-  credit: text(),
-  /** Where the research came from: the Centenary book, an interview. */
-  source: text(),
-  yearFrom: integer('year_from'),
-  yearTo: integer('year_to'),
-  place: text(),
-  /** Covered on first appearance, never hidden. See "Sensitive content". */
-  sensitive: boolean().notNull().default(false),
-  featured: boolean().notNull().default(false),
-  published: boolean().notNull().default(true),
+export const photo = pgTable(
+  'photo',
+  {
+    id: integer().primaryKey().generatedAlwaysAsIdentity(),
+    /** Permanent identifier: `/foto/espacios-001` survives the photo changing category. */
+    slug: varchar({ length: 64 }).notNull().unique(),
+    /** "Cortesía: ..." — the family who lent it. Neutral, so never translated. */
+    credit: text(),
+    /** Where the research came from: the Centenary book, an interview. */
+    source: text(),
+    yearFrom: integer('year_from'),
+    yearTo: integer('year_to'),
+    place: text(),
+    /** Covered on first appearance, never hidden. See "Sensitive content". */
+    sensitive: boolean().notNull().default(false),
+    featured: boolean().notNull().default(false),
+    published: boolean().notNull().default(true),
 
-  // --- preservation master ---
-  masterSource: masterSource('master_source').notNull(),
-  /** Null while the master is the copy rescued from Sites. */
-  driveFileId: text('drive_file_id'),
-  masterKey: text('master_key'),
-  masterWidth: integer('master_width').notNull(),
-  masterHeight: integer('master_height').notNull(),
-  masterBytes: integer('master_bytes').notNull(),
-  masterSha256: varchar('master_sha256', { length: 64 }).notNull(),
+    // --- preservation master ---
+    masterSource: masterSource('master_source').notNull(),
+    /** Null while the master is the copy rescued from Sites. */
+    driveFileId: text('drive_file_id'),
+    masterKey: text('master_key'),
+    masterWidth: integer('master_width').notNull(),
+    masterHeight: integer('master_height').notNull(),
+    masterBytes: integer('master_bytes').notNull(),
+    masterSha256: varchar('master_sha256', { length: 64 }).notNull(),
 
-  // --- web derivatives (R2). Keys carry a random component: a takedown must
-  // not leave the rest of the archive derivable from one URL. ---
-  webKey: text('web_key'),
-  webWidth: integer('web_width'),
-  webHeight: integer('web_height'),
-  thumbKey: text('thumb_key'),
+    // --- web derivatives (R2). Keys carry a random component: a takedown must
+    // not leave the rest of the archive derivable from one URL. ---
+    webKey: text('web_key'),
+    webWidth: integer('web_width'),
+    webHeight: integer('web_height'),
+    thumbKey: text('thumb_key'),
 
-  // --- optional AI restoration: an interpretation, not the document ---
-  restoredDriveFileId: text('restored_drive_file_id'),
-  /**
-   * The restoration's own master, under the same principle as the photograph's:
-   * the master is the document and the derivatives are regenerable. Without it a
-   * takedown would delete the restored derivatives and republishing could not
-   * bring them back, so the retouching work would be lost by unpublishing --
-   * which is a takedown destroying research, exactly what "Exposure" promises it
-   * does not do.
-   */
-  restoredMasterKey: text('restored_master_key'),
-  restoredWebKey: text('restored_web_key'),
-  /**
-   * The restoration's own rendition size. It is derived from its own master, so
-   * its widths are its own: rendering it at the photograph's `web_width` asks R2
-   * for files that were never encoded. F28 called this safe while a restoration
-   * was a re-render of the same scan; the panel accepts arbitrary uploads now.
-   */
-  restoredWebWidth: integer('restored_web_width'),
-  restoredWebHeight: integer('restored_web_height'),
-  restoredThumbKey: text('restored_thumb_key'),
-  restoredMethod: text('restored_method'),
-  restoredAt: timestamp('restored_at', { withTimezone: true }),
-})
+    // --- optional AI restoration: an interpretation, not the document ---
+    restoredDriveFileId: text('restored_drive_file_id'),
+    /**
+     * The restoration's own master, under the same principle as the photograph's:
+     * the master is the document and the derivatives are regenerable. Without it a
+     * takedown would delete the restored derivatives and republishing could not
+     * bring them back, so the retouching work would be lost by unpublishing --
+     * which is a takedown destroying research, exactly what "Exposure" promises it
+     * does not do.
+     */
+    restoredMasterKey: text('restored_master_key'),
+    restoredWebKey: text('restored_web_key'),
+    /**
+     * The restoration's own rendition size. It is derived from its own master, so
+     * its widths are its own: rendering it at the photograph's `web_width` asks R2
+     * for files that were never encoded. F28 called this safe while a restoration
+     * was a re-render of the same scan; the panel accepts arbitrary uploads now.
+     */
+    restoredWebWidth: integer('restored_web_width'),
+    restoredWebHeight: integer('restored_web_height'),
+    restoredThumbKey: text('restored_thumb_key'),
+    restoredMethod: text('restored_method'),
+    restoredAt: timestamp('restored_at', { withTimezone: true }),
+  },
+  (t) => [
+    /**
+     * **The Drive import's idempotency, given by Postgres.** Re-importing a
+     * folder must not duplicate a photograph, and the import does check before
+     * it writes -- but a check that reads before it writes is a race, not a
+     * guarantee, and the thing it guards is 600 irreplaceable scans. The
+     * constraint is where the promise lives; the check is only there to give a
+     * better message than a constraint violation.
+     *
+     * Partial, because the 592 rescued from Sites all carry null here. Postgres
+     * treats nulls as distinct in a unique index anyway, so the predicate
+     * changes no behaviour -- it says out loud that null means "no Drive master"
+     * rather than "one more row competing for the same value", and it keeps 592
+     * dead entries out of the index.
+     */
+    uniqueIndex('photo_drive_file_id_key')
+      .on(t.driveFileId)
+      .where(sql`${t.driveFileId} is not null`),
+  ],
+)
 
 export const photoTranslation = pgTable(
   'photo_translation',

@@ -12,7 +12,7 @@ import { requireAdmin } from '@/lib/auth'
  * The figures are the panel's own and not the footer's: `archiveFacts()` counts
  * published photographs and is cached for a day, which is right for a public
  * page and wrong for the screen you open to find out what is waiting to be
- * published. The Drive import arrives in T12.
+ * published.
  */
 export default async function AdminHome() {
   const admin = await requireAdmin()
@@ -57,6 +57,7 @@ export default async function AdminHome() {
           ['/admin/photos', 'Editar fotografías'],
           ['/admin/categories', 'Organizar la portada y las secciones'],
           ['/admin/site-text', 'Editar los textos del sitio'],
+          ['/admin/import', 'Importar fotografías desde Drive'],
         ].map(([href, label]) => (
           <Link
             key={href}
@@ -67,8 +68,6 @@ export default async function AdminHome() {
           </Link>
         ))}
       </nav>
-
-      <p className="t-intro text-muted mt-8">Importar desde Drive es la próxima tarea.</p>
     </>
   )
 }
