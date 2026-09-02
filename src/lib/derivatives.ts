@@ -1,6 +1,7 @@
+import { download } from './drive'
 import { derive } from './images'
 import { keyFor } from './photo'
-import { newPrefix, put, removePrefix } from './r2'
+import { getBytes, newPrefix, put, removePrefix } from './r2'
 import type { Master } from './images'
 
 /**
@@ -38,6 +39,45 @@ const DERIVATIVE_PREFIX = /^photos\/[A-Za-z0-9_-]+$/
 
 /** A master's key is a full object key, not a prefix: one segment plus an extension. */
 const MASTER_KEY = /^masters\/[A-Za-z0-9_-]+\.[A-Za-z0-9]+$/
+
+/**
+ * Where one photograph's master lives, which is **two places by design**: the
+ * 592 rescued from Sites sit in R2, and anything the panel imports stays in
+ * Drive, because 600 high-resolution scans do not fit in R2's free 10 GB and
+ * copying them there would break the split the whole storage plan rests on.
+ */
+export type MasterRef = {
+  masterSource: 'sites' | 'drive'
+  masterKey: string | null
+  driveFileId: string | null
+}
+
+/**
+ * Whether there is a master to read at all -- the check a caller makes before
+ * offering to regenerate derivatives. It is deliberately the exact negation of
+ * `readMaster`'s own throw: anything this calls true, that one can read.
+ */
+export function hasMaster(row: MasterRef): boolean {
+  return Boolean(row.masterKey || row.driveFileId)
+}
+
+/**
+ * The master's bytes, wherever it is. Republishing regenerates derivatives from
+ * the master, so a caller that reached for `master_key` alone could take a
+ * photograph down and never put it back once it came from Drive -- `master_key`
+ * is null there, permanently and by design.
+ *
+ * `master_source` decides, because that is the column whose job it is: a row
+ * half-migrated from the Sites rescue to a real scan can hold both, and the
+ * scan is the document. The other one is still tried rather than refused, since
+ * the failure this exists to prevent is a photograph that cannot be republished.
+ */
+export async function readMaster(row: MasterRef): Promise<Buffer> {
+  if (row.masterSource === 'drive' && row.driveFileId) return download(row.driveFileId)
+  if (row.masterKey) return getBytes(row.masterKey)
+  if (row.driveFileId) return download(row.driveFileId)
+  throw new Error('this photograph has no master: neither a master_key nor a drive_file_id')
+}
 
 /** Encodes the renditions, uploads them, and reports the keys a row should store. */
 export async function generate(

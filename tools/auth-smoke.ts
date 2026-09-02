@@ -17,12 +17,14 @@
  *   BASE_URL=http://localhost:3001 npm run auth:smoke
  */
 import assert from 'node:assert/strict'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { encode } from 'next-auth/jwt'
 import postgres from 'postgres'
 import { POSTGRES_OPTIONS } from '../src/db/connect'
-import { appUser, photo } from '../src/db/schema'
+import { appUser, category, photo } from '../src/db/schema'
 
 try {
   process.loadEnvFile('.env.local')
@@ -223,9 +225,137 @@ async function main() {
       assert.equal(anonymous.location, '/admin/signin', 'and a post with no session at all is too')
     }
 
+    // --- 10. the Drive import screen, which is a route like any other ---
+    // T12 added a page and an action, and the rule is per route and per action:
+    // the layout above them is chrome and says so itself.
+    await db.insert(appUser).values({ email: EMAIL, name: 'Auth Smoke' })
+    const importAnonymous = await get('/admin/import')
+    assert.equal(importAnonymous.status, 307, 'an anonymous GET /admin/import is redirected')
+    assert.equal(importAnonymous.location, '/admin/signin')
+    assert.ok(
+      !importAnonymous.body.includes('Importar desde Drive'),
+      'and none of the screen is sent',
+    )
+
+    const importAllowed = await get('/admin/import', session)
+    assert.equal(importAllowed.status, 200, 'an allowlisted session reaches the import screen')
+    assert.ok(
+      importAllowed.body.includes('Importar desde Drive'),
+      'and the screen renders whether or not Drive is configured yet',
+    )
+
+    /**
+     * The action, which needs the screen to be showing its form: Drive
+     * configured, a folder and a section chosen in the query string, and
+     * something still pending in that folder. Skipped otherwise, so this file
+     * still runs before the Google Cloud Console work is done.
+     *
+     * Scraped on `name="auto"` and not on `name="folder"`: the folder picker is
+     * a **GET** form carrying `<select name="folder">` and it comes first in the
+     * markup, so looking for that field finds a form with no server action on it
+     * at all. `auto` is the "Importar todas" button and exists nowhere else.
+     *
+     * The folder id posted is deliberately not a Drive id, so the action refuses
+     * it before it reaches Drive or the database: what is being tested is who
+     * gets to run it, and a test of a gate must not be able to write.
+     */
+    const [section] = await db.select({ slug: category.slug }).from(category).limit(1)
+    const screen = await get(
+      `/admin/import?folder=${process.env.GOOGLE_DRIVE_MASTERS_FOLDER_ID ?? ''}&section=${section?.slug ?? ''}`,
+      session,
+    )
+    const importNext = screen.body.includes('name="auto"') ? actionIdOn(screen.body, 'auto') : null
+    if (!importNext) {
+      console.log('  (the import form is not on screen -- Drive unconfigured or nothing pending)')
+    } else {
+      const posted = { folder: 'not-a-drive-id', section: 'campo' }
+      const ran = await postAction('/admin/import', importNext, posted, session)
+      assert.equal(ran.status, 303, 'an allowlisted post reaches the import action')
+      /**
+       * It comes back on the screen it was posted from, carrying the refusal.
+       * `not-a-drive-id` passes `isFileId` -- that guard is about keeping a quote
+       * out of Drive's `q` parameter, not about whether the folder exists -- so
+       * the action got as far as `reachable()`, which is the check that refused
+       * it. That is the point: the action ran and answered for itself.
+       */
+      assert.equal(
+        ran.location,
+        '/admin/import?folder=not-a-drive-id&section=campo&error=carpeta',
+        'and the action answers for itself: it refused the folder, which is not the gate',
+      )
+
+      await db.delete(appUser).where(eq(appUser.email, EMAIL))
+      const refused = await postAction('/admin/import', importNext, posted, session)
+      assert.equal(
+        refused.location,
+        '/admin/signin',
+        'the same post with a revoked row never reaches the action',
+      )
+      const anonymous = await postAction('/admin/import', importNext, posted)
+      assert.equal(anonymous.location, '/admin/signin', 'and with no session at all it does not')
+    }
+
+    /**
+     * --- 11. every action in the panel, statically ---
+     *
+     * The cases above prove the gate holds on the actions they post to. This is
+     * the one that covers the action nobody wrote a case for: `requireAdmin()`
+     * has to be the **first thing** an exported action does, and the only way to
+     * check that for an action that does not exist yet is to check the shape.
+     * Cheap, and it is the failure a runtime test cannot see.
+     */
+    const admin = join(process.cwd(), 'src/app/admin')
+    const actionFiles = readdirSync(admin, { withFileTypes: true, recursive: true })
+      .filter((entry) => entry.name === 'actions.ts')
+      .map((entry) => join(entry.parentPath, entry.name))
+    assert.ok(actionFiles.length >= 4, 'the panel has action files to check')
+    let gated = 0
+    let declared = 0
+    for (const file of actionFiles) {
+      const source = readFileSync(file, 'utf8')
+      assert.ok(source.startsWith("'use server'"), `${file} is not a server action module`)
+
+      /**
+       * **Counted before it is parsed, and asserted equal afterwards.** The
+       * pattern below cannot span a parameter list containing a closing paren --
+       * a callback type, or a default like `= new Date()` -- and an action it
+       * fails to match would simply not be checked. A gate check that skips in
+       * silence is worse than none, because it reports success. So the number of
+       * actions the file declares is the number the loop has to have inspected.
+       */
+      declared += source.match(/^export async function /gm)?.length ?? 0
+
+      for (const [, name, body] of source.matchAll(
+        /export async function (\w+)\([^)]*\)\s*\{\n((?:.*\n){0,6})/g,
+      )) {
+        // The **first statement**, not merely a line that mentions it: an early
+        // version of this check passed with the call commented out, because a
+        // comment contains the string it was looking for.
+        const first = body
+          .split('\n')
+          .map((line) => line.trim())
+          .find((line) => line && !line.startsWith('//') && !line.startsWith('*'))
+        assert.equal(
+          first,
+          'await requireAdmin()',
+          `${file}: ${name}() does not call requireAdmin() first -- it starts with ${first}`,
+        )
+        gated++
+      }
+    }
+    assert.equal(
+      gated,
+      declared,
+      `${declared} exported actions declared but only ${gated} could be parsed and checked: ` +
+        'one of them has a signature the pattern above does not match, so it was skipped in silence',
+    )
+    assert.ok(gated >= 8, `only ${gated} actions found, which is fewer than the panel has`)
+    console.log(`  (${gated} exported actions across ${actionFiles.length} files, all gated)`)
+
     console.log(
       'auth smoke ok: anonymous, allowlisted, revoked-with-live-cookie, forged, sign-in, ' +
-        'outage, cancelled, unmapped, server action (allowed, revoked, anonymous)',
+        'outage, cancelled, unmapped, server action (allowed, revoked, anonymous), ' +
+        'the import screen, and every action gated',
     )
   } finally {
     await db.delete(appUser).where(eq(appUser.email, EMAIL))

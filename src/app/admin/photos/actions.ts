@@ -5,7 +5,13 @@ import { redirect } from 'next/navigation'
 import { db } from '@/db'
 import { category, photo, photoTranslation } from '@/db/schema'
 import { requireAdmin } from '@/lib/auth'
-import { dropDerivatives, dropRestoredMaster, generate } from '@/lib/derivatives'
+import {
+  dropDerivatives,
+  dropRestoredMaster,
+  generate,
+  hasMaster,
+  readMaster,
+} from '@/lib/derivatives'
 import { read } from '@/lib/images'
 import { masterKeyFor } from '@/lib/photo'
 import { getBytes, newPrefix, put } from '@/lib/r2'
@@ -123,8 +129,8 @@ export async function saveDetails(form: FormData) {
  * The takedown, and undoing it. Unpublishing deletes every derivative -- the
  * photograph's and its restoration's -- and nulls the keys, so nothing in the
  * database points at a file that is not there. Publishing reads the masters back
- * out of R2 and derives again under a **new** random prefix: the addresses a
- * takedown killed stay dead.
+ * -- from R2 or from Drive, whichever holds this one -- and derives again under a
+ * **new** random prefix: the addresses a takedown killed stay dead.
  *
  * No master is ever deleted here. That is what makes a takedown reversible, and
  * it is why the restoration needed a `restored_master_key` of its own.
@@ -159,9 +165,18 @@ export async function setPublished(form: FormData) {
       return
     }
 
-    // Republishing reads from the master, because the master is the document. One
-    // that only exists in Drive cannot be reached until the import in T12.
-    if (!row.webKey && !row.masterKey) throw new Invalid('sin-master')
+    /**
+     * Republishing reads from the master, because the master is the document --
+     * and **where the master lives is not one place**. This used to ask for
+     * `master_key`, which is R2, and every photograph in the archive had one
+     * because all 592 were rescued from Sites. A photograph imported from Drive
+     * has `master_key` null and `drive_file_id` set, by design: the masters stay
+     * in Drive because 600 high-resolution scans do not fit in R2's free 10 GB.
+     * So the check refused it and the read would have dereferenced a null --
+     * one could be unpublished and then never published again. `readMaster` is
+     * the one door to a master's bytes, and `hasMaster` is exactly its negation.
+     */
+    if (!row.webKey && !hasMaster(row)) throw new Invalid('sin-master')
 
     /**
      * Everything that writes to R2 is inside the rollback, not only the database
@@ -172,7 +187,7 @@ export async function setPublished(form: FormData) {
     let web: Awaited<ReturnType<typeof generate>> | null = null
     let restored: Awaited<ReturnType<typeof generate>> | null = null
     try {
-      if (!row.webKey) web = await generate(slug, await getBytes(row.masterKey!))
+      if (!row.webKey) web = await generate(slug, await readMaster(row))
       if (row.restoredMasterKey && !row.restoredWebKey) {
         restored = await generate(`${slug}-restaurada`, await getBytes(row.restoredMasterKey))
       }

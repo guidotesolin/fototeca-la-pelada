@@ -19,8 +19,12 @@ const OWN_WIDTH_PAYS = 1.15
 /** What we accept as a master. Anything else is rejected before sharp touches it. */
 const INPUT_FORMATS = new Set(['jpeg', 'png', 'webp', 'tiff', 'avif', 'heif', 'gif'])
 
-/** A scan has no business being larger than this, and an upload even less. */
-const MAX_BYTES = 40 * 1024 * 1024
+/**
+ * A scan has no business being larger than this, and an upload even less.
+ * Exported because `lib/drive.ts` has to stop a download at the same number:
+ * counting after `read()` means the whole file is already in memory.
+ */
+export const MAX_BYTES = 40 * 1024 * 1024
 
 export type Rendition = {
   width: number
