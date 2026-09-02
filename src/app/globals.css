@@ -792,3 +792,48 @@ body > header {
     transform: none;
   }
 }
+
+/**
+ * The panel's save notice. It arrives over the screen instead of pushing it down,
+ * because the message is about something that already happened and must not move
+ * the thing you were looking at, and it takes itself away after five seconds.
+ *
+ * No JavaScript: the dismissal is the second animation, delayed and holding its
+ * last frame. A client component would have bought a close button and the ability
+ * to tidy `?ok=` out of the address, neither of which is worth shipping a bundle
+ * to a screen that is two people wide. Failures do not use this -- they stay in
+ * the flow until they are dealt with.
+ */
+.snackbar {
+  /* It floats over the screen for five seconds; it must not take the clicks that
+     land on whatever is underneath it while it does. */
+  pointer-events: none;
+  animation:
+    snackbar-in 180ms ease-out,
+    snackbar-out 300ms ease-in 5s forwards;
+  box-shadow:
+    0 0 0 1px oklch(from var(--color-ground) l c h / 0.9),
+    0 12px 32px oklch(from var(--color-ground) l c h / 0.7);
+}
+
+@keyframes snackbar-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@keyframes snackbar-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The movement goes, the disappearing stays: without the second animation the
+     notice would sit there for ever. */
+  .snackbar {
+    animation: snackbar-out 1ms linear 5s forwards;
+  }
+}

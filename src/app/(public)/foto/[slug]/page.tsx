@@ -127,10 +127,24 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
    */
   const column = Math.max(width, MIN_COLUMN)
 
-  /** The restored copy is fetched only if it is asked for, so it is never eager. */
-  const frame = (webKey: string, priority: boolean) => (
-    <div className="mount" style={{ maxWidth: width }}>
-      <PhotoImage photo={{ ...photo, webKey }} sizes={sizes} priority={priority} veil={false} />
+  /**
+   * The restored copy is fetched only if it is asked for, so it is never eager.
+   * It also carries **its own** width and height: it is derived from its own
+   * master, so its renditions are its own, and asking for the photograph's
+   * widest one is asking R2 for a file that was never encoded.
+   */
+  const frame = (
+    webKey: string,
+    priority: boolean,
+    size?: { webWidth: number; webHeight: number },
+  ) => (
+    <div className="mount" style={{ maxWidth: Math.min(size?.webWidth ?? photo.webWidth, width) }}>
+      <PhotoImage
+        photo={{ ...photo, webKey, ...size }}
+        sizes={sizes}
+        priority={priority}
+        veil={false}
+      />
     </div>
   )
 
@@ -168,7 +182,13 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
         {photo.restoredWebKey ? (
           <>
             <div id="restaurada" className="ab-restored">
-              {frame(photo.restoredWebKey, false)}
+              {frame(
+                photo.restoredWebKey,
+                false,
+                photo.restoredWebWidth && photo.restoredWebHeight
+                  ? { webWidth: photo.restoredWebWidth, webHeight: photo.restoredWebHeight }
+                  : undefined,
+              )}
             </div>
             <div id="original" className="ab-original">
               {frame(photo.webKey, true)}
@@ -186,7 +206,7 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
                 href="#restaurada"
                 className="link text-muted hover:text-text focus-visible:outline-focus py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                Restaurada
+                Restaurada con IA
               </a>
             </p>
           </>

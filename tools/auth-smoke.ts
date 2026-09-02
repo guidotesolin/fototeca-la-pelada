@@ -22,7 +22,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import { encode } from 'next-auth/jwt'
 import postgres from 'postgres'
 import { POSTGRES_OPTIONS } from '../src/db/connect'
-import { appUser } from '../src/db/schema'
+import { appUser, photo } from '../src/db/schema'
 
 try {
   process.loadEnvFile('.env.local')
@@ -56,6 +56,37 @@ async function get(path: string, cookie?: string) {
     location: response.headers.get('location'),
     body: await response.text(),
   }
+}
+
+/**
+ * The hidden field Next renders so a form that calls a server action still works
+ * with JavaScript off: the action's id is the field's **name**. Scraping it is
+ * how this file can post to an action the way a browser does, without a bundle.
+ */
+function actionIdOn(html: string, field: string): string {
+  const form = html.split('<form').find((chunk) => chunk.includes(`name="${field}"`))
+  const id = form?.match(/\$ACTION_ID_[a-f0-9]+/)?.[0]
+  assert.ok(id, `no server action found on the form carrying ${field}`)
+  return id
+}
+
+/** What a browser with no JavaScript posts to a server action: multipart, to the page's own URL. */
+async function postAction(
+  path: string,
+  actionId: string,
+  fields: Record<string, string>,
+  cookie?: string,
+) {
+  const body = new FormData()
+  body.set(actionId, '')
+  for (const [name, value] of Object.entries(fields)) body.set(name, value)
+  const response = await fetch(new URL(path, BASE), {
+    method: 'POST',
+    redirect: 'manual',
+    headers: cookie ? { cookie: `${COOKIE}=${cookie}` } : {},
+    body,
+  })
+  return { status: response.status, location: response.headers.get('location') }
 }
 
 async function main() {
@@ -141,9 +172,60 @@ async function main() {
     )
     assert.ok(unknown.body.includes('No se pudo completar el ingreso'), 'it says what it knows')
 
+    // --- 9. the same boundary, on a server action ---
+    // T10's writes are server actions, which are POST endpoints with public URLs:
+    // hiding the button that calls one hides nothing, so `requireAdmin()` has to
+    // hold on the POST and not only on the page that drew the form.
+    //
+    // Every post here names a slug that **does not exist**, so the action can
+    // never write, whatever the answer: if the gate ever regressed, this test
+    // fails loudly instead of editing the archive it is running against.
+    const [any] = await db.select({ slug: photo.slug }).from(photo).limit(1)
+    if (!any) {
+      console.log('  (no photographs in the database, skipping the server action case)')
+    } else {
+      const screen = await get(`/admin/photos/${any.slug}`, session)
+      assert.equal(screen.status, 200, 'the photo screen is reachable with a session')
+      const saveDetails = actionIdOn(screen.body, 'caption')
+
+      // The control first: with a session the action really does run, so the
+      // rejection below is a rejection and not the post bouncing off something else.
+      const ran = await postAction(
+        '/admin/photos/t10-no-existe',
+        saveDetails,
+        { slug: 't10-no-existe' },
+        session,
+      )
+      assert.equal(ran.status, 303, 'an allowlisted post reaches the action')
+      assert.equal(
+        ran.location,
+        '/admin/photos/t10-no-existe?error=no-existe',
+        'and the action answers for itself: it looked the photograph up and did not find it',
+      )
+
+      await db.delete(appUser).where(eq(appUser.email, EMAIL))
+      const refused = await postAction(
+        '/admin/photos/t10-no-existe',
+        saveDetails,
+        { slug: 't10-no-existe' },
+        session,
+      )
+      assert.equal(refused.status, 303, 'the same post with a revoked row is answered by the gate')
+      assert.equal(
+        refused.location,
+        '/admin/signin',
+        'the action never runs: authorization is checked inside it, not by the page that drew it',
+      )
+
+      const anonymous = await postAction('/admin/photos/t10-no-existe', saveDetails, {
+        slug: 't10-no-existe',
+      })
+      assert.equal(anonymous.location, '/admin/signin', 'and a post with no session at all is too')
+    }
+
     console.log(
       'auth smoke ok: anonymous, allowlisted, revoked-with-live-cookie, forged, sign-in, ' +
-        'outage, cancelled, unmapped',
+        'outage, cancelled, unmapped, server action (allowed, revoked, anonymous)',
     )
   } finally {
     await db.delete(appUser).where(eq(appUser.email, EMAIL))

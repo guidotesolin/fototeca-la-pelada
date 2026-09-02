@@ -192,24 +192,47 @@ async function verify(sections: Section[]) {
       mk: photo.masterKey,
       wk: photo.webKey,
       tk: photo.thumbKey,
+      rmk: photo.restoredMasterKey,
+      rwk: photo.restoredWebKey,
+      published: photo.published,
       sha: photo.masterSha256,
     })
     .from(photo)
   console.log(`\n  ${rows.length} photos in the database`)
 
-  const missingThumb = rows.filter((r) => !r.tk).map((r) => r.slug)
+  /**
+   * Scoped to the published ones, and that scope is the point. A takedown deletes
+   * the derivatives and nulls the keys on purpose, so from T10 on "every photo has
+   * a thumbnail" is false the moment the panel is used as intended -- this
+   * assertion turned red on the first takedown and would have gone on crying wolf
+   * over the invariant below, which is the one that matters.
+   */
+  const published = rows.filter((r) => r.published)
+  const missingThumb = published.filter((r) => !r.tk).map((r) => r.slug)
   const absent = (
     await inBatches(
-      rows.filter((r) => r.tk),
+      published.filter((r) => r.tk),
       16,
       async (r) => ((await exists(r.tk!)) ? null : r.slug),
     )
   ).filter(Boolean)
   console.log(
-    `  thumbnails: ${missingThumb.length} without a key, ${absent.length} missing from R2`,
+    `  thumbnails: ${published.length} published, ${missingThumb.length} without a key, ` +
+      `${absent.length} missing from R2`,
   )
 
-  const sample = rows.filter((_, i) => i % Math.ceil(rows.length / 10) === 0)
+  /**
+   * And the other half of the same promise: an unpublished photograph must hold no
+   * derivative keys at all. A key left behind after a takedown is a row pointing at
+   * a file that is gone -- or worse, at one that is not.
+   */
+  const stale = rows.filter((r) => !r.published && (r.wk || r.tk || r.rwk)).map((r) => r.slug)
+  console.log(
+    `  takedowns: ${rows.length - published.length} unpublished, ${stale.length} still naming derivatives`,
+  )
+
+  const withMaster = rows.filter((r) => r.mk)
+  const sample = withMaster.filter((_, i) => i % Math.ceil(withMaster.length / 10) === 0)
   let mismatched = 0
   for (const r of sample) {
     const hash = createHash('sha256')
@@ -224,7 +247,10 @@ async function verify(sections: Section[]) {
 
   // An object no row points at is an object the panel can never delete, which is
   // the takedown promise quietly broken. An interrupted seed is how they appear.
-  const referenced = rows.flatMap((r) => [r.mk, r.wk].filter(Boolean) as string[])
+  // The restoration's two keys count as references from T10 on: a photograph can
+  // now carry a second master and a second set of derivatives, and leaving them
+  // out of this list would report every restoration in the archive as an orphan.
+  const referenced = rows.flatMap((r) => [r.mk, r.wk, r.rmk, r.rwk].filter(Boolean) as string[])
   const stored = await listKeys()
   const orphans = stored.filter((k) => !referenced.some((p) => k === p || k.startsWith(`${p}-`)))
   console.log(`  R2: ${stored.length} objects, ${orphans.length} referenced by no row`)
@@ -232,7 +258,12 @@ async function verify(sections: Section[]) {
   const total = sections.reduce((n, s) => n + s.photos.length, 0)
   assert.equal(rows.length, total, 'every photo in archive.json is in the database')
   assert.equal(bad, 0, 'every category count matches')
-  assert.equal(missingThumb.length + absent.length, 0, 'every photo has a thumbnail in R2')
+  assert.equal(
+    missingThumb.length + absent.length,
+    0,
+    'every published photo has a thumbnail in R2',
+  )
+  assert.equal(stale.length, 0, 'no unpublished photo still names a derivative')
   assert.equal(mismatched, 0, 'every sampled master matches its hash')
   assert.equal(orphans.length, 0, 'no object in R2 is unreachable from the database')
   console.log('\nverify ok')

@@ -200,12 +200,20 @@ where to look.
 T8 built it, and it is literally the one exception: 631 routes and `/buscar` is the only dynamic
 one, because reading `searchParams` is a request-time API in Next 16. The page adds **no JavaScript
 of its own** — the same seven chunks as a gallery — and the filters are a GET form of native
-`<select>`s, so the whole screen works with script disabled. Two caches sit under it: `unstable_cache`
-per query, and a `Cache-Control` set for `/buscar` in `next.config.ts`, which is needed because Next
-puts `private, no-cache, no-store` on a dynamically rendered page. The docs do not say which of the
-two wins, so it was measured: the `headers()` entry does. An hour of `s-maxage`, because
-`revalidateTag` cannot reach a CDN entry for a route that is not ISR, and that hour is how long a
-caption fixed in the panel can take to appear in search.
+`<select>`s, so the whole screen works with script disabled. T8 put two caches under it:
+`unstable_cache` per query, and an hour of `s-maxage` set for `/buscar` in `next.config.ts` —
+needed because Next puts `private, no-cache, no-store` on a dynamically rendered page, and measured
+to win over it.
+
+**T10 took the second one out**, and the reason is worth keeping. `revalidateTag` cannot reach a CDN
+entry for a route that is not ISR, which T8 recorded as an hour's delay for a corrected caption.
+Once the panel could take a photograph down, the same hour became something else: a withdrawn
+photograph's caption and credit — the research text that names living people — went on being served
+from cached search results long after its own page answered 410, on the one public route the proxy
+does not cover. Neon is protected anyway, and by the layer that can be invalidated: the query behind
+the page is an `unstable_cache` tagged `GALLERY_TAG`, so two people searching the same words still
+reach the database once and a takedown drops that entry with every other. What the CDN entry was
+buying was a function invocation.
 
 The filters offer only what the search reaches — each one computed without its own value and with
 the other two applied. A dropdown that lists a decade holding nothing is a dead end, and on an
@@ -370,7 +378,8 @@ photo                            photo_translation
   web_key / web_width / web_height
   thumb_key
   -- optional AI restoration
-  restored_drive_file_id / restored_web_key / restored_thumb_key
+  restored_drive_file_id / restored_master_key
+  restored_web_key / restored_thumb_key
   restored_method / restored_at
 
 photo_category                   app_user
@@ -384,6 +393,13 @@ Details that matter:
 - **`master_source` + `drive_file_id`**: today the best available master is the copy rescued from
   Sites. When the real scan is uploaded, `master_source` becomes `'drive'`, derivatives are
   regenerated, and **not a single metadata field is touched**.
+- **`restored_master_key`, added in T10**, and it is principle 1 applied to the second image.
+  The schema shipped with `restored_drive_file_id` and the two derivative keys but no master for
+  the restoration, and a takedown deletes derivatives -- so unpublishing a photograph whose
+  restoration had been uploaded by hand would have destroyed it, with nothing to regenerate from
+  unless the file happened to still be in Drive. A takedown must not cost anybody their work. One
+  nullable column, and the restoration is now stored exactly like the photograph: master kept,
+  derivatives regenerable.
 - **`year_from`/`year_to`** feed the decade filter. The text as they wrote it ("circa 1960",
   "década del 40") already lives in the `caption`, so it needs no field of its own.
 - **`photo_category` is N:N**: a photo can sit in both Familias and Casamientos. A real improvement
@@ -501,11 +517,83 @@ How a takedown works:
 4. The master stays intact in Drive and the metadata in the database: none of the research work is
    lost. Republishing regenerates the derivatives.
 
+**How the 410 is produced, as built in T10.** No page in Next 16 can choose its status code:
+`notFound()` gives 404, `forbidden()` and `unauthorized()` give 403 and 401, and there is nothing
+else -- so the two ways out F29 recorded turned out not to exist, since a `route.ts` also cannot sit
+at the same path as a `page.tsx`. The one place in the framework that can put an arbitrary status on
+a URL is `proxy.ts`, so `src/proxy.ts` matches `/foto/:slug` and answers 410 for a slug that is on
+the takedown list. It reads that list from `/api/gone` rather than from the database, because a
+lookup per request would put Neon back in the request path -- the one thing the pre-rendered design
+exists to avoid -- and it memoizes the answer for two seconds. The proxy carries no authorization:
+T9's decision that a proxy is not an auth boundary still stands.
+
+**What the proxy costs, and what the memo actually bounds.** This runs on every `/foto/:slug`
+request, prefetches included, so it was measured on the production build rather than reasoned about.
+The list is fetched **once per instance**, not once per request -- the first version fetched it 24
+times for 24 concurrent requests, which is precisely a gallery prefetching its page of photographs,
+and the in-flight promise is now shared. What remains is **180-191 ms** of TTFB on a cold instance
+against **76 ms** for a gallery, which carries no proxy, and **9 ms** warm; a stale memo refreshes
+behind the answer instead of blocking it, at 25 ms. Blocking that first request is deliberate:
+passing through while the list loads would take the fetch off the critical path entirely, and on an
+archive this quiet most requests arrive at a cold instance, so the answer would almost always be the
+empty list and the 410 would never fire.
+
+The memo is what the lag is made of, and the lag is **not** merely 404 where 410 belongs: until it
+catches up, the photograph's page is still the pre-rendered one, **200 with the caption on it**. The
+image is dead from the moment the panel answers; the caption is the part that names living people,
+so two seconds is the ceiling rather than ten. Measured end to end: 1.9 s of the stale page, then
+404, then 410 at 2.7 s. The opposite direction is closed rather than bounded -- a photograph that has
+just been republished must never be declared permanently gone, so the proxy re-reads the list before
+it answers 410, a cost charged only to requests for photographs that are already down.
+
+**Revalidation after a write takes two profiles, and the difference is not cosmetic.** The public
+pages are pre-rendered with `dynamicParams = false`, which means the pre-rendered copy is the only
+copy: expiring it with `revalidateTag(tag, { expire: 0 })` leaves nothing to serve and nothing to
+regenerate it from, and `next start` then answers **404 for every photograph and every gallery**
+with `NoFallbackError` until the process restarts. Measured, on the way to shipping T10. So
+`GALLERY_TAG` is revalidated with `'max'`, which serves the old page while the new one renders
+behind it. The takedown list is the opposite case -- stale is exactly what it cannot be -- so it
+carries a tag of its own, `TAKEDOWN_TAG`, revalidated with `{ expire: 0 }`. It is read by a route
+handler, which always regenerates on demand, so expiring it risks nothing.
+
+**How long a change takes to show, end to end.** Three caches sit between a save and a reader, and
+only the first two were in this document. Measured after editing a caption from the panel: the
+server answers with the new text on the **third request, about two seconds later** -- the first is
+served stale and starts the revalidation, which is what `'max'` is. Then there is a third cache that
+is not ours: Next keeps a statically generated page in the **client** for five minutes, so a reader
+already browsing, or an editor who clicks through from the panel, can be shown the old page long
+after the server has the new one. That is why the panel's links to the public site are plain
+anchors: a document load has no client cache, and those links exist precisely to check what was just
+changed. Turning the window down globally (`experimental.staleTimes`) was rejected -- it would cost
+every reader the instant back-and-forth the galleries were built for, to fix a case only the two
+editors hit.
+
+**Two consequences of `dynamicParams = false` that anyone touching these routes needs.** They are
+the same fact seen twice: the pre-rendered copy is the only copy, and nothing can make another one
+until the next build.
+
+- **`revalidatePath('/foto/<slug>')` must not be used.** It evicts that page's only copy, and the
+  photograph then answers 404 **until the next deploy** -- the `{ expire: 0 }` failure narrowed to
+  one page. Tried in T10 to close the window above, and rejected.
+- **`generateStaticParams` lists every photograph, published or not.** It runs at build time and
+  never again, so filtering by `published` meant a photograph taken down before a deploy had no
+  route afterwards: the panel would publish it, regenerate its derivatives, report success, and the
+  page would go on answering 404 until somebody deployed. An unpublished slug costs one build-time
+  render that ends in `notFound()`, and buys a path revalidation can fill. Invented slugs still cost
+  nothing, because the list never leaves the archive.
+
 Two technical consequences that must be decided before writing code, not after:
 
 - **R2 keys cannot be guessable.** If they were `photos/campo-078/web.avif`, anyone could derive
   the rest of the archive and the takedown would be a lie again. They carry a random component per
   photo.
+- **The masters sit in the same public bucket, and a takedown does not touch them.** By design the
+  master survives, and the design assumed it survives in Drive; today, for all 592, it is the copy
+  rescued from Sites and it lives in R2 behind the same public domain as the derivatives. Its key
+  carries the same random component and no page has ever linked it, so it is not reachable by
+  guessing or by walking the archive -- but it is reachable by anyone who wrote the URL down. Closing
+  that means keeping `masters/` off the public domain, which is bucket configuration rather than
+  code, and it belongs with F16 in T14.
 - **Google keeps cached copies.** Unpublishing does not remove it from the index immediately; that
   needs the Search Console removal tool. It is procedure, not code, and it should be written down
   so the brothers can do it without the maintainer.

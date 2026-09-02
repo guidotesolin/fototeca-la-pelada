@@ -89,7 +89,24 @@ export const photo = pgTable('photo', {
 
   // --- optional AI restoration: an interpretation, not the document ---
   restoredDriveFileId: text('restored_drive_file_id'),
+  /**
+   * The restoration's own master, under the same principle as the photograph's:
+   * the master is the document and the derivatives are regenerable. Without it a
+   * takedown would delete the restored derivatives and republishing could not
+   * bring them back, so the retouching work would be lost by unpublishing --
+   * which is a takedown destroying research, exactly what "Exposure" promises it
+   * does not do.
+   */
+  restoredMasterKey: text('restored_master_key'),
   restoredWebKey: text('restored_web_key'),
+  /**
+   * The restoration's own rendition size. It is derived from its own master, so
+   * its widths are its own: rendering it at the photograph's `web_width` asks R2
+   * for files that were never encoded. F28 called this safe while a restoration
+   * was a re-render of the same scan; the panel accepts arbitrary uploads now.
+   */
+  restoredWebWidth: integer('restored_web_width'),
+  restoredWebHeight: integer('restored_web_height'),
   restoredThumbKey: text('restored_thumb_key'),
   restoredMethod: text('restored_method'),
   restoredAt: timestamp('restored_at', { withTimezone: true }),

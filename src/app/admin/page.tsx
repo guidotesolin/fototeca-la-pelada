@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import Link from 'next/link'
 import { db } from '@/db'
 import { appUser, category, photo } from '@/db/schema'
 import { requireAdmin } from '@/lib/auth'
@@ -52,9 +53,17 @@ export default async function AdminHome() {
         ))}
       </dl>
 
-      <p className="t-intro text-muted mt-10">
-        Editar fotografías, organizar las secciones y la portada, e importar desde Drive son las
-        próximas tareas. Por ahora el panel sólo confirma quién sos.
+      <p className="mt-10">
+        <Link
+          href="/admin/photos"
+          className="t-credit link hover:text-text focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
+        >
+          Editar fotografías →
+        </Link>
+      </p>
+
+      <p className="t-intro text-muted mt-6">
+        Organizar las secciones y la portada, e importar desde Drive, son las próximas tareas.
       </p>
     </>
   )

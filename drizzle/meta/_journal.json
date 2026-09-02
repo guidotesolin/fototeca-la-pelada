@@ -22,6 +22,20 @@
       "when": 1788199453077,
       "tag": "0002_far_star_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788357662935,
+      "tag": "0003_fancy_taskmaster",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788371789532,
+      "tag": "0004_tiny_bushwacker",
+      "breakpoints": true
     }
   ]
 }

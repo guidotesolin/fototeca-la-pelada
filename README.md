@@ -50,23 +50,24 @@ npm run dev
 
 ## Scripts
 
-| Command                | What it does                             |
-| ---------------------- | ---------------------------------------- |
-| `npm run dev`          | Development server                       |
-| `npm run build`        | Production build                         |
-| `npm run lint`         | ESLint                                   |
-| `npm run format`       | Prettier across the repo                 |
-| `npm run format:check` | Verify formatting without writing        |
-| `npm run db:generate`  | Generate a migration from the schema     |
-| `npm run db:migrate`   | Apply pending migrations                 |
-| `npm run db:smoke`     | Check the schema against a live database |
-| `npm run images:smoke` | Check the derivative pipeline and R2     |
-| `npm run url:smoke`    | Check the URL guards on `site_text`      |
-| `npm run search:smoke` | Check search against a live database     |
-| `npm run auth:smoke`   | Check the panel's boundary (app running) |
-| `npm run admin:add`    | Put an email address on the allowlist    |
-| `npm run admin:list`   | Show who can enter the panel             |
-| `npm run admin:remove` | Take an email address off the allowlist  |
+| Command                  | What it does                               |
+| ------------------------ | ------------------------------------------ |
+| `npm run dev`            | Development server                         |
+| `npm run build`          | Production build                           |
+| `npm run lint`           | ESLint                                     |
+| `npm run format`         | Prettier across the repo                   |
+| `npm run format:check`   | Verify formatting without writing          |
+| `npm run db:generate`    | Generate a migration from the schema       |
+| `npm run db:migrate`     | Apply pending migrations                   |
+| `npm run db:smoke`       | Check the schema against a live database   |
+| `npm run images:smoke`   | Check the derivative pipeline and R2       |
+| `npm run url:smoke`      | Check the URL guards on `site_text`        |
+| `npm run search:smoke`   | Check search against a live database       |
+| `npm run takedown:smoke` | Check the takedown against the real bucket |
+| `npm run auth:smoke`     | Check the panel's boundary (app running)   |
+| `npm run admin:add`      | Put an email address on the allowlist      |
+| `npm run admin:list`     | Show who can enter the panel               |
+| `npm run admin:remove`   | Take an email address off the allowlist    |
 
 ## Workflow
 
@@ -126,6 +127,26 @@ stays cryptographically valid, but every panel request re-reads `app_user`.
 ```bash
 npm run admin:remove -- someone@gmail.com
 ```
+
+## Taking a photograph down
+
+When a neighbour asks for their photograph to be removed:
+
+1. **Panel → Fotografías**, find it (the search box takes a caption, a "Cortesía" or the
+   identifier), open it and press **Despublicar**.
+2. That deletes its web derivatives from R2 — its restoration's too, if it has one — so the image
+   stops answering at its URL the moment the panel answers. Its page takes **a couple of seconds**
+   to catch up: for about two more it still shows the copy the site had already built, then it
+   answers **410 Gone**. If you check the instant you press the button you will see the old page,
+   and that is the cache turning over, not a failure. It leaves the galleries and the search in the
+   same few seconds.
+3. **Nothing is lost.** The masters and every word of the research stay where they are, and
+   **Publicar** regenerates the derivatives from them at new addresses. The ones the takedown killed
+   never come back.
+4. **Google keeps its own copy for a while.** The 410 is what tells it to drop the page, and it
+   obeys on its next crawl. To hurry it, use the removal tool in Search Console
+   (<https://search.google.com/search-console/removals>) on the photograph's URL. That step is done
+   by hand and needs nobody from the outside.
 
 ## Security
 
@@ -197,23 +218,24 @@ npm run dev
 
 ## Scripts
 
-| Comando                | Qué hace                                 |
-| ---------------------- | ---------------------------------------- |
-| `npm run dev`          | Servidor de desarrollo                   |
-| `npm run build`        | Build de producción                      |
-| `npm run lint`         | ESLint                                   |
-| `npm run format`       | Prettier sobre todo el repo              |
-| `npm run format:check` | Verifica formato sin escribir            |
-| `npm run db:generate`  | Genera una migración desde el esquema    |
-| `npm run db:migrate`   | Aplica las migraciones pendientes        |
-| `npm run db:smoke`     | Verifica el esquema contra una base real |
-| `npm run images:smoke` | Verifica el pipeline de derivados y R2   |
-| `npm run url:smoke`    | Guards de URL de `site_text`             |
-| `npm run search:smoke` | Verifica la búsqueda en una base real    |
-| `npm run auth:smoke`   | Verifica el límite del panel (app viva)  |
-| `npm run admin:add`    | Agrega un correo a la lista blanca       |
-| `npm run admin:list`   | Muestra quién puede entrar al panel      |
-| `npm run admin:remove` | Saca un correo de la lista blanca        |
+| Comando                  | Qué hace                                        |
+| ------------------------ | ----------------------------------------------- |
+| `npm run dev`            | Servidor de desarrollo                          |
+| `npm run build`          | Build de producción                             |
+| `npm run lint`           | ESLint                                          |
+| `npm run format`         | Prettier sobre todo el repo                     |
+| `npm run format:check`   | Verifica formato sin escribir                   |
+| `npm run db:generate`    | Genera una migración desde el esquema           |
+| `npm run db:migrate`     | Aplica las migraciones pendientes               |
+| `npm run db:smoke`       | Verifica el esquema contra una base real        |
+| `npm run images:smoke`   | Verifica el pipeline de derivados y R2          |
+| `npm run url:smoke`      | Guards de URL de `site_text`                    |
+| `npm run search:smoke`   | Verifica la búsqueda en una base real           |
+| `npm run takedown:smoke` | Verifica la baja de fotos contra el bucket real |
+| `npm run auth:smoke`     | Verifica el límite del panel (app viva)         |
+| `npm run admin:add`      | Agrega un correo a la lista blanca              |
+| `npm run admin:list`     | Muestra quién puede entrar al panel             |
+| `npm run admin:remove`   | Saca un correo de la lista blanca               |
 
 ## Flujo de trabajo
 
@@ -275,6 +297,26 @@ siendo válida, pero cada request del panel vuelve a leer `app_user`.
 ```bash
 npm run admin:remove -- alguien@gmail.com
 ```
+
+## Dar de baja una fotografía
+
+Cuando un vecino pide que saquen su foto:
+
+1. **Panel → Fotografías**, buscala (el buscador toma el epígrafe, la "Cortesía" o el
+   identificador), abrila y apretá **Despublicar**.
+2. Eso borra sus derivadas de R2 —y las de su restauración, si tiene— así que la imagen deja de
+   responder en su URL apenas el panel contesta. La ficha tarda **un par de segundos** en ponerse al
+   día: durante unos dos más sigue mostrando la copia que el sitio ya tenía armada, y después
+   responde **410 Gone**. Si mirás en el instante en que apretás el botón vas a ver la página vieja,
+   y eso es la caché dándose vuelta, no una falla. Sale de las galerías y del buscador en esos
+   mismos segundos.
+3. **No se pierde nada.** Los masters y todo el trabajo de investigación quedan donde están, y
+   **Publicar** regenera las derivadas a partir de ellos, en direcciones nuevas. Las que mató la
+   baja no vuelven nunca.
+4. **Google se queda un tiempo con su copia.** El 410 es lo que le dice que la saque, y obedece en
+   el próximo rastreo. Para apurarlo, usá la herramienta de eliminación de Search Console
+   (<https://search.google.com/search-console/removals>) sobre la URL de la fotografía. Ese paso es
+   a mano y no necesita a nadie de afuera.
 
 ## Seguridad
 

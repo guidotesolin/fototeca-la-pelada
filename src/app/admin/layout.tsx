@@ -38,12 +38,17 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
               {/* The address, not the name: it is the address that is on the
                   allowlist, so it is the one worth showing. */}
               <span className="t-meta">{admin.email}</span>
-              <Link
+              {/* An anchor rather than `Link`, for the same reason as the one on
+                  the photo screen: a client navigation can serve the site from a
+                  five-minute-old client cache, and somebody leaving the panel to
+                  look at what they just changed must not be shown what it was. */}
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+              <a
                 href="/"
                 className="t-credit link hover:text-text focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 Ver el sitio
-              </Link>
+              </a>
               {/* A POST, so a prefetch or a crawler cannot sign anybody out. */}
               <form
                 action={async () => {

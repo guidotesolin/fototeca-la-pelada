@@ -47,6 +47,9 @@ export type PhotoDetail = PhotoCard & {
   yearTo: number | null
   /** An interpretation, never the document: the page opens on the original. */
   restoredWebKey: string | null
+  /** Its own, not the photograph's: it is derived from its own master. */
+  restoredWebWidth: number | null
+  restoredWebHeight: number | null
   categories: { slug: string; name: string }[]
 }
 
@@ -191,14 +194,45 @@ export const listSectionPhotos = unstable_cache(
   { tags: [GALLERY_TAG], revalidate: REVALIDATE },
 )
 
-/** Every published photo, for `generateStaticParams` on the detail page. */
+/**
+ * How many photographs each section holds, published or not, for
+ * `generateStaticParams` on the pagination route. Same reason as `listPhotoSlugs`
+ * below: that route is `dynamicParams = false`, its params are fixed at build
+ * time, and counting only the published ones means publishing the 25th photograph
+ * of a section makes the gallery render a "Siguiente" link to a page that has no
+ * route and answers 404 until somebody deploys.
+ */
+export const countSectionPhotos = unstable_cache(
+  async (): Promise<Record<string, number>> => {
+    const rows = await db
+      .select({ slug: category.slug, n: sql<number>`count(*)::int` })
+      .from(photoCategory)
+      .innerJoin(category, eq(category.id, photoCategory.categoryId))
+      .groupBy(category.slug)
+    return Object.fromEntries(rows.map((r) => [r.slug, r.n]))
+  },
+  ['section-photo-counts'],
+  { tags: [GALLERY_TAG], revalidate: REVALIDATE },
+)
+
+/**
+ * Every photograph in the archive, for `generateStaticParams` on the detail page.
+ *
+ * **Every one, not only the published ones**, and the difference is a bug T10
+ * measured. `generateStaticParams` runs at build time and never again, and the
+ * page sets `dynamicParams = false`, so a slug missing from this list has no
+ * route at all: publishing it from the panel writes the row, regenerates the
+ * derivatives, reports success -- and the page keeps answering 404 until somebody
+ * deploys. Listing an unpublished photograph costs one build-time render that
+ * ends in `notFound()`, and buys a path that revalidation can fill the moment it
+ * is published again.
+ *
+ * The list stays inside the archive either way, so an invented slug still costs
+ * nothing: it is not a route, and nothing reaches the database for it.
+ */
 export const listPhotoSlugs = unstable_cache(
   async (): Promise<string[]> => {
-    const rows = await db
-      .select({ slug: photo.slug })
-      .from(photo)
-      .where(eq(photo.published, true))
-      .orderBy(asc(photo.slug))
+    const rows = await db.select({ slug: photo.slug }).from(photo).orderBy(asc(photo.slug))
     return rows.map((r) => r.slug)
   },
   ['photo-slugs'],
@@ -225,6 +259,8 @@ export const getPhoto = unstable_cache(
         webWidth: photo.webWidth,
         webHeight: photo.webHeight,
         restoredWebKey: photo.restoredWebKey,
+        restoredWebWidth: photo.restoredWebWidth,
+        restoredWebHeight: photo.restoredWebHeight,
         categorySlug: category.slug,
         categoryName: categoryTranslation.name,
       })
