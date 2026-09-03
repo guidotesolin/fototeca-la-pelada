@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 import type { NextRequest } from 'next/server'
+import { clientKey, overLimit } from '@/lib/rate-limit'
 import { defaultLocale, isLocale, locales, splitLocale, switchHref } from '@/i18n/config'
 
 /**
@@ -31,6 +32,17 @@ import { defaultLocale, isLocale, locales, splitLocale, switchHref } from '@/i18
  * to every public path for the locale routing, so the guard moved from the
  * matcher into `takenDown` -- a gallery still pays nothing for the takedown list,
  * which is what the measurements below are about.
+ *
+ * ### The search rate limit, added in T14
+ *
+ * `/buscar` is the one public route rendered per request and therefore the one
+ * place the database is touched per visit, which is what _Security_ asks for a
+ * limit on. It goes here for the same reason the 410 does: a page cannot choose
+ * its status code, and 429 is a status code.
+ *
+ * It is charged only to `/buscar`, in any language. Every other public route is
+ * pre-rendered or ISR and answers from the CDN, so counting them would throttle
+ * a reader scrolling a gallery to protect a database they never reach.
  *
  * ### The locale routing, added in T13
  *
@@ -118,6 +130,19 @@ const MEMO_MS = 2_000
 /** A takedown list that will not answer must not hold up the archive behind it. */
 const REFRESH_TIMEOUT_MS = 1_500
 
+/**
+ * Searches one address may run in a minute.
+ *
+ * Thirty, and the number is set by who shares an address rather than by how fast
+ * a person types. Rural mobile data and a village put many readers behind one
+ * CGNAT address, so a limit tight enough to be interesting -- five, ten -- would
+ * be a whole school hitting 429 on a Tuesday. Thirty is far past anyone typing
+ * and still three orders of magnitude under a scraper walking the archive, which
+ * is the shape this is here to stop.
+ */
+const SEARCH_LIMIT = 30
+const SEARCH_WINDOW_MS = 60_000
+
 let memo: { at: number; slugs: Set<string> } | null = null
 
 /** The refresh in flight, so a page of prefetches asks once between them. */
@@ -157,15 +182,31 @@ function refresh(origin: string): Promise<void> {
   return refreshing
 }
 
-/** Plain and self-contained: the page's own chrome is three database reads away. */
-function gonePage(): string {
+/**
+ * Plain and self-contained: the page's own chrome is three database reads away,
+ * and neither of the two answers that use this is a page of the archive.
+ *
+ * Spanish in all four languages, which is the 410's own decision from T10 kept
+ * rather than revisited: localising it means the message files inside the proxy
+ * bundle, for two sentences nobody is meant to read.
+ *
+ * Both arguments are escaped even though both call sites pass a literal today.
+ * This used to take none -- T14 is what gave it parameters -- and the obvious next
+ * edit is naming the slug or the query in the message, which is the moment an
+ * unescaped template becomes the archive's only XSS. One line now beats finding
+ * that out later.
+ */
+const escapeHtml = (text: string): string =>
+  text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] as string)
+
+function plainPage(title: string, message: string): string {
   return `<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Fotografía retirada · Fototeca La Pelada</title>
+<title>${escapeHtml(title)} · Fototeca La Pelada</title>
 <style>
   html { color-scheme: dark }
   body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 2rem;
@@ -178,7 +219,7 @@ function gonePage(): string {
 </head>
 <body>
 <main>
-  <p>Esta fotografía fue retirada del archivo.</p>
+  <p>${escapeHtml(message)}</p>
   <p><a href="/">Ir al archivo</a></p>
 </main>
 </body>
@@ -246,10 +287,36 @@ async function takenDown(request: NextRequest): Promise<NextResponse | null> {
     if (!memo?.slugs.has(slug)) return null
   }
 
-  return new NextResponse(gonePage(), {
-    status: 410,
-    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
-  })
+  return new NextResponse(
+    plainPage('Fotografía retirada', 'Esta fotografía fue retirada del archivo.'),
+    {
+      status: 410,
+      headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+    },
+  )
+}
+
+/** The 429 for a search flood, or null when this is not one. */
+function searchFlood(request: NextRequest): NextResponse | null {
+  if (splitLocale(request.nextUrl.pathname).path !== '/buscar') return null
+  if (!overLimit(`s:${clientKey(request.headers)}`, SEARCH_LIMIT, SEARCH_WINDOW_MS)) return null
+
+  return new NextResponse(
+    plainPage(
+      'Demasiadas búsquedas',
+      'Demasiadas búsquedas seguidas. Probá de nuevo en un minuto.',
+    ),
+    {
+      status: 429,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        // Seconds, per RFC 9110. The window is fixed, so this is its length and
+        // not the time left in it -- which errs long, which is the safe way.
+        'retry-after': String(SEARCH_WINDOW_MS / 1000),
+        'cache-control': 'no-store',
+      },
+    },
+  )
 }
 
 /**
@@ -281,7 +348,9 @@ function switchLanguage(request: NextRequest): NextResponse | null {
 }
 
 export async function proxy(request: NextRequest) {
-  return switchLanguage(request) ?? (await takenDown(request)) ?? intl(request)
+  return (
+    switchLanguage(request) ?? searchFlood(request) ?? (await takenDown(request)) ?? intl(request)
+  )
 }
 
 /**

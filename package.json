@@ -17,6 +17,8 @@
     "slug:smoke": "tsx tools/slug-smoke.ts",
     "search:smoke": "tsx --conditions=react-server tools/search-smoke.ts",
     "i18n:smoke": "tsx tools/i18n-smoke.ts",
+    "ratelimit:smoke": "tsx tools/ratelimit-smoke.ts",
+    "secrets:smoke": "tsx tools/secrets-smoke.ts",
     "takedown:smoke": "tsx tools/takedown-smoke.ts",
     "drive:smoke": "tsx --conditions=react-server tools/drive-smoke.ts",
     "home:smoke": "tsx tools/home-smoke.ts",

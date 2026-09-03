@@ -5,6 +5,7 @@ import { requireAdmin } from '@/lib/auth'
 import { keyFor, publicUrl } from '@/lib/photo'
 import { Back, BUTTON, Check, FIELD, Field, Notice, Row, one } from '../../ui'
 import { attachRestoration, removeRestoration, saveDetails, setPublished } from '../actions'
+import { TakedownHelp } from '../../takedown-help'
 import { FilePicker } from '../file-picker'
 
 /**
@@ -185,6 +186,11 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
             {photo.published ? 'Despublicar' : 'Publicar'}
           </button>
         </form>
+
+        {/* Only while it is hidden, because only then is there something left to
+            do. On a published photograph this would be a panel announcing a next
+            step that does not exist, which is how a panel teaches you to ignore it. */}
+        {!photo.published && <TakedownHelp slug={photo.slug} />}
       </section>
 
       <section className="mt-14">

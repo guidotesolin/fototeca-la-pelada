@@ -760,7 +760,7 @@ depends on -- so `published` is something only the site reads, and hiding is inv
 holding the file's address. Nothing links it once the photograph is hidden, and the keys carry a
 random component so it cannot be guessed or walked, but a link written down before still resolves.
 
-So **hiding is not a takedown**, and the `/sobre` page invites takedown requests. The gap is real
+So **hiding is not a takedown**, and the footer invites takedown requests on every page. The gap is real
 and it is not closable in application code: honouring one means the bucket refusing to serve the
 object, which is bucket configuration -- the same change F16 and F35 already carry into T14, where
 `masters/` comes off the public domain. Until that exists, a neighbour who asks for their photograph
@@ -876,15 +876,61 @@ Two technical consequences that must be decided before writing code, not after:
   by anyone who wrote the URL down. Closing it means keeping both prefixes off the public domain,
   which is bucket configuration rather than code, and it belongs with F16 and F35 in T14.
 - **Google keeps cached copies.** Unpublishing does not remove it from the index immediately; that
-  needs the Search Console removal tool. It is procedure, not code, and it should be written down
-  so the brothers can do it without the maintainer.
+  needs the Search Console removal tool. It is procedure, not code, and T14 wrote it down **in the
+  panel**, in Spanish: `src/app/admin/takedown-help.tsx`, a collapsed `<details>` inside
+  _Publicación_ on the photograph's own screen, drawn **only while the photograph is hidden**. It
+  took two moves to get there. It was first `docs/OPERACIONES.md`, which Lautaro and Marcos have no
+  way of reaching; then a block on the panel's home, which they reach and would never think to open.
+  On the photograph it appears at the one moment there is something to do about it, and it can do
+  what neither earlier version could: **print this photograph's own address**, built from
+  `SITE_URL` exactly as the sitemap's are, so it is the string to paste rather than an example to
+  adapt. **There is no second copy**: this bullet points at that file rather than repeating it.
 
-The `/sobre` page carries the contact address (fototecalp@gmail.com) with an explicit line on how
-to request a correction or a takedown.
+**There is no `/sobre` page, and that is a decision rather than a gap.** It sat in the repository
+layout from the beginning, no card ever built it, and T6 removed the only link to it -- so what was
+being planned was a page nothing reached, to carry a promise that has to reach everybody. The
+contact address (fototecalp@gmail.com) is in the **footer of every page**, read from
+`site_text.contact`, which is strictly more reach than the page would have had.
+
+What the footer does not yet say is the sentence: that this is also the address to write to for a
+correction or a takedown. That belongs in `site_text.rights_notice`, which sits in the same footer
+and which the panel edits **without a deploy** -- so it is the authors' own wording, theirs to write
+and to change, which is the rule the whole design is organised by: what is content lives in the
+database. Until somebody writes it, the invitation is an email address and not an invitation, which
+is F49.
 
 **A result set is not a page of the archive.** Everything above is about the photographs, which are
 indexed. `/buscar` itself carries `noindex, follow`: an open search box is unbounded URL space, and
 what should be found is the photograph, not the query that reached it.
+
+### The sitemap and robots.txt, as built in T14
+
+`app/sitemap.ts` lists **only published photographs and visible sections**, which is the one line
+that separates its query from the two beside it: `listPhotoSlugs` and `countSectionPhotos` feed
+`generateStaticParams` and deliberately include what is hidden, so a photograph published from the
+panel already has a pre-rendered page. A sitemap is the opposite promise -- it is what the archive
+tells Google to come and fetch -- and a hidden photograph's page answers 410. `listPublicPaths` in
+`db/queries/gallery.ts` is that query, and it carries `GALLERY_TAG` like every other public read, so
+unpublishing drops the sitemap entry with the same `revalidateTag` that drops the gallery.
+
+**Every address is listed once per language, and each entry carries all four `hreflang` links plus
+`x-default`.** That is the shape Google documents: an entry has to name every version _including
+itself_, and a version with no entry of its own has no return link from the sitemap. It comes to
+**2,492 entries** -- 623 addresses (the home page, 30 galleries, 592 photographs) times four --
+against Google's 50,000 limit, so `generateSitemaps` would be ceremony. The pages already emit the
+same set in `<head>` through `alternatesFor`, and both are built from `locales` and `localeHref`,
+which is what stops the two from disagreeing.
+
+No `lastModified`: `photo` has no `updated_at`, and a column, a migration and a write in every panel
+action to fill a field Google treats as a hint is not a trade this archive should make. No
+`changeFrequency` and no `priority` either, for the simpler reason that Google has said publicly it
+ignores both.
+
+`robots.txt` allows everything except `/admin` and `/api`, and the interesting line is the one that
+is **not** there: `/buscar` is deliberately crawlable. It carries `noindex, follow` in its own
+metadata, and a crawler has to be allowed to fetch the page to read that -- disallowing it would
+hide the `noindex` and leave Google free to index the address anyway from links pointing at it.
+`follow` is the other half, since the results are a path to photographs that should be indexed.
 
 **No people table: search is enough.** Names live inside captions as loose text, and people and
 places coexist there — "María Luisa" is a locality, not a person. A `person` table built from
@@ -930,6 +976,192 @@ Security beyond keys:
   is not enough.
 - **CSP and security headers**, allowing only our own image domain.
 - **Rate limiting** on write endpoints and on search.
+
+### The headers, as built in T14
+
+They are set in `next.config.ts` under `source: '/:path*'`, and each half of that is a decision.
+`headers()` rather than `proxy.ts`, because Next's own documentation calls
+`NextResponse.next({ headers })` bad practice -- it can override `Content-Type` and break server
+actions and streaming -- and because headers declared here are applied **before the filesystem**, so
+a pre-rendered page served straight off the CDN carries them too, which is nearly this whole site.
+`'/:path*'` and not `'/(.*)'`, because `*` is zero-or-more and that is what also matches `/`.
+
+| Header                      | Value                                                                   | What it closes                                      |
+| --------------------------- | ----------------------------------------------------------------------- | --------------------------------------------------- |
+| `Content-Security-Policy`   | see below                                                               | Where scripts, images, frames and form posts may go |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains`                                   | A downgrade to http on the apex and on `img.`       |
+| `X-Content-Type-Options`    | `nosniff`                                                               | A rendition sniffed into something executable       |
+| `Referrer-Policy`           | `strict-origin-when-cross-origin`                                       | A photograph's full path leaking to another site    |
+| `X-Frame-Options`           | `DENY`                                                                  | `frame-ancestors` again, for browsers that lack it  |
+| `Permissions-Policy`        | camera, microphone, geolocation, payment, usb, browsing-topics all `()` | Capabilities the archive never asks for             |
+
+`preload` is deliberately **not** on the HSTS header. The preload list is a one-way door that takes
+months to leave, and a year of `max-age` over the apex and the image subdomain is the whole of what
+this archive needs. `X-Frame-Options` is redundant with `frame-ancestors` on any current browser and
+is kept anyway, because _Mobile first_ is written for old embedded WebViews and that is exactly
+where it is the only one of the two that lands.
+
+The policy:
+
+```
+default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none';
+form-action 'self' https://accounts.google.com;
+img-src 'self' data: <NEXT_PUBLIC_IMAGE_BASE_URL>;
+font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';
+connect-src 'self'; frame-src https://maps-api-ssl.google.com https://maps.google.com https://www.google.com
+```
+
+Four things in it are load-bearing and were checked against the running build rather than reasoned
+about:
+
+- **`img-src` is built from `NEXT_PUBLIC_IMAGE_BASE_URL`**, the same variable the `<img>` tags are
+  built from, so the header follows the bucket from `pub-….r2.dev` to `img.fototecalapelada.com.ar`
+  with no second place to remember.
+- **`frame-src` is built from `MAP_HOSTS` in `src/lib/url.ts`**, the same list `mapEmbedUrl`
+  enforces. Two copies of one fact is how one of them goes stale, and the failure would be silent:
+  a pin moved to a host the guard allows and the header does not renders an empty frame and no
+  error anybody would look for.
+- **`font-src 'self'` is enough**, because `next/font/google` downloads the files at build time and
+  serves them from `/_next/static/media`. Verified: the build contains the `.woff2` files and no
+  reference to `fonts.gstatic.com` anywhere, and the rendered page carries no external stylesheet.
+- **`/admin` gets one extra source and nothing else**: `https://*.googleusercontent.com` in
+  `img-src`, for the thumbnails the Drive import picker shows straight from Drive. A wildcard rather
+  than the `lh3.` the code comment names, because Drive hands out `thumbnailLink` on whichever
+  `googleusercontent.com` host it likes and a pinned subdomain would break the picker one day with
+  an empty square. It is a second `headers()` entry placed **after** the general one, since when two
+  rules set the same key the last match wins -- checked with a real request, because "last wins" is
+  the kind of documented behaviour that is worth one `curl`.
+
+**`script-src` carries `'unsafe-inline'`, and that is the honest cost of the pre-rendering.** Next's
+CSP guide offers two shapes. The nonce is generated in the proxy and read with `headers()`, which
+its own documentation says **forces dynamic rendering on every page** -- the whole pre-rendered
+archive rendered per request, which is the cross-cutting decision this project rests on, traded for
+a header. The other is `script-src 'self' 'unsafe-inline'` in `next.config.ts`, which is what this
+is. `experimental.sri` is a third option and a third experimental flag, and it still would not cover
+the archive's own inline script: the one in the public layout that puts `show-sensitive` on `<html>`
+before first paint, which exists precisely so that no round trip happens before the veil is decided.
+Verified that it is load-bearing rather than assumed -- with the policy live, the class is on
+`<html>` after a reload, so a strict policy would silently take the sensitive-content preference
+away.
+
+What the policy still buys with `'unsafe-inline'` in it is most of the value: no external script
+host, no `eval` in production, no plugins, no framing, no form posting anywhere but here and
+Google's sign-in, and images from nowhere but the archive's own bucket. And the injection it gives
+up on is the one this site has least of -- nothing renders user HTML, React escapes every string,
+and the two fields that reach an `href` or an `<iframe src>` go through `src/lib/url.ts` first.
+`style-src` carries it for two reasons that are not going away either: `experimental.inlineCss`
+turns every stylesheet into a `<style>` tag on purpose, and React writes `style` attributes for the
+per-photo `aspect-ratio` that keeps CLS at zero. `'unsafe-eval'` is added in **development only**,
+which is Next's own instruction.
+
+### The rate limiting, as built in T14
+
+A fixed-window counter in memory, `src/lib/rate-limit.ts`, in the two places _Security_ names and
+nowhere else. F31 is what it closes.
+
+- **Search: 30 a minute per address**, answered with 429 and `Retry-After` from `proxy.ts` -- the
+  same reason the 410 lives there, that a page cannot choose its status code. It is charged only to
+  `/buscar`, in any of the four languages: every other public route is pre-rendered or ISR and
+  answers from the CDN, so counting them would throttle a reader scrolling a gallery to protect a
+  database they never reach. Thirty is set by **who shares an address** rather than by how fast
+  anybody types -- rural mobile data and a village put many readers behind one CGNAT address, so a
+  tighter limit is a school hitting 429 on a Tuesday -- and it is still three orders of magnitude
+  under a scraper.
+- **Panel writes: 60 a minute per administrator**, in `outcome()` in `src/app/admin/write.ts`, which
+  is the one function every write in the panel already passes through for its revalidation. One
+  guard covers all ten actions and no future action can be added without it. Keyed by administrator
+  rather than by address, because these endpoints are behind `requireAdmin()` so there is a name to
+  charge it to. Sixty is set by the only thing in the panel that writes in a loop, the Drive import,
+  which brings one photograph per request at seconds each and so lands nearer twenty.
+
+**What it does not do, stated plainly: it counts per instance.** Serverless runs as many copies as
+it likes, so a limit of N is N per instance and a flood spread across cold starts is barely slowed.
+The way out is a shared counter with an atomic increment, and the reason it is not here is that a
+KV store is a dependency, an account and a variable to lose for an archive whose search reaches a
+query cache before it reaches Neon. What this buys is the case it was asked for -- one client, one
+loop, thousands of distinct queries -- and that one a `Map` stops. `npm run ratelimit:smoke` covers
+the counter itself, including the bounded-memory cap: a limiter that grows a `Map` without bound is
+a better denial of service than the one it prevents.
+
+### Verifying the bundle, as built in T14
+
+`npm run secrets:smoke` is ARCHITECTURE's own instruction -- "grep the generated client files for
+any key" -- made repeatable, because it is the one check whose failure is unrecoverable: the
+repository is public and a bundle is served to everyone. It reads the **real values** out of
+`.env.local` and searches for them, which is the only version worth running, since reasoning about
+which variables Next inlines is exactly the reasoning `NEXT_PUBLIC_` exists to make unnecessary.
+
+Three shapes of each secret are searched -- raw, JSON-escaped and URI-encoded -- and the Drive
+service account is additionally decoded so its `private_key`, `private_key_id` and `client_email`
+are searched too, since a leak of the JSON would not match the variable's own base64. "The client"
+is both `.next/static` and the prerendered `.html`/`.rsc`/`.body` responses under `.next/server/app`.
+The server's own chunks are reported and never failed on: a value there is a secret doing its job.
+
+It also asserts the run was not vacuous, which is the way a check like this fails quietly: the two
+`NEXT_PUBLIC_` values **must** appear in the client files, or the build was made without them and
+the scan was searching a bundle that is not the one production serves. Measured on this build:
+4,682 client files, 12 secrets, zero hits, and both public values present.
+
+---
+
+## Production
+
+Everything in this section is configured at a platform rather than in the repository, which is why
+it is written down: none of it is visible in a diff, and the maintainer is not the only person who
+should be able to find it.
+
+### Domains
+
+| Address                       | Serves             | Where it points                                                                                                                                   |
+| ----------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fototecalapelada.com.ar`     | The archive        | Vercel. This is the canonical origin and the value of `NEXT_PUBLIC_SITE_URL`, so it is what every address in the sitemap is written with.         |
+| `www.fototecalapelada.com.ar` | Nothing of its own | Vercel, redirecting to the apex. Somebody will type it; one address per page is the whole point of the permalink.                                 |
+| `img.fototecalapelada.com.ar` | The renditions     | Cloudflare R2 as the bucket's custom domain. `NEXT_PUBLIC_IMAGE_BASE_URL`, and therefore also the one non-`'self'` source in the CSP's `img-src`. |
+
+The `.com.ar` is registered at NIC Argentina and is the only recurring cost in the project. It is
+billed yearly, and it is the one item on this page that stops working on a date rather than on a
+change: put the renewal somewhere that is not one person's memory.
+
+**`pub-….r2.dev` is turned off once `img.` answers.** It is R2's development URL, it exposes the
+bucket at a second public address, and while it is on there are two ways to reach every rendition
+and only one of them is in the CSP. That is F16.
+
+**`masters/` is kept off the public domain**, which is F35 and the amendment's unfinished half. The
+bucket holds two prefixes -- `photos/` for the renditions and `masters/` for the 592 copies rescued
+from Sites -- and nothing in the application ever links a master. It is not application code that
+can close this: the bucket serves images directly, which is the free-egress design a gallery depends
+on, so `published` is something only the site reads. The mechanism is an edge rule on the custom
+domain that blocks `/masters/` and answers 404. Until it exists, a master is reachable by anyone who
+wrote its URL down, and _Exposure, indexing and takedown on request_ is where that is stated in full.
+
+### Environment variables
+
+They live in Vercel's project settings. The repository carries only `.env.example`, with names and
+obviously fake values, and `npm run secrets:smoke` is what proves none of the server ones reached
+the bundle.
+
+| Variable                                                                    | In Vercel | Same as development?                                                                                                                                                            |
+| --------------------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                                                      | yes       | **No** -- `https://fototecalapelada.com.ar`                                                                                                                                     |
+| `NEXT_PUBLIC_IMAGE_BASE_URL`                                                | yes       | **No** -- `https://img.fototecalapelada.com.ar`                                                                                                                                 |
+| `DATABASE_URL`                                                              | yes       | Same Neon project, pooled string                                                                                                                                                |
+| `AUTH_SECRET`                                                               | yes       | **No** -- a second `openssl rand -base64 32`, never the development one                                                                                                         |
+| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET`                                     | yes       | Same OAuth client, with the production redirect URI added to it                                                                                                                 |
+| `AUTH_URL`                                                                  | **no**    | Auth.js detects the origin on Vercel. It is set locally because `npm run start` is not Vercel and Auth.js will not trust the `Host` header on a platform it does not recognise. |
+| `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` | yes       | Same bucket                                                                                                                                                                     |
+| `GOOGLE_SERVICE_ACCOUNT_JSON_BASE64`                                        | yes       | Same key. **Base64 of the JSON, never the JSON file**, and never in the repository -- it is decoded in memory by `src/lib/drive.ts`.                                            |
+| `GOOGLE_DRIVE_MASTERS_FOLDER_ID`                                            | yes       | Same folder                                                                                                                                                                     |
+
+The two `NEXT_PUBLIC_` values are the only ones that reach the browser, and both are public by
+definition: the address readers type and the address their browser fetches images from. Nothing else
+may ever carry that prefix.
+
+### Google OAuth
+
+The production redirect URI is `https://fototecalapelada.com.ar/api/auth/callback/google`, added to
+the **same** OAuth client the development one uses rather than to a second client -- a second client
+is a second pair of secrets to rotate for no gain, and Google accepts several redirect URIs on one.
+The localhost URI stays, because that is how the panel is developed.
 
 ---
 
@@ -1016,18 +1248,20 @@ fototeca-la-pelada/
 │   │   │   ├── categoria/[slug]/
 │   │   │   ├── foto/[slug]/
 │   │   │   ├── buscar/
-│   │   │   ├── creditos/
-│   │   │   └── sobre/
+│   │   │   └── creditos/         #   planned, never built (F13); `/sobre` was dropped
 │   │   ├── admin/                 # dynamic, authenticated, Spanish strings
 │   │   │   ├── layout.tsx         #   the second ROOT layout: <html lang="es">
 │   │   │   ├── photos/
 │   │   │   ├── import/
 │   │   │   ├── categories/
 │   │   │   ├── site-text/
-│   │   │   └── translations/      #   what is still untranslated, per language
-│   │   └── api/
+│   │   │   ├── translations/      #   what is still untranslated, per language
+│   │   │   └── takedown-help.tsx  #   the Search Console half of a takedown, shown on a hidden photo
+│   │   ├── api/
+│   │   ├── sitemap.ts             # published photographs only, ×4 languages with hreflang
+│   │   └── robots.ts
 │   ├── db/{schema.ts,index.ts,queries/}
-│   ├── lib/{auth.ts,drive.ts,images.ts,r2.ts}
+│   ├── lib/{auth.ts,drive.ts,images.ts,r2.ts,rate-limit.ts,url.ts}
 │   ├── components/                # document.tsx is the two root layouts' shared half
 │   ├── proxy.ts                   # locale routing + the takedown 410 + the language switch
 │   └── i18n/
@@ -1037,7 +1271,8 @@ fototeca-la-pelada/
 ├── drizzle/                       # migrations
 ├── tools/
 │   ├── extract-sites.py           # archive rescue
-│   └── seed.ts                    # archive.json → Postgres + R2
+│   ├── seed.ts                    # archive.json → Postgres + R2
+│   └── *-smoke.ts                 # one runnable check per risky piece; secrets-smoke greps the build
 └── archive/                       # raw rescue: permanent backup, never deleted
     ├── archive.json               # the metadata: versioned, it is the research work
     └── originals/                 # the image files: gitignored, ~105 MB
@@ -1130,7 +1365,23 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
 - **Panel**: sign in with an account outside the allowlist and confirm rejection; import a test
   Drive folder, re-import it and confirm the counts do not move, and unpublish and republish one of
   the imported photographs — that last one is what proves the master is readable from Drive.
-- **Security**: grep the generated client files for any key; run `gitleaks` over the full history.
+- **Security**: `npm run build && npm run secrets:smoke`, which greps the generated client files for
+  the real value of every server variable; run `gitleaks` over the full history. Then, against the
+  production build rather than `next dev`, because the two do not behave the same: **request the
+  headers** and read them off the response, on a pre-rendered page, on `/buscar`, on a static asset
+  and on `/admin` -- the last one to confirm it gets the extra image source and the others to
+  confirm they do not. Then **load the home page in a browser** and confirm the console is clean,
+  the map iframe rendered, the Alegreya faces loaded from `/_next/static/media` and no image broken:
+  a CSP that blocks the map or the fonts fails silently everywhere except there. Then reload with the
+  sensitive preference set and confirm `show-sensitive` is on `<html>`, which is the inline script
+  the policy has to keep working.
+- **Rate limiting**: `npm run ratelimit:smoke` for the counter, then against the build: 31 searches
+  in a minute from one client, expecting 30 × 200 and then 429 with `Retry-After`, and a gallery and
+  a photo page in the middle of it expecting 200 -- the limit is on the database, not on reading.
+- **Sitemap**: count the `<url>` entries and the distinct photograph slugs, and confirm the number
+  matches `select count(*) from photo where published` and not `count(*)`. Then look for an
+  unpublished slug by name and confirm it is absent, and for `/buscar` and confirm the same. Then
+  read one entry in full: four `hreflang` links plus `x-default`, all absolute.
 
 ---
 

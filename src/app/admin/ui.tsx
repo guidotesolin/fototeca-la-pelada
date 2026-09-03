@@ -114,6 +114,11 @@ export const FAILED: Record<string, string> = {
   'archivo-grande':
     'La primera fotografía por importar de esa carpeta pasa los 40 MB. Sacala de la carpeta en Drive para poder seguir con el resto.',
 
+  // F31's rate limit, from `write.ts`. Only the Drive import can get near it, so
+  // the wording points at waiting rather than at anything being wrong.
+  'demasiado-rapido':
+    'Demasiados cambios seguidos. Esperá un minuto y seguí: no se perdió nada de lo anterior.',
+
   interno: 'No se pudo completar la operación. Probá de nuevo.',
 }
 

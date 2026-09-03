@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata, Viewport } from 'next'
 import { archiveFacts, listSections, listSiteText } from '@/db/queries/gallery'
-import { externalUrl } from '@/lib/url'
+import { SITE_URL, externalUrl } from '@/lib/url'
 import { Document, THEME_COLOR } from '@/components/document'
 import { MenuDismiss } from '@/components/menu-dismiss'
 import { SensitiveSwitch } from '@/components/sensitive-switch'
@@ -50,7 +50,7 @@ export async function generateMetadata(props: LayoutProps<'/[locale]'>): Promise
   const t = await getTranslations({ locale, namespace: 'meta' })
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+    metadataBase: new URL(SITE_URL),
     title: { default: 'Fototeca La Pelada', template: '%s · Fototeca La Pelada' },
     description: t('description'),
   }
