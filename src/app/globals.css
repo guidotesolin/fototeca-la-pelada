@@ -313,27 +313,108 @@ body {
   transform: rotate(180deg);
 }
 
-/* Right-anchored at every width: the hamburger sits at the right end of the bar on
-   a phone and the word does on desktop, so the panel always grows leftward. The
-   max-width is what keeps it inside a 375 px screen. */
+/*
+ * The sections panel spans the bar. `position: static` on the `<details>` hands the
+ * containing block up to `body > header`, which is positioned by the `body > *` rule
+ * further down -- so the panel measures itself against the bar rather than against
+ * the word that opens it, and eleven sections lay out in four columns instead of one.
+ *
+ * It floats over the page rather than pushing it down, which the flow version would
+ * need: `<details>` cannot be split around the bar, and wrapping the whole bar in
+ * one would make every pixel of it a toggle. The panel is opaque and carries the
+ * bar's own hairline underneath, so it reads as the bar having grown.
+ */
+.menu-wide {
+  position: static;
+}
+
+.menu-panel-wide {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-rule);
+  box-shadow: 0 16px 40px oklch(from var(--color-ground) l c h / 0.7);
+}
+
+/* The settings panel, which stays a dropdown: it is a form, not an index, and it
+   belongs under the control it answers to. Right-anchored, so it never leaves the
+   viewport; the max-width is what keeps it inside a 375 px screen. It outranks the
+   sections panel, which `name` on the two `<details>` should already have closed --
+   the z-index is what an old WebView that ignores `name` falls back on. */
 .menu-panel {
   position: absolute;
   top: calc(100% + 12px);
   right: 0;
+  width: 330px;
   max-width: calc(100vw - 32px);
-  z-index: 1;
-  min-width: 232px;
-  max-height: min(70vh, 520px);
-  overflow-y: auto;
-  padding: 6px 0;
+  z-index: 3;
+  padding: 18px;
   background-color: var(--color-surface);
   box-shadow:
     inset 0 0 0 1px oklch(from var(--color-rule) l c h / 0.9),
-    0 16px 40px oklch(from var(--color-ground) l c h / 0.7);
+    0 18px 44px oklch(from var(--color-ground) l c h / 0.75);
+}
+
+/* Under 640 the gear is not the last thing in the row -- the hamburger is -- so a
+   panel hung off it ends 30 px short of the margin on one side and off the screen
+   on the other. Below that width both menus measure against the bar instead, and
+   the panel takes the page's own right margin. */
+@media (max-width: 639.98px) {
+  .menu {
+    position: static;
+  }
+
+  .menu-panel {
+    right: 16px;
+  }
+}
+
+/*
+ * The one switch on the site. A `<button role="switch">`, so the keyboard and the
+ * screen reader get it for free; the knob is a `::before` rather than a span,
+ * because a control whose only child is decoration should not have to ship one.
+ * `translate` and not `justify-content`, which does not animate.
+ */
+.switch {
+  flex: none;
+  width: 44px;
+  height: 26px;
+  padding: 3px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background-color: oklch(from var(--color-text) l c h / 0.16);
+  transition: background-color 200ms ease;
+}
+
+.switch::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--color-text);
+  transition: translate 200ms ease;
+}
+
+.switch[aria-checked='true'] {
+  background-color: var(--color-accent);
+}
+
+.switch[aria-checked='true']::before {
+  translate: 18px 0;
+  background-color: var(--color-ground);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .menu-caret {
+  .menu-caret,
+  .switch,
+  .switch::before {
     transition: none;
   }
 }
@@ -393,6 +474,24 @@ body {
 .reveal[open] ~ figure img {
   filter: none;
   scale: none;
+}
+
+/*
+ * The same lift, asked for once for the whole archive from the header's settings
+ * panel (see components/sensitive-switch.tsx). Unlayered like the rules above, so
+ * it wins over `blur-[9px]` and `scale-110` whatever the specificity.
+ *
+ * The warning on a photo page stays -- it is the context the caption is read in --
+ * but its control goes: there is nothing left for it to reveal.
+ */
+.show-sensitive .sensitive-blur {
+  filter: none;
+  scale: none;
+}
+
+.show-sensitive .sensitive-veil,
+.show-sensitive .reveal-action {
+  display: none;
 }
 
 /*

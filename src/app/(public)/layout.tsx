@@ -2,7 +2,22 @@ import Link from 'next/link'
 import { archiveFacts, listSections, listSiteText } from '@/db/queries/gallery'
 import { externalUrl } from '@/lib/url'
 import { MenuDismiss } from '@/components/menu-dismiss'
+import { SensitiveSwitch } from '@/components/sensitive-switch'
 import logo from '@/brand/header-logo.png'
+
+/**
+ * The four languages of `locale` in the schema, in the panel's own order. Codes
+ * here and not in the database: which languages the site has is a matter of what
+ * has been built, not of what has been translated. T13 gives each one a href.
+ */
+const LOCALES = [
+  { code: 'es', label: 'ESP' },
+  { code: 'en', label: 'ENG' },
+  { code: 'fr', label: 'FRA' },
+  { code: 'it', label: 'ITA' },
+]
+
+const CURRENT_LOCALE = 'es'
 
 /**
  * The three marks, drawn from primitives instead of pasted brand paths. This design
@@ -83,6 +98,19 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
 
   return (
     <>
+      {/* The reader's own answer to the veil, read before anything paints so a
+          reader who already lifted it never watches the blur come off. `try`
+          because a private window throws on the first `localStorage` touch, and a
+          throw here would take the rest of the document with it. The failure is
+          the safe one either way: no class, so the photographs stay covered. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html:
+            "try{if(localStorage.getItem('sensitive'))" +
+            "document.documentElement.classList.add('show-sensitive')}catch(e){}",
+        }}
+      />
+
       {/* The stacking that lets the menu open over the page lives in globals.css,
             on `body > header`; see the note there. */}
       <header className="border-rule border-b">
@@ -108,15 +136,24 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
             </span>
           </Link>
 
-          <div className="flex min-w-0 items-center gap-3 sm:gap-7">
+          {/* DOM order is the desktop order — sections, search, settings. On a phone
+              the sections trigger is sent to the end with `order-last`, which puts the
+              row in the order a thumb reaches it: field, settings, hamburger. */}
+          <div className="flex min-w-0 items-center gap-2 sm:gap-6">
             <nav
               aria-label="Principal"
               className="order-last flex shrink-0 items-center sm:order-none"
             >
               {/* One `<details>` for both: a hamburger on a phone, the word from
                     640 up. Two summaries would ship the section list twice. */}
-              <details className="menu">
-                <summary className="t-credit link hover:text-text focus-visible:outline-focus flex items-center gap-1.5 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2">
+              {/* `name` makes the two panels an exclusive accordion in the browser
+                    itself. Without it the mutual exclusion lived only in the pointer
+                    handler, so a keyboard could open both at once and the settings
+                    dropdown painted over the section links underneath it. An old
+                    WebView ignores the attribute and degrades to exactly that, which
+                    is what makes it safe here. */}
+              <details name="header" className="menu menu-wide">
+                <summary className="t-credit link hover:text-text focus-visible:outline-focus flex h-11 items-center gap-1.5 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-auto">
                   <span className="sr-only sm:not-sr-only">Secciones</span>
                   <svg
                     width="22"
@@ -146,23 +183,32 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
                     <path d="M5 9l7 7 7-7" />
                   </svg>
                 </summary>
-                <ul className="menu-panel">
-                  {sections.map((section) => (
-                    <li key={section.slug}>
-                      <Link
-                        href={`/categoria/${section.slug}`}
-                        className="t-credit link hover:text-text focus-visible:outline-focus flex items-baseline justify-between gap-6 px-3 py-2 focus-visible:outline-2 focus-visible:-outline-offset-2"
-                      >
-                        {section.name}
-                        <span className="t-meta shrink-0">{section.photos}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                {/* The panel spans the bar instead of hanging off the word: eleven
+                      sections in four columns are read at a glance, where a 232 px
+                      column made them a scroll. The list keeps the page's own
+                      margins, so the columns land under the content and not under
+                      the viewport. */}
+                <div className="menu-panel-wide">
+                  <ul className="max-w-content mx-auto grid w-full grid-cols-2 gap-x-4 px-4 py-3 sm:grid-cols-3 sm:gap-x-8 sm:px-6 sm:py-5 lg:grid-cols-4">
+                    {sections.map((section) => (
+                      <li key={section.slug}>
+                        <Link
+                          href={`/categoria/${section.slug}`}
+                          className="t-credit link hover:bg-surface-high hover:text-text focus-visible:outline-focus flex min-h-11 items-baseline justify-between gap-4 px-3 py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2"
+                        >
+                          {section.name}
+                          <span className="t-meta shrink-0">{section.photos}</span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </details>
-              {/* Escape and a press outside close it. `<details>` has no light
-                    dismiss of its own; this attaches the two listeners and renders
-                    nothing, so the section list stays out of the bundle. */}
+              {/* Escape, a press outside, and a navigation close it. `<details>`
+                    has no light dismiss of its own; this attaches the listeners and
+                    renders nothing, so the section list stays out of the bundle. It
+                    finds every `details.menu`, so the settings panel below is covered
+                    too. */}
               <MenuDismiss />
             </nav>
 
@@ -206,6 +252,70 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
                 </svg>
               </button>
             </form>
+
+            {/* Only where there is room for the two groups to read as two: on a
+                  phone the icons are far enough apart already. */}
+            <span className="bg-rule hidden h-6 w-px shrink-0 sm:block" aria-hidden />
+
+            <details name="header" className="menu shrink-0">
+              <summary className="t-credit link hover:text-text focus-visible:outline-focus flex h-11 items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2">
+                <span className="sr-only sm:not-sr-only sm:text-[15px]">Ajustes</span>
+                {/* A gear drawn as a hub and eight teeth rather than a toothed
+                      outline: at 20 px the outline's notches close up into a dark
+                      ring, the same legibility test the footer's marks were drawn
+                      to. Same stroke as those, so the whole set matches. */}
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.1}
+                  strokeLinecap="round"
+                  aria-hidden
+                  className="shrink-0"
+                >
+                  <circle cx="12" cy="12" r="4.8" />
+                  <path d="M12 4.3v2.9M12 16.8v2.9M19.7 12h-2.9M4.3 12h2.9M15.39 8.61 17.44 6.56M8.61 15.39 6.56 17.44M15.39 15.39 17.44 17.44M8.61 8.61 6.56 6.56" />
+                </svg>
+              </summary>
+
+              <div className="menu-panel">
+                <p className="t-label">Idioma</p>
+                {/* Stated, not offered: the archive is in Spanish until T13 puts
+                      `/[locale]` under these, and a control that changes nothing is
+                      worse than one that says so. T13 turns them into links. */}
+                <div className="mt-3 flex gap-1.5" role="group" aria-label="Idioma">
+                  {LOCALES.map(({ code, label }) => (
+                    <button
+                      key={code}
+                      type="button"
+                      disabled
+                      aria-pressed={code === CURRENT_LOCALE}
+                      className={`flex-1 border py-2 font-sans text-[14px] ${
+                        code === CURRENT_LOCALE
+                          ? 'border-accent text-accent bg-surface-high'
+                          : 'border-rule text-muted'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="border-rule mt-5 flex items-start justify-between gap-4 border-t pt-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-text font-sans text-[15px] leading-none">
+                      Contenido sensible
+                    </span>
+                    <span className="text-muted font-sans text-[12.5px] leading-snug">
+                      Muestra sin difuminar las fotografías con imágenes de faena de animales.
+                    </span>
+                  </div>
+                  <SensitiveSwitch />
+                </div>
+              </div>
+            </details>
           </div>
         </div>
       </header>

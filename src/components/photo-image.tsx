@@ -44,17 +44,26 @@ export function PhotoImage({
         <source type="image/webp" srcSet={srcSetFor(webKey, webWidth, 'webp')} sizes={sizes} />
         <img
           src={publicUrl(keyFor(webKey, webWidth, 'webp'))}
-          alt={sensitive ? '' : alt}
+          /* The caption at every state. It used to be emptied for a sensitive
+             photograph, which protected nobody -- the same caption is in the
+             `<figcaption>` beside the link, read out either way -- and cost the
+             link its only accessible name wherever the veil is not drawn: the
+             photo page, which passes `veil={false}`, and every gallery card once
+             the reader turns the archive-wide preference on. */
+          alt={alt}
           width={webWidth}
           height={webHeight}
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : undefined}
           decoding="async"
-          className={`h-full w-full object-cover ${sensitive ? 'scale-110 blur-[9px]' : ''}`}
+          /* `sensitive-blur` carries no blur of its own: it is the handle the
+             archive-wide preference from the header reaches for. See the note
+             beside that rule in globals.css. */
+          className={`h-full w-full object-cover ${sensitive ? 'sensitive-blur scale-110 blur-[9px]' : ''}`}
         />
       </picture>
       {sensitive && veil && (
-        <div className="bg-ground/85 absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
+        <div className="sensitive-veil bg-ground/85 absolute inset-0 flex flex-col items-center justify-center gap-2 p-3 text-center">
           <p className="text-text font-sans text-[11px] leading-tight">
             Contiene imágenes de faena de animales
           </p>

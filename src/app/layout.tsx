@@ -51,7 +51,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
-    <html lang="es" className={`${alegreya.variable} ${alegreyaItalic.variable} h-full`}>
+    // `suppressHydrationWarning` because the inline script in `(public)/layout.tsx`
+    // puts `show-sensitive` on this element before React ever runs, and React would
+    // otherwise report the class it did not write as a mismatch. It suppresses that
+    // check on this element alone, not on the tree under it.
+    <html
+      lang="es"
+      className={`${alegreya.variable} ${alegreyaItalic.variable} h-full`}
+      suppressHydrationWarning
+    >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   )
