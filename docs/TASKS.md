@@ -712,13 +712,59 @@ deleted: 592 photographs, 592 translations, 592 memberships, Campo back to 79, a
 `npm run db:seed:verify` green at 3,342 R2 objects with none unreferenced. The originals in Drive
 were never touched; nothing in this task writes to Drive.
 
+### Header redesign — out of band, on `main`
+
+Not a card and not on the board: done directly on `main` between T12 and T13, at the maintainer's
+request, from a design covering only the bar's right side. It is written down because it changed
+two things a later task will otherwise trip over.
+
+**The sections panel spans the bar** instead of hanging off the word as a 232 px dropdown, so the
+eleven sections read at a glance — four columns on desktop, two on a phone. Beside it the search
+field is unchanged, and a new settings `<details>` holds the language picker and the
+sensitive-content switch. The language buttons are **rendered and inert**: T13 gives them their
+hrefs. The switch is live, and _Sensitive content_ in ARCHITECTURE.md now records how it is stored
+and why it is not a cookie.
+
+#### The bug the redesign uncovered, which was older than the redesign
+
+**No link in the header menu had ever been clickable.** `menu-dismiss.tsx` closed the `<details>` on
+`pointerdown` when the press landed on an anchor inside it; `<details>` un-renders its contents, so
+by `pointerup` the anchor was gone and the browser retargeted the click to their nearest common
+ancestor, `body`. The menu shut and the page stayed where it was. Measured, and confirmed against
+`main` with the old narrow dropdown before the redesign was written, so it dates from T6 — the wide
+panel only made it easy to notice, because eleven sections across the bar invite the click that the
+one-column dropdown rarely got.
+
+The fix is not "close later". The invariant that branch existed for is _a menu must not outlive the
+page it was opened on_, which is about a navigation and not about a click, so it is keyed to
+`usePathname()` now. That closes four holes the press-time close had at once: the retarget, closing
+on Ctrl- and middle-click where nothing navigates, missing Back, and missing Enter on any link
+outside the panel. Closing a `<details>` while the reader's focus is inside it drops that focus on
+`<body>` at the next layout, so the close hands it back to the summary — the same thing the Escape
+branch already did, and the reason Escape in the search field no longer yanks the reader out of the
+field they were typing in.
+
+Two panels also meant the two `<details>` could both be open at once from the keyboard, where the
+pointer handler's mutual exclusion never ran. They carry a shared `name` now, which is the browser's
+own exclusive accordion; a WebView too old for the attribute ignores it and degrades to exactly the
+behaviour of the day before.
+
+_Commit_: `feat(header): widen the sections panel and add language and sensitive-content settings`
+— the fix above rode along in it rather than landing on its own, so `menu-dismiss.tsx` is the file
+to look at in that commit if a header menu ever stops navigating again.
+
 ### T13 — Public i18n
 
 `next-intl` over the `/[locale]` routes, fallback to Spanish when a translation is missing, and a
 panel view of what is untranslated per language. **The panel itself is not translated.**
 
+The header redesign above already renders the picker — four buttons, ESP/ENG/FRA/ITA, `disabled`
+and marked with the current locale. This task gives them their hrefs and deletes the `disabled`; it
+does not design a control. The same pass moves the two strings that are copy rather than labels
+into the message files: the sensitive-content warning, and the sentence under the switch.
+
 _Acceptance_: `/en/foto/espacios-001` shows the English caption when it exists and the Spanish one
-when it does not; correct `hreflang`; the panel stays in Spanish.
+when it does not; correct `hreflang`; the panel stays in Spanish; the four language buttons navigate.
 _Commit_: `feat(i18n): add locale routing and translation fallback for the public site`
 
 ### T14 — Deploy and hardening

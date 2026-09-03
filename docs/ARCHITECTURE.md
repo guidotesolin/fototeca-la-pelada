@@ -205,8 +205,8 @@ browsers, on a phone, often on rural mobile data.
 
 **Hard requirement: the photo and its caption must be visible without JavaScript.** Embedded
 browsers are old and unpredictable. All archive content is server-rendered; JavaScript only adds
-conveniences (revealing a sensitive image, switching original/restored, instant filtering). If it
-fails, the archive is still readable.
+conveniences (revealing a sensitive image, switching original/restored, instant filtering,
+remembering the sensitive-content preference). If it fails, the archive is still readable.
 
 **Images are most of the weight, so that is where the fight is:**
 
@@ -480,7 +480,10 @@ Details that matter:
   the database now, not only in `archive.json`. The map's coordinates and the social URLs are in
   there for the same reason as the prose: moving the pin or adding a fourth network must not need a
   deploy. The only words in code are labels: "El archivo hasta hoy", "A cargo del archivo",
-  "Contacto", "Redes", "Secciones", "Buscar", "Todas las secciones".
+  "Contacto", "Redes", "Secciones", "Buscar", "Todas las secciones", and from the header's settings
+  panel "Ajustes", "Idioma" and "Contenido sensible". That panel also carries one full sentence
+  explaining the switch, which is copy and not a label — it belongs in the message files with the
+  warning text, and moves there in T13 rather than earning a `site_text` key of its own now.
 - **A URL out of the database is a trust boundary.** `site_text` becomes editable from the panel in
   T11, and its values reach an `href` and an `<iframe src>`, so `src/lib/url.ts` guards them: the
   map embed against an exact hostname allowlist, the network links against the scheme only, since
@@ -545,16 +548,29 @@ ways the new site would make worse:
 So the warning is **a property of the photo** — `photo.sensitive` — and travels with it. The text
 lives in the message files, translated once, because today exactly one kind of warning exists:
 
-| Where                      | Behavior                                                                                                                                                                                     |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gallery grid               | Blurred thumbnail with a restrained label. One click reveals it. Not hidden: blurring gives informed choice, hiding would erase the archive.                                                 |
-| Photo detail page          | A card with the text **before** the image, the image blurred behind it, and a "Ver la fotografía" button. This is what fixes direct access.                                                  |
-| Search results             | Same as the grid. **Decision: sensitive photos appear everywhere, blurred** — excluding them from search would create the incoherence of searching "carneada" and not finding the carneadas. |
-| Viewer preference          | A "show sensitive images unblurred" toggle, remembered in `localStorage`. A researcher does not click 30 times; a casual visitor keeps them covered.                                         |
-| Sharing and search engines | If a photo is sensitive it is **never used as `og:image`**, and its page carries `noimageindex`.                                                                                             |
+| Where                      | Behavior                                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gallery grid               | Blurred thumbnail with a restrained label. One click reveals it. Not hidden: blurring gives informed choice, hiding would erase the archive.                                                                  |
+| Photo detail page          | A card with the text **before** the image, the image blurred behind it, and a "Ver la fotografía" button. This is what fixes direct access.                                                                   |
+| Search results             | Same as the grid. **Decision: sensitive photos appear everywhere, blurred** — excluding them from search would create the incoherence of searching "carneada" and not finding the carneadas.                  |
+| Viewer preference          | Built: the "Contenido sensible" switch in the header's settings panel, remembered in `localStorage`. A researcher does not click 30 times; a casual visitor keeps them covered. **Not a cookie** — see below. |
+| Sharing and search engines | If a photo is sensitive it is **never used as `og:image`**, and its page carries `noimageindex`.                                                                                                              |
 
 The per-section intro still exists (`category_translation.intro`), so they can keep the notice they
 wrote as context. It is no longer the mechanism, just courtesy.
+
+**The preference is `localStorage` and a class on `<html>`, never a cookie**, and that follows from
+the pre-rendering decision above rather than from taste. A cookie has to be read on the server, and
+reading one in the public layout would make every pre-rendered route dynamic — the whole archive
+rendered per request so that one reader can see a blur come off. So a small inline script writes the
+class before first paint and unlayered CSS does the rest. With JavaScript off nothing runs and the
+veil stays, which is the direction a failure here has to fail in.
+
+**The switch is authoritative in both directions.** Turning the veil back on also closes any photo
+page's own `<details class="reveal">`: the rule that lifts the blur for one photograph outlives the
+preference otherwise, so a reader who asked to be covered again would go on looking at the carneada.
+Caught in review and never shipped, which is the only reason it is worth a paragraph: the failing
+gesture is invisible, because the panel hides that card's label while the preference is on.
 
 **Wording criterion**, which matters in a historical archive: the warning describes, it does not
 judge. "Contains images of animal butchering", not "disturbing content". A carneada is a legitimate
@@ -886,7 +902,10 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
   search still work; open a shared link in Facebook's embedded browser on a real phone; and check
   that pinch zoom works.
 - **Sensitive content**: flag a carneada and test all four paths — grid, search, direct link in a
-  new window, and the WhatsApp link preview, which must not show the image.
+  new window, and the WhatsApp link preview, which must not show the image. Then the preference,
+  both ways and in that order: turn it on, uncover a photograph on its own page, turn it off, and
+  confirm the blur is back. Checking only the first half is what made a real defect invisible until
+  review went looking for it.
 - **Takedown**: unpublish and confirm 410, removal from galleries, search and sitemap, and that
   **the R2 URL stops responding**; then republish and verify derivatives are regenerated.
 - **Panel**: sign in with an account outside the allowlist and confirm rejection; import a test
