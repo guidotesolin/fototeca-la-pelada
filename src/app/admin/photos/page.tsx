@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { ADMIN_PER_PAGE, FILTERS, isFilter, listCategories, listPhotos } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { publicUrl } from '@/lib/photo'
@@ -13,6 +14,8 @@ import { saveOrder } from './actions'
  *
  * Spanish, and never translated: only the two of them use it.
  */
+
+export const metadata: Metadata = { title: 'Editar fotos' }
 
 export default async function AdminPhotos(props: PageProps<'/admin/photos'>) {
   await requireAdmin()

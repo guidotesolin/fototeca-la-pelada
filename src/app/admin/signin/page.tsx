@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import type { Metadata } from 'next'
 import { currentAdmin, signIn } from '@/lib/auth'
 
 /**
@@ -39,6 +40,8 @@ const MESSAGES: Record<string, string> = {
 
 /** An unrecognised code is not evidence of a broken deployment, so it does not claim to be one. */
 const UNKNOWN = 'No se pudo completar el ingreso. Probá de nuevo.'
+
+export const metadata: Metadata = { title: 'Iniciar sesión' }
 
 export default async function SignIn(props: PageProps<'/admin/signin'>) {
   // Already in: no reason to show a sign-in button to someone who is signed in.

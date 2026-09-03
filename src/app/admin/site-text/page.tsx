@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { listSiteTextForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { externalUrl, mapEmbedUrl } from '@/lib/url'
@@ -17,6 +18,8 @@ import { saveSiteText } from './actions'
  * through and the same one the home page renders through. A stored value predates
  * this screen, so the panel does not get to assume one is safe either.
  */
+export const metadata: Metadata = { title: 'Editar textos' }
+
 export default async function AdminSiteText(props: PageProps<'/admin/site-text'>) {
   await requireAdmin()
   const params = await props.searchParams

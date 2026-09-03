@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPhotoForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
@@ -15,6 +16,17 @@ import { FilePicker } from '../file-picker'
  * Reaching this markup proves nothing about the next request, which is why the
  * check is never left to the screen.
  */
+
+/** The slug names the tab, straight from the address: it is what the heading
+ * below shows anyway, and reading it from `params` keeps a title off the
+ * database -- `getPhotoForEdit` is not request-cached, so a lookup here would
+ * be a second round trip for every render of the screen. */
+export async function generateMetadata(
+  props: PageProps<'/admin/photos/[slug]'>,
+): Promise<Metadata> {
+  const { slug } = await props.params
+  return { title: `Editar foto · ${slug}` }
+}
 
 export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>) {
   await requireAdmin()

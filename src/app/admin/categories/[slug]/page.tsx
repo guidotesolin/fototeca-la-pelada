@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getCategoryForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
@@ -19,6 +20,16 @@ import { deleteCategory, saveCategory } from '../actions'
  * Every form here posts to a server action that calls `requireAdmin()` of its
  * own. Reaching this markup proves nothing about the next request.
  */
+/** The slug names the tab rather than the section's name: same reason as on the
+ * photo screen -- `getCategoryForEdit` is not request-cached, and the address is
+ * already in hand. */
+export async function generateMetadata(
+  props: PageProps<'/admin/categories/[slug]'>,
+): Promise<Metadata> {
+  const { slug } = await props.params
+  return { title: `Editar sección · ${slug}` }
+}
+
 export default async function EditCategory(props: PageProps<'/admin/categories/[slug]'>) {
   await requireAdmin()
   const { slug } = await props.params

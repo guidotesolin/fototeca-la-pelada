@@ -196,7 +196,7 @@ are set it says so and runs its other checks anyway.
 
 ### Importing
 
-**Panel → Importar fotografías desde Drive.** Pick a folder — the masters folder or one of the
+**Panel → Importar desde Drive.** Pick a folder — the masters folder or one of the
 folders inside it — and the **section** the photographs belong to. The section decides two things:
 which gallery they appear in, and their identifier, which follows the archive's own convention
 (`espacios-071`, the next free number). **Drive filenames are not used**: they carry spaces,
@@ -233,7 +233,7 @@ of the Drive folder and press the button again.
 
 When a neighbour asks for their photograph to be removed:
 
-1. **Panel → Fotografías**, find it (the search box takes a caption, a "Cortesía" or the
+1. **Panel → Editar fotos**, find it (the search box takes a caption, a "Cortesía" or the
    identifier), open it and press **Despublicar**.
 2. That deletes its web derivatives from R2 — its restoration's too, if it has one — so the image
    stops answering at its URL the moment the panel answers. Its page takes **a couple of seconds**
@@ -466,7 +466,7 @@ dos variables no estén puestas lo dice, y corre igual el resto de sus verificac
 
 ### Importar
 
-**Panel → Importar fotografías desde Drive.** Se elige una carpeta — la de originales o una de las
+**Panel → Importar desde Drive.** Se elige una carpeta — la de originales o una de las
 que tiene adentro — y la **sección** a la que pertenecen las fotografías. La sección decide dos
 cosas: en qué galería aparecen y cuál es su identificador, que sigue la convención del archivo
 (`espacios-071`, el próximo número libre). **Los nombres de archivo de Drive no se usan**: traen
@@ -504,7 +504,7 @@ aprieta el botón de nuevo.
 
 Cuando un vecino pide que saquen su foto:
 
-1. **Panel → Fotografías**, buscala (el buscador toma el epígrafe, la "Cortesía" o el
+1. **Panel → Editar fotos**, buscala (el buscador toma el epígrafe, la "Cortesía" o el
    identificador), abrila y apretá **Despublicar**.
 2. Eso borra sus derivadas de R2 —y las de su restauración, si tiene— así que la imagen deja de
    responder en su URL apenas el panel contesta. La ficha tarda **un par de segundos** en ponerse al

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { listCategoriesForHome, listFeaturedForAdmin } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { publicUrl } from '@/lib/photo'
@@ -16,6 +17,8 @@ import { createCategory, saveHome } from './actions'
  *
  * Spanish, and never translated: only the two of them use it.
  */
+export const metadata: Metadata = { title: 'Editar secciones' }
+
 export default async function AdminCategories(props: PageProps<'/admin/categories'>) {
   await requireAdmin()
   const params = await props.searchParams

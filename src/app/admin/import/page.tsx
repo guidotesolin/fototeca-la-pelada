@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { importedFromDrive, listCategories } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { isFileId, listFolders, listImages, mastersFolderId } from '@/lib/drive'
@@ -37,6 +38,8 @@ export const maxDuration = 60
 
 /** Enough rows to see what is happening without printing the whole vault. */
 const SHOWN = 60
+
+export const metadata: Metadata = { title: 'Importar desde Drive' }
 
 export default async function AdminImport(props: PageProps<'/admin/import'>) {
   await requireAdmin()
