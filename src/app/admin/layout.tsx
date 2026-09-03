@@ -1,11 +1,18 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import Link from 'next/link'
 import { currentAdmin, signOut } from '@/lib/auth'
+import { Document, THEME_COLOR } from '@/components/document'
 
 /**
- * The panel's frame. In Spanish and never translated: only the two of them use
- * it, so it carries no i18n machinery -- the strings are written here, and T13's
- * `next-intl` wraps the public routes only.
+ * The panel's frame, and **a root layout of its own since T13**: it renders
+ * `<html lang="es">` rather than inheriting one. The public site's root layout
+ * sits under `[locale]` so that it can declare the language it is in, and a
+ * layout above that could not be locale-aware -- so there is no shared root left
+ * to inherit. `Document` is the half the two of them have in common.
+ *
+ * In Spanish and never translated: only the two of them use it, so it carries no
+ * i18n machinery -- the strings are written here, and `next-intl` wraps the
+ * public routes only. Hard-coding `lang="es"` here says exactly that.
  *
  * This layout is chrome, not a gate. It reads the session to decide whether to
  * draw a header, because the sign-in screen renders inside it too and a check
@@ -13,17 +20,21 @@ import { currentAdmin, signOut } from '@/lib/auth'
  * the top of every page, route handler and server action underneath.
  */
 
-/** The panel is not content. Overrides the root object: metadata merges shallowly. */
+/** The panel is not content, and this is now the root object rather than an override. */
 export const metadata: Metadata = {
   title: { default: 'Panel', template: '%s · Panel · Fototeca La Pelada' },
   robots: { index: false, follow: false },
+}
+
+export const viewport: Viewport = {
+  themeColor: THEME_COLOR,
 }
 
 export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
   const admin = await currentAdmin()
 
   return (
-    <>
+    <Document lang="es">
       {admin && (
         <header className="border-rule border-b">
           <div className="max-w-content mx-auto flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
@@ -71,6 +82,6 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
       <main className="max-w-content mx-auto w-full flex-1 px-4 py-10 sm:px-6 sm:py-14">
         {children}
       </main>
-    </>
+    </Document>
   )
 }

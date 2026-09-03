@@ -63,6 +63,7 @@ npm run dev
 | `npm run images:smoke`   | Check the derivative pipeline and R2        |
 | `npm run url:smoke`      | Check the URL guards on `site_text`         |
 | `npm run search:smoke`   | Check search against a live database        |
+| `npm run i18n:smoke`     | Check the message files and locale routing  |
 | `npm run takedown:smoke` | Check the takedown against the real bucket  |
 | `npm run drive:smoke`    | Check the Drive import and the master reads |
 | `npm run home:smoke`     | Check T11's acceptance (app running)        |
@@ -331,6 +332,7 @@ npm run dev
 | `npm run images:smoke`   | Verifica el pipeline de derivados y R2                         |
 | `npm run url:smoke`      | Guards de URL de `site_text`                                   |
 | `npm run search:smoke`   | Verifica la búsqueda en una base real                          |
+| `npm run i18n:smoke`     | Verifica los archivos de mensajes y las URLs por idioma        |
 | `npm run takedown:smoke` | Verifica la baja de fotos contra el bucket real                |
 | `npm run drive:smoke`    | Verifica la importación desde Drive y la lectura de originales |
 | `npm run home:smoke`     | Verifica portada, secciones y textos (app viva)                |

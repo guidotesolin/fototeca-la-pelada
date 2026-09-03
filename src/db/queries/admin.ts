@@ -10,6 +10,7 @@ import {
   siteText,
 } from '@/db/schema'
 import { isSectionSlug } from '@/lib/slug'
+import { TRANSLATABLE_SITE_TEXT } from '@/app/admin/site-text/fields'
 import { REVALIDATE, SOURCE_LOCALE } from './gallery'
 
 /**
@@ -461,4 +462,128 @@ export async function listSiteTextForEdit(): Promise<Record<string, string>> {
     .from(siteText)
     .where(eq(siteText.locale, SOURCE_LOCALE))
   return Object.fromEntries(rows.map((r) => [r.key, r.value]))
+}
+
+/**
+ * What is still untranslated, per language.
+ *
+ * The panel's only i18n screen, and read-only: T15 loads the translations, and
+ * this is what tells whoever does it where the work is. It is in Spanish like
+ * every other panel screen -- _Language conventions_ keeps `next-intl` on the
+ * public routes only.
+ *
+ * **Spanish is its own denominator**, which is why it comes back as a row like
+ * the others rather than as separate totals: it is the source language, so
+ * whatever exists in Spanish is exactly what there is to translate. 592 captions
+ * in Spanish means 592 captions to translate, and the Spanish row reads 592/592
+ * by construction.
+ *
+ * "Translated" means a **non-empty** field and not merely a row: the Drive import
+ * creates a `photo_translation` with a null caption, and the public read path
+ * treats an empty translation as absent (`nullif` before the `coalesce` in
+ * `gallery.ts`). A screen that counted rows would report an imported photograph
+ * as translated into Spanish it does not have.
+ *
+ * **And only the `site_text` keys that are language count**, which is
+ * `TRANSLATABLE_SITE_TEXT` -- seven of the twelve. The other five are a map
+ * embed, an email address and three social URLs, and _Anything that is not
+ * language is not translated_ covers them: counting them made the screen list
+ * five impossible items in each of three languages and pin the figure at 7/12
+ * for ever. Caught in review.
+ */
+export type TranslationProgress = {
+  locale: string
+  captions: number
+  notes: number
+  names: number
+  intros: number
+  texts: number
+  /** Small enough to name, unlike the captions: twelve keys and eleven sections. */
+  missingTexts: string[]
+  missingNames: string[]
+}
+
+/** Where the caption work actually is, which is the unit somebody would take on. */
+export type MissingBySection = { locale: string; slug: string; missing: number }
+
+/**
+ * The translatable keys as a parameterized list. `= any(${array})` does not work:
+ * Drizzle expands a JS array into `($1, $2, …)`, which Postgres reads as a record
+ * and refuses to cast to `text[]`. `sql.join` says what is meant -- one bound
+ * parameter per key, inside an `in`.
+ */
+const TRANSLATABLE_KEYS = sql.join(
+  TRANSLATABLE_SITE_TEXT.map((key) => sql`${key}`),
+  sql`, `,
+)
+
+export async function translationProgress(): Promise<{
+  progress: TranslationProgress[]
+  bySection: MissingBySection[]
+}> {
+  /**
+   * One round trip for the summary. The subqueries all hang off the same
+   * `enum_range`, so adding a fifth language to the schema puts it on this screen
+   * with no code change -- which is the point of reading the enum rather than a
+   * list in TypeScript.
+   */
+  const progress = await db.execute<TranslationProgress>(sql`
+    select
+      l.locale::text as locale,
+      (select count(*) from photo_translation t
+        where t.locale = l.locale and coalesce(t.caption, '') <> '')::int as captions,
+      (select count(*) from photo_translation t
+        where t.locale = l.locale and coalesce(t.notes, '') <> '')::int as notes,
+      (select count(*) from category_translation ct
+        where ct.locale = l.locale and coalesce(ct.name, '') <> '')::int as names,
+      (select count(*) from category_translation ct
+        where ct.locale = l.locale and coalesce(ct.intro, '') <> '')::int as intros,
+      (select count(*) from site_text s
+        where s.locale = l.locale and coalesce(s.value, '') <> ''
+          and s.key in (${TRANSLATABLE_KEYS}))::int as texts,
+      (select coalesce(array_agg(s.key order by s.key), '{}')
+         from site_text s
+        where s.locale = ${SOURCE_LOCALE}::locale
+          and s.key in (${TRANSLATABLE_KEYS})
+          and not exists (
+            select 1 from site_text o
+             where o.key = s.key and o.locale = l.locale and coalesce(o.value, '') <> ''
+          )) as "missingTexts",
+      (select coalesce(array_agg(c.slug order by c.position, c.slug), '{}')
+         from category c
+        where not exists (
+          select 1 from category_translation ct
+           where ct.category_id = c.id and ct.locale = l.locale
+             and coalesce(ct.name, '') <> ''
+        )) as "missingNames"
+      from unnest(enum_range(null::locale)) as l(locale)
+     order by array_position(enum_range(null::locale), l.locale)
+  `)
+
+  /**
+   * A photograph in two sections is counted in both, which is right for "how much
+   * is left in Campo": whoever translates the section translates it there.
+   * Only photographs that have something to translate -- a Spanish caption -- are
+   * counted, so the 73 that arrived with no caption at all are not reported as
+   * work nobody can do.
+   */
+  const bySection = await db.execute<MissingBySection>(sql`
+    select l.locale::text as locale, c.slug, count(*)::int as missing
+      from unnest(enum_range(null::locale)) as l(locale)
+      cross join photo_category pc
+      join category c on c.id = pc.category_id
+      join photo_translation es
+        on es.photo_id = pc.photo_id and es.locale = ${SOURCE_LOCALE}::locale
+     where l.locale <> ${SOURCE_LOCALE}::locale
+       and coalesce(es.caption, '') <> ''
+       and not exists (
+         select 1 from photo_translation t
+          where t.photo_id = pc.photo_id and t.locale = l.locale
+            and coalesce(t.caption, '') <> ''
+       )
+     group by l.locale, c.slug
+     order by l.locale, c.slug
+  `)
+
+  return { progress, bySection }
 }

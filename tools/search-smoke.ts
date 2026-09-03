@@ -70,7 +70,7 @@ async function main() {
   })
 
   const total = async (q: string, rest: Partial<SearchQuery> = {}) =>
-    (await runSearch(query(q, rest), 1)).total
+    (await runSearch('es', query(q, rest), 1)).total
 
   // --- the acceptance criteria, both directions of the accent -------------------
 
@@ -108,7 +108,7 @@ async function main() {
 
   check('stemming', (await total('escuelas')) === (await total('escuela')), 'plural and singular')
 
-  const carneada = await runSearch(query('carneada'), 1)
+  const carneada = await runSearch('es', query('carneada'), 1)
   check('sensitive', carneada.total > 0, '"carneada" found none of the carneadas')
   check(
     'sensitive',
@@ -118,7 +118,7 @@ async function main() {
 
   // --- filters ------------------------------------------------------------------
 
-  const everything = facetsFrom(await runFacetRows(''), NO_FILTERS)
+  const everything = facetsFrom(await runFacetRows('es', ''), NO_FILTERS, 'es')
   check(
     'facets',
     everything.credits.length > 0 && everything.decades.length > 0,
@@ -131,7 +131,7 @@ async function main() {
   check('decade', (await total('', { decade: 999_0 })) === 0, 'an empty decade returned rows')
 
   const credit = everything.credits[0].value
-  const byCredit = await runSearch(query('', { credit }), 1)
+  const byCredit = await runSearch('es', query('', { credit }), 1)
   check('credit', byCredit.total > 0, `no photograph credited to ${credit}`)
   check(
     'credit',
@@ -142,10 +142,69 @@ async function main() {
   const narrowed = await total('Tesolin', { section: 'espacios' })
   check('combined', narrowed > 0 && narrowed < tesolin, `${tesolin} narrowed to ${narrowed}`)
 
+  // --- the four languages -------------------------------------------------------
+
+  /**
+   * **A word that lives only in the epigraphs, and that is the point of it.**
+   *
+   * The first version of this loop searched "Tesolin" in all four languages and
+   * passed while the fallback was broken, because "Tesolin" is a **credit**: it
+   * appears in 62 credits and in exactly **one** caption, and the credit half of
+   * `DOCUMENT` is re-tokenized at query time in the asked locale, so it matches
+   * in any language whatever the captions do. The check was green with the
+   * caption path returning nothing. Measured: "escuela" reached 25 photographs in
+   * Spanish and 0 in English.
+   *
+   * So the assertion moved onto a caption-only word, and it is the one that
+   * fails if the text ever stops being re-tokenized in the reader's own
+   * configuration. French and Italian are not a free pass either: their stemmers
+   * truncate "escuela" the way Spanish does, so a version that matched a stored
+   * Spanish vector would pass in three languages out of four -- which is how this
+   * looked like an English bug instead of a structural one.
+   */
+  const CAPTION_ONLY = 'escuela'
+  const inCaptions = await total(CAPTION_ONLY)
+  check(
+    'the word is a caption word',
+    inCaptions > 0,
+    `"${CAPTION_ONLY}" is not in any epigraph, so this loop would prove nothing`,
+  )
+  const viaCredit = await total(CAPTION_ONLY, { credit: 'no-such-credit-exists' })
+  check(
+    'the word is not a credit word',
+    viaCredit === 0,
+    `"${CAPTION_ONLY}" is reachable through a credit, so it cannot test the caption path`,
+  )
+
+  for (const locale of ['es', 'en', 'fr', 'it'] as const) {
+    const found = (await runSearch(locale, query(CAPTION_ONLY), 1)).total
+    check(
+      'every language reaches the epigraphs',
+      found === inCaptions,
+      `${locale} found ${found} of the ${inCaptions} photographs whose caption says "${CAPTION_ONLY}" -- the text is not being stemmed in the reader's own configuration`,
+    )
+  }
+
+  /**
+   * And the credit half, which is the other acceptance criterion: 61 of the 62
+   * Tesolín photographs carry the surname only in `credit`, so a `DOCUMENT` that
+   * quietly lost it would still look like it worked.
+   */
+  for (const locale of ['es', 'en', 'fr', 'it'] as const) {
+    const found = (await runSearch(locale, query('Tesolin'), 1)).total
+    check(
+      'every language reaches the credits',
+      found === tesolin,
+      `${locale} found ${found} of the ${tesolin} Tesolín photographs`,
+    )
+    const rows = await runFacetRows(locale, 'Tesolin')
+    check('every language filters', rows.length === tesolin, `${locale} facets over ${rows.length}`)
+  }
+
   // --- pagination ---------------------------------------------------------------
 
-  const first = await runSearch(query('Tesolin'), 1)
-  const second = await runSearch(query('Tesolin'), 2)
+  const first = await runSearch('es', query('Tesolin'), 1)
+  const second = await runSearch('es', query('Tesolin'), 2)
   check('paging', first.total === second.total, 'the total moved between pages')
   check('paging', second.photos.length > 0, 'page two is empty on a 62-result search')
   check(
@@ -157,14 +216,14 @@ async function main() {
   // --- whatever someone types ---------------------------------------------------
 
   for (const hostile of ['"', "'", 'a & b', 'or', '-', '<script>', '\\', 'a'.repeat(200), '   ']) {
-    const rows = await runSearch(query(hostile), 1)
+    const rows = await runSearch('es', query(hostile), 1)
     check('hostile input', rows.total >= 0, `${JSON.stringify(hostile)} did not come back`)
   }
 
   // --- the filters offer only what the words reach ------------------------------
 
-  const tesolinRows = await runFacetRows('Tesolin')
-  const open = facetsFrom(tesolinRows, NO_FILTERS)
+  const tesolinRows = await runFacetRows('es', 'Tesolin')
+  const open = facetsFrom(tesolinRows, NO_FILTERS, 'es')
   const decades = open.decades.map((d) => d.value)
   check(
     'facets follow the search',
@@ -200,7 +259,7 @@ async function main() {
 
   // And it stays exact once another filter narrows it, which is the case an
   // estimate would get wrong: the count is taken with that filter applied.
-  const withDecade = facetsFrom(tesolinRows, { ...NO_FILTERS, decade: decades[0] })
+  const withDecade = facetsFrom(tesolinRows, { ...NO_FILTERS, decade: decades[0] }, 'es')
   for (const { value, count } of withDecade.sections) {
     const got = await total('Tesolin', { section: value, decade: decades[0] })
     check(
@@ -212,7 +271,11 @@ async function main() {
 
   // A filter is computed without its own value, so choosing one never empties the
   // menu it was chosen from -- otherwise a reader could not change their mind.
-  const narrowedTo = facetsFrom(tesolinRows, { ...NO_FILTERS, section: open.sections[0].value })
+  const narrowedTo = facetsFrom(
+    tesolinRows,
+    { ...NO_FILTERS, section: open.sections[0].value },
+    'es',
+  )
   check(
     'facets exclude their own filter',
     narrowedTo.sections.length === open.sections.length,
@@ -225,7 +288,11 @@ async function main() {
   )
 
   // And a combination that finds nothing still shows what was chosen, at zero.
-  const impossible = facetsFrom([], { ...NO_FILTERS, decade: 1870, credit: 'Familia Tesolín' })
+  const impossible = facetsFrom(
+    [],
+    { ...NO_FILTERS, decade: 1870, credit: 'Familia Tesolín' },
+    'es',
+  )
   assert.deepEqual(impossible.decades, [{ value: 1870, count: 0 }])
   assert.deepEqual(impossible.credits, [{ value: 'Familia Tesolín', count: 0 }])
   checks += 2
@@ -235,6 +302,7 @@ async function main() {
   const spanning = facetsFrom(
     [{ credit: null, yearFrom: 1879, yearTo: 1914, sections: [] }],
     NO_FILTERS,
+    'es',
   )
   assert.deepEqual(
     spanning.decades.map((d) => d.value),
@@ -242,7 +310,8 @@ async function main() {
   )
   checks++
   assert.deepEqual(
-    facetsFrom([{ credit: null, yearFrom: null, yearTo: null, sections: [] }], NO_FILTERS).decades,
+    facetsFrom([{ credit: null, yearFrom: null, yearTo: null, sections: [] }], NO_FILTERS, 'es')
+      .decades,
     [],
   )
   checks++
@@ -285,16 +354,23 @@ async function main() {
   checks++
 
   assert.equal(
-    searchHref(parsed),
+    searchHref('es', parsed),
     '/buscar?q=Tesol%C3%ADn&seccion=campo&credito=Familia+Tesol%C3%ADn&decada=1960',
   )
   checks++
-  assert.equal(searchHref(query('')), '/buscar')
+  assert.equal(searchHref('es', query('')), '/buscar')
   checks++
-  assert.equal(searchHref(query('a'), 3), '/buscar?q=a&p=3')
+  assert.equal(searchHref('es', query('a'), 3), '/buscar?q=a&p=3')
   checks++
   // Page one is the bare address, so one result set has one URL and not two.
-  assert.equal(searchHref(query('a'), 1), '/buscar?q=a')
+  assert.equal(searchHref('es', query('a'), 1), '/buscar?q=a')
+  checks++
+
+  // Spanish has no prefix and the other three do, which is `as-needed`. The
+  // parameter names stay Spanish in all four: they are part of a shared address.
+  assert.equal(searchHref('en', query('a'), 2), '/en/buscar?q=a&p=2')
+  checks++
+  assert.equal(searchHref('fr', query('')), '/fr/buscar')
   checks++
 
   for (const [input, expected] of [

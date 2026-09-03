@@ -120,4 +120,18 @@ export const SITE_TEXT: SiteTextField[] = [
  * execute, so this is about a typo reaching the footer rather than about a
  * scheme -- one `@`, a dot after it, no spaces.
  */
+/**
+ * The keys that are language, which is `line` and `text` and not the other three.
+ *
+ * A map embed, an email address and three social URLs are not prose: _Anything
+ * that is not language is not translated_ is the data model's own rule, and
+ * `listSiteText` already behaves that way in effect — it merges the Spanish value
+ * under whatever locale was asked for, so the URL is the same URL in four
+ * languages. The translations screen needs to know, or it reports five items per
+ * language that nobody can ever translate and can never reach 100%.
+ */
+export const TRANSLATABLE_SITE_TEXT = SITE_TEXT.filter(
+  (field) => field.kind === 'line' || field.kind === 'text',
+).map((field) => field.key)
+
 export const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
