@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "description": "Archivio fotografico digitale di La Pelada, Santa Fe, Argentina. Fotografie digitalizzate con l'autorizzazione dei proprietari, con la loro didascalia e la famiglia che le ha prestate."
+  },
+  "header": {
+    "nav": "Principale",
+    "sections": "Sezioni",
+    "searchLabel": "Cerca nelle didascalie dell'archivio",
+    "search": "Cerca",
+    "settings": "Impostazioni",
+    "language": "Lingua",
+    "sensitive": "Contenuto sensibile",
+    "sensitiveHint": "Mostra senza sfocatura le fotografie con immagini di macellazione di animali.",
+    "sensitiveSwitch": "Mostra il contenuto sensibile senza sfocatura"
+  },
+  "languages": {
+    "es": "spagnolo",
+    "en": "inglese",
+    "fr": "francese",
+    "it": "italiano"
+  },
+  "footer": {
+    "archiveToDate": "L'archivio a oggi",
+    "photos": "{count, plural, one {# fotografia} other {# fotografie}}",
+    "sections": "{count, plural, one {# sezione} other {# sezioni}}",
+    "families": "{count, plural, one {# famiglia} other {# famiglie}}",
+    "inCharge": "Archivio curato da",
+    "contact": "Contatti",
+    "networks": "Social"
+  },
+  "home": {
+    "deck": "Esplora per sezione",
+    "map": "Mappa di La Pelada",
+    "featured": "In evidenza",
+    "allSections": "Tutte le sezioni · {count, plural, one {# fotografia} other {# fotografie}}"
+  },
+  "notFound": {
+    "title": "Questa pagina non esiste",
+    "body": "L'indirizzo che cerchi non è nell'archivio. Il link potrebbe essere scritto male, o la fotografia potrebbe essere stata spostata.",
+    "back": "Vai all'archivio"
+  },
+  "gallery": {
+    "index": "Indice",
+    "photos": "{count, plural, one {# foto} other {# foto}}",
+    "page": "pagina {page} di {pages}",
+    "pagination": "Paginazione",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "pageTitle": "{name}, pagina {page}"
+  },
+  "photo": {
+    "sensitive": "Contenuto sensibile",
+    "warning": "Contiene immagini di macellazione di animali.",
+    "altNoCaption": "Fotografia senza didascalia",
+    "reveal": "Vedi la fotografia",
+    "hide": "Nascondi la fotografia",
+    "courtesy": "Per gentile concessione di {credit}",
+    "original": "Originale",
+    "restored": "Restaurata con IA",
+    "year": "Anno",
+    "section": "Sezione",
+    "sections": "Sezioni",
+    "identifier": "Identificativo",
+    "home": "Home",
+    "photographsOf": "Fotografie di {section}",
+    "position": "{index} di {total}",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "untitled": "Fotografia {slug}",
+    "description": "Una fotografia dell'archivio di La Pelada.",
+    "descriptionWithCredit": "Una fotografia dell'archivio di La Pelada. Per gentile concessione di {credit}."
+  },
+  "search": {
+    "title": "Cerca",
+    "label": "Didascalie, cognomi, sezioni",
+    "placeholder": "Inserisci un termine",
+    "section": "Sezione",
+    "decade": "Decennio",
+    "credit": "Prestata da",
+    "allSections": "Tutte",
+    "allDecades": "Tutti",
+    "allCredits": "Tutti",
+    "option": "{label} ({count})",
+    "submit": "Cerca",
+    "clear": "Rimuovi i filtri",
+    "help": "Cerca una parola della didascalia, il cognome della famiglia che ha prestato la fotografia o il nome di una sezione. Puoi anche filtrare senza scrivere nulla.",
+    "empty": "Nessuna fotografia corrisponde a questa ricerca.",
+    "results": "{count, plural, one {# fotografia} other {# fotografie}}",
+    "query": "«{q}»",
+    "range": "{from}–{to}",
+    "pagination": "Paginazione dei risultati",
+    "titleWithQuery": "{q} · Cerca"
+  }
+}

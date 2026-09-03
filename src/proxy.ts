@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server'
+import createIntlMiddleware from 'next-intl/middleware'
 import type { NextRequest } from 'next/server'
+import { defaultLocale, isLocale, locales, splitLocale, switchHref } from '@/i18n/config'
 
 /**
- * The 410, and the only reason this file exists.
+ * Two things, and Next allows exactly one `proxy.ts` -- so they are composed here
+ * rather than chained: the locale routing the public URLs need, and the 410 a
+ * takedown owes a search engine.
+ *
+ * T9 decided against a `proxy.ts` for **authentication**, and that still holds:
+ * this one carries no authorization, reads no session and guards nothing.
+ *
+ * ### The 410, and the original reason this file exists
  *
  * _Exposure, indexing and takedown on request_ requires that an unpublished
  * photograph's page answer **410 Gone**, not 404: 410 is what tells a search
@@ -13,25 +22,46 @@ import type { NextRequest } from 'next/server'
  * `page.tsx`. F29 offered two ways out and neither exists; the proxy is the one
  * place in the framework that can put an arbitrary status on a URL.
  *
- * T9 decided against a `proxy.ts` for **authentication**, and that still holds:
- * this one carries no authorization, reads no session and guards nothing. It
- * answers one question about one route.
- *
  * What it must not do is put Neon back in the request path, which is the
  * cross-cutting decision the whole pre-rendered site rests on. So the list comes
  * from `/api/gone`, whose own read is cached and tagged, and Neon is touched only
  * when a takedown actually changes it.
  *
- * ### What this costs, measured
+ * **It is charged only to `/foto/…`, in any language.** The matcher had to widen
+ * to every public path for the locale routing, so the guard moved from the
+ * matcher into `takenDown` -- a gallery still pays nothing for the takedown list,
+ * which is what the measurements below are about.
  *
- * This proxy runs on every `/foto/:slug` request, including prefetches -- and a
- * gallery prefetches its whole page of photographs. Measured on the production
- * build, five cold starts each:
+ * ### The locale routing, added in T13
+ *
+ * `as-needed`: Spanish has no prefix, the other three do, and the rewrite from
+ * `/foto/espacios-001` to `/es/foto/espacios-001` is what lets the Spanish URLs
+ * the archive has already published go on working while `[locale]` is a real
+ * segment underneath. See `localeHref` for why that trade rather than `always`.
+ *
+ * **Locale detection and the locale cookie are both off**, which is a decision
+ * and not a default. With either on, `accept-language` or a previous visit could
+ * redirect a reader away from the URL they were given -- so the short Spanish
+ * link shared in the town's WhatsApp would land an Italian-speaking descendant on
+ * `/it/foto/…`, and the same address would serve two different pages to two
+ * readers. The URL is the only thing that decides the language here; the picker
+ * in the header is the only thing that changes it. It also keeps every public
+ * address cacheable at the CDN with no `Vary`, and it means the public site sets
+ * no cookie at all.
+ *
+ * `alternateLinks` is off for a smaller reason: next-intl would emit the
+ * alternates as a `Link` response header, and the pages already emit them in
+ * `<head>` through `alternatesFor`. Two sources for one fact is how one of them
+ * goes stale.
+ *
+ * ### What the 410 costs, measured
+ *
+ * On the production build, five cold starts each:
  *
  * | | TTFB |
  * | --- | --- |
  * | `/foto/[slug]`, cold instance, first request | 191 ms |
- * | `/categoria/[slug]`, cold, no proxy on the route | 76 ms |
+ * | `/categoria/[slug]`, cold, no takedown list on the route | 76 ms |
  * | either one, warm | 8-11 ms |
  *
  * So the list costs ~115 ms once per instance and nothing afterwards, and the
@@ -44,8 +74,7 @@ import type { NextRequest } from 'next/server'
  * the background would take the fetch off the critical path completely, and it
  * was rejected: on an archive this quiet most requests arrive at a cold
  * instance, so the answer would almost always be the empty list and the 410
- * would essentially never fire. Blocking once per instance is what makes the
- * feature real.
+ * would essentially never fire.
  *
  * ponytail: an in-process memo, so a takedown reaches an instance up to
  * `MEMO_MS` late (F37) -- the files are deleted long before the page stops
@@ -53,6 +82,15 @@ import type { NextRequest } from 'next/server'
  * store the panel writes and the proxy reads in a microsecond, which is a
  * dependency this project does not have.
  */
+
+const intl = createIntlMiddleware({
+  locales,
+  defaultLocale,
+  localePrefix: 'as-needed',
+  localeDetection: false,
+  localeCookie: false,
+  alternateLinks: false,
+})
 
 /**
  * How long a request may be answered from a list that was already read.
@@ -65,12 +103,12 @@ import type { NextRequest } from 'next/server'
  *   dead, but the caption is the part that names living people.
  * - After republishing, until the memo catches up, a photograph that is back
  *   answers 410, which tells a crawler it is never coming back. The check
- *   before the 410 at the foot of `proxy` closes that one entirely; the memo
+ *   before the 410 at the foot of `takenDown` closes that one entirely; the memo
  *   only bounds the first.
  *
- * A refresh never blocks a reader (see `proxy`), collapses across concurrent
- * requests, and does not reach Neon unless a takedown actually changed the list,
- * so a shorter memo costs invocations proportional to traffic and nothing else.
+ * A refresh never blocks a reader, collapses across concurrent requests, and
+ * does not reach Neon unless a takedown actually changed the list, so a shorter
+ * memo costs invocations proportional to traffic and nothing else.
  */
 const MEMO_MS = 2_000
 
@@ -146,13 +184,21 @@ function gonePage(): string {
 }
 
 /**
+ * The photograph a public path names, in any language, or null if the path is not
+ * a photograph's.
+ *
  * Next matches the route on the decoded path, so the takedown list has to be read
  * the same way: `/foto/%63ampo-078` is `/foto/campo-078` to everything downstream,
  * and comparing the raw segment lets an encoded spelling walk past the 410.
  * A malformed escape is not a slug, so it decodes to nothing and passes through.
  */
-function slugOf(pathname: string): string {
-  const raw = pathname.slice('/foto/'.length)
+const PHOTO = '/foto/'
+
+function slugOf(pathname: string): string | null {
+  const { path } = splitLocale(pathname)
+  if (!path.startsWith(PHOTO)) return null
+  const raw = path.slice(PHOTO.length)
+  if (!raw || raw.includes('/')) return null
   try {
     return decodeURIComponent(raw)
   } catch {
@@ -160,14 +206,16 @@ function slugOf(pathname: string): string {
   }
 }
 
-export async function proxy(request: NextRequest) {
+/** The 410 response, or null when this photograph is not on the takedown list. */
+async function takenDown(request: NextRequest): Promise<NextResponse | null> {
   const slug = slugOf(request.nextUrl.pathname)
-  const origin = request.nextUrl.origin
+  if (!slug) return null
+
   let settled: Promise<void> | null = null
   let list = memo
 
   if (!list || Date.now() - list.at >= MEMO_MS) {
-    settled = refresh(origin)
+    settled = refresh(request.nextUrl.origin)
     // Only the very first request on an instance waits. Once there is a list, a
     // stale one answers now and the new one arrives behind it, so no reader pays
     // for a refresh they did not ask for.
@@ -177,7 +225,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (!list?.slugs.has(slug)) return NextResponse.next()
+  if (!list?.slugs.has(slug)) return null
 
   /**
    * The list says this photograph is gone, and 410 is the one answer that cannot
@@ -192,7 +240,7 @@ export async function proxy(request: NextRequest) {
   if (settled) {
     // The same refresh already in flight, not a second one.
     await settled
-    if (!memo?.slugs.has(slug)) return NextResponse.next()
+    if (!memo?.slugs.has(slug)) return null
   }
 
   return new NextResponse(gonePage(), {
@@ -201,5 +249,42 @@ export async function proxy(request: NextRequest) {
   })
 }
 
-/** Only the photograph pages. Every other route pays nothing for this. */
-export const config = { matcher: '/foto/:slug' }
+/**
+ * The header's language picker, which is four links to `/idioma/<code>`.
+ *
+ * A layout cannot know the path it is wrapping, and the only way to read it on
+ * the server is a request header -- which would make every one of the 592
+ * pre-rendered photo pages dynamic, for a control in a dropdown. So the link
+ * carries the language and the request carries the page, and the two are put
+ * together here: the reader stays on the photograph they were looking at, with no
+ * client state and with JavaScript off.
+ *
+ * `no-store`, and this one matters: the address is the same for every reader and
+ * the answer depends on where they came from, so a cached redirect would send
+ * everybody to whatever page the first reader happened to be on.
+ *
+ * The decision itself is `switchHref` in `i18n/config.ts`, which is where the
+ * note on why a same-origin `Referer` is still not trusted lives -- and why that
+ * is a pure function with a test rather than eight lines in here.
+ */
+function switchLanguage(request: NextRequest): NextResponse | null {
+  const asked = /^\/idioma\/([^/]+)\/?$/.exec(request.nextUrl.pathname)?.[1]
+  // Not a language: nothing answers this address, so let it fall through to the
+  // 404 the route tree already gives it.
+  if (!asked || !isLocale(asked)) return null
+
+  const to = switchHref(asked, request.headers.get('referer'), request.nextUrl.origin)
+  return NextResponse.redirect(to, { status: 307, headers: { 'cache-control': 'no-store' } })
+}
+
+export async function proxy(request: NextRequest) {
+  return switchLanguage(request) ?? (await takenDown(request)) ?? intl(request)
+}
+
+/**
+ * Every public path, and nothing else. `/admin` and `/api` are outside the
+ * localization system by design, `_next` and `_vercel` are the framework's, and
+ * anything with a dot in it is a file -- `favicon.ico`, `manifest.webmanifest`,
+ * and the sitemap when T14 adds it.
+ */
+export const config = { matcher: '/((?!admin|api|_next|_vercel|.*\\..*).*)' }

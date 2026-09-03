@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "description": "Archive photographique numérique de La Pelada, Santa Fe, Argentine. Photographies numérisées avec l'autorisation de leurs propriétaires, avec leur légende et la famille qui les a prêtées."
+  },
+  "header": {
+    "nav": "Principal",
+    "sections": "Sections",
+    "searchLabel": "Rechercher dans les légendes de l'archive",
+    "search": "Rechercher",
+    "settings": "Réglages",
+    "language": "Langue",
+    "sensitive": "Contenu sensible",
+    "sensitiveHint": "Affiche sans floutage les photographies montrant l'abattage d'animaux.",
+    "sensitiveSwitch": "Afficher le contenu sensible sans floutage"
+  },
+  "languages": {
+    "es": "espagnol",
+    "en": "anglais",
+    "fr": "français",
+    "it": "italien"
+  },
+  "footer": {
+    "archiveToDate": "L'archive à ce jour",
+    "photos": "{count, plural, one {# photographie} other {# photographies}}",
+    "sections": "{count, plural, one {# section} other {# sections}}",
+    "families": "{count, plural, one {# famille} other {# familles}}",
+    "inCharge": "Archive tenue par",
+    "contact": "Contact",
+    "networks": "Réseaux"
+  },
+  "home": {
+    "deck": "Explorer par section",
+    "map": "Carte de La Pelada",
+    "featured": "À la une",
+    "allSections": "Toutes les sections · {count, plural, one {# photographie} other {# photographies}}"
+  },
+  "notFound": {
+    "title": "Cette page n'existe pas",
+    "body": "L'adresse que vous cherchez ne figure pas dans l'archive. Le lien est peut-être mal orthographié, ou la photographie a changé de place.",
+    "back": "Aller à l'archive"
+  },
+  "gallery": {
+    "index": "Index",
+    "photos": "{count, plural, one {# photo} other {# photos}}",
+    "page": "page {page} sur {pages}",
+    "pagination": "Pagination",
+    "previous": "Précédente",
+    "next": "Suivante",
+    "pageTitle": "{name}, page {page}"
+  },
+  "photo": {
+    "sensitive": "Contenu sensible",
+    "warning": "Contient des images d'abattage d'animaux.",
+    "altNoCaption": "Photographie sans légende",
+    "reveal": "Voir la photographie",
+    "hide": "Masquer la photographie",
+    "courtesy": "Avec l'aimable autorisation de {credit}",
+    "original": "Original",
+    "restored": "Restaurée par IA",
+    "year": "Année",
+    "section": "Section",
+    "sections": "Sections",
+    "identifier": "Identifiant",
+    "home": "Accueil",
+    "photographsOf": "Photographies de {section}",
+    "position": "{index} sur {total}",
+    "previous": "Précédente",
+    "next": "Suivante",
+    "untitled": "Photographie {slug}",
+    "description": "Une photographie de l'archive de La Pelada.",
+    "descriptionWithCredit": "Une photographie de l'archive de La Pelada. Avec l'aimable autorisation de {credit}."
+  },
+  "search": {
+    "title": "Rechercher",
+    "label": "Légendes, patronymes, sections",
+    "placeholder": "Saisissez un terme",
+    "section": "Section",
+    "decade": "Décennie",
+    "credit": "Prêtée par",
+    "allSections": "Toutes",
+    "allDecades": "Toutes",
+    "allCredits": "Tous",
+    "option": "{label} ({count})",
+    "submit": "Rechercher",
+    "clear": "Retirer les filtres",
+    "help": "Cherchez un mot d'une légende, le patronyme de la famille qui a prêté la photographie ou le nom d'une section. Vous pouvez aussi filtrer sans rien saisir.",
+    "empty": "Aucune photographie ne correspond à cette recherche.",
+    "results": "{count, plural, one {# photographie} other {# photographies}}",
+    "query": "« {q} »",
+    "range": "{from}–{to}",
+    "pagination": "Pagination des résultats",
+    "titleWithQuery": "{q} · Rechercher"
+  }
+}

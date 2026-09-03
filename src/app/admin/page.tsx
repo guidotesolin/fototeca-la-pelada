@@ -58,6 +58,7 @@ export default async function AdminHome() {
           ['/admin/categories', 'Organizar la portada y las secciones'],
           ['/admin/site-text', 'Editar los textos del sitio'],
           ['/admin/import', 'Importar fotografías desde Drive'],
+          ['/admin/translations', 'Ver qué falta traducir'],
         ].map(([href, label]) => (
           <Link
             key={href}

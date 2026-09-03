@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "description": "Digital photographic archive of La Pelada, Santa Fe, Argentina. Photographs digitised with their owners' permission, each with its caption and the family who lent it."
+  },
+  "header": {
+    "nav": "Main",
+    "sections": "Sections",
+    "searchLabel": "Search the archive's captions",
+    "search": "Search",
+    "settings": "Settings",
+    "language": "Language",
+    "sensitive": "Sensitive content",
+    "sensitiveHint": "Shows photographs containing images of animal butchering without a blur.",
+    "sensitiveSwitch": "Show sensitive content without a blur"
+  },
+  "languages": {
+    "es": "Spanish",
+    "en": "English",
+    "fr": "French",
+    "it": "Italian"
+  },
+  "footer": {
+    "archiveToDate": "The archive so far",
+    "photos": "{count, plural, one {# photograph} other {# photographs}}",
+    "sections": "{count, plural, one {# section} other {# sections}}",
+    "families": "{count, plural, one {# family} other {# families}}",
+    "inCharge": "Archive maintained by",
+    "contact": "Contact",
+    "networks": "Social"
+  },
+  "home": {
+    "deck": "Browse by section",
+    "map": "Map of La Pelada",
+    "featured": "Featured",
+    "allSections": "All sections · {count, plural, one {# photograph} other {# photographs}}"
+  },
+  "notFound": {
+    "title": "This page does not exist",
+    "body": "The address you are looking for is not in the archive. The link may be misspelled, or the photograph may have moved.",
+    "back": "Go to the archive"
+  },
+  "gallery": {
+    "index": "Index",
+    "photos": "{count, plural, one {# photo} other {# photos}}",
+    "page": "page {page} of {pages}",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageTitle": "{name}, page {page}"
+  },
+  "photo": {
+    "sensitive": "Sensitive content",
+    "warning": "Contains images of animal butchering.",
+    "altNoCaption": "Photograph with no caption",
+    "reveal": "View the photograph",
+    "hide": "Hide the photograph",
+    "courtesy": "Courtesy of {credit}",
+    "original": "Original",
+    "restored": "AI restored",
+    "year": "Year",
+    "section": "Section",
+    "sections": "Sections",
+    "identifier": "Identifier",
+    "home": "Home",
+    "photographsOf": "Photographs in {section}",
+    "position": "{index} of {total}",
+    "previous": "Previous",
+    "next": "Next",
+    "untitled": "Photograph {slug}",
+    "description": "A photograph from the archive of La Pelada.",
+    "descriptionWithCredit": "A photograph from the archive of La Pelada. Courtesy of {credit}."
+  },
+  "search": {
+    "title": "Search",
+    "label": "Captions, surnames, sections",
+    "placeholder": "Enter a term",
+    "section": "Section",
+    "decade": "Decade",
+    "credit": "Lent by",
+    "allSections": "All",
+    "allDecades": "All",
+    "allCredits": "Everyone",
+    "option": "{label} ({count})",
+    "submit": "Search",
+    "clear": "Clear filters",
+    "help": "Search for a word from a caption, the surname of the family who lent the photograph, or the name of a section. You can also filter without typing anything.",
+    "empty": "No photographs match this search.",
+    "results": "{count, plural, one {# photograph} other {# photographs}}",
+    "query": "“{q}”",
+    "range": "{from}–{to}",
+    "pagination": "Results pagination",
+    "titleWithQuery": "{q} · Search"
+  }
+}

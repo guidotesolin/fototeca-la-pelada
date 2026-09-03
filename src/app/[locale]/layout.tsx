@@ -1,23 +1,60 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+import type { Metadata, Viewport } from 'next'
 import { archiveFacts, listSections, listSiteText } from '@/db/queries/gallery'
 import { externalUrl } from '@/lib/url'
+import { Document, THEME_COLOR } from '@/components/document'
 import { MenuDismiss } from '@/components/menu-dismiss'
 import { SensitiveSwitch } from '@/components/sensitive-switch'
+import { LOCALE_LABELS, isLocale, localeHref, locales } from '@/i18n/config'
 import logo from '@/brand/header-logo.png'
+import type { Locale } from '@/i18n/config'
 
 /**
- * The four languages of `locale` in the schema, in the panel's own order. Codes
- * here and not in the database: which languages the site has is a matter of what
- * has been built, not of what has been translated. T13 gives each one a href.
+ * The public site's root layout, and the whole of the localisation boundary.
+ *
+ * `[locale]` sits above it rather than under a route group, which is what makes
+ * the locale a segment this layout can read -- and therefore what lets `<html
+ * lang>` be true. `/admin` has a root layout of its own and no locale segment,
+ * so the panel is outside this system entirely: _Language conventions_ keeps it
+ * in Spanish with no i18n machinery, and this is where that separation is
+ * physical rather than a convention.
+ *
+ * Every string on this page comes from one of two places and never from a third:
+ * the **message files** carry what the site says as a product -- labels, and the
+ * two sentences that are copy -- and the **database** carries what the authors
+ * wrote. Nothing is inline any more.
  */
-const LOCALES = [
-  { code: 'es', label: 'ESP' },
-  { code: 'en', label: 'ENG' },
-  { code: 'fr', label: 'FRA' },
-  { code: 'it', label: 'ITA' },
-]
+export const viewport: Viewport = {
+  themeColor: THEME_COLOR,
+}
 
-const CURRENT_LOCALE = 'es'
+/**
+ * All four, pre-rendered. The locale is the cheapest segment in the tree: four
+ * home pages, and the galleries under it come to 30 per language -- eleven page
+ * ones and nineteen paged, `ceil(n/24)` over the eleven sections.
+ * `/foto/[slug]` is the one that does not multiply -- see its own note.
+ */
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }))
+}
+
+/**
+ * `metadataBase` arrives with this task, because `alternates` is written as
+ * paths: a relative alternate with no base is a build error, and an absolute one
+ * would hard-code the origin into every page of the archive.
+ */
+export async function generateMetadata(props: LayoutProps<'/[locale]'>): Promise<Metadata> {
+  const { locale } = await props.params
+  const t = await getTranslations({ locale, namespace: 'meta' })
+
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+    title: { default: 'Fototeca La Pelada', template: '%s · Fototeca La Pelada' },
+    description: t('description'),
+  }
+}
 
 /**
  * The three marks, drawn from primitives instead of pasted brand paths. This design
@@ -75,11 +112,21 @@ function NetworkIcon({ name }: { name: string }) {
   )
 }
 
-export default async function PublicLayout({ children }: LayoutProps<'/'>) {
-  const [sections, facts, text] = await Promise.all([
-    listSections(),
+export default async function PublicLayout({ children, params }: LayoutProps<'/[locale]'>) {
+  const { locale: asked } = await params
+  // `[locale]` is the topmost segment, so it catches any unknown first path
+  // segment the proxy did not rewrite. A value that is not one of the four is
+  // not a language, it is a 404.
+  if (!isLocale(asked)) notFound()
+  const locale: Locale = asked
+
+  const [sections, facts, text, t, tf, tl] = await Promise.all([
+    listSections(locale),
     archiveFacts(),
-    listSiteText(),
+    listSiteText(locale),
+    getTranslations({ locale, namespace: 'header' }),
+    getTranslations({ locale, namespace: 'footer' }),
+    getTranslations({ locale, namespace: 'languages' }),
   ])
 
   /**
@@ -97,7 +144,7 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
   })
 
   return (
-    <>
+    <Document lang={locale}>
       {/* The reader's own answer to the veil, read before anything paints so a
           reader who already lifted it never watches the blur come off. `try`
           because a private window throws on the first `localStorage` touch, and a
@@ -116,7 +163,7 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
       <header className="border-rule border-b">
         <div className="max-w-content mx-auto flex w-full items-center justify-between gap-3 px-4 py-3 sm:gap-6 sm:px-6">
           <Link
-            href="/"
+            href={localeHref(locale, '/')}
             className="focus-visible:outline-focus flex shrink-0 items-center gap-3 focus-visible:outline-2 focus-visible:outline-offset-4"
           >
             {/* Empty alt: the name is beside it, or inside the mark itself. */}
@@ -130,7 +177,8 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
             {/* Only from 640: on a phone the lockup already reads "FOTOTECA / LA
                   PELADA", so the wordmark beside it is the same words twice and the
                   row does not fit. `sr-only` rather than hidden, so the link keeps
-                  its name for a screen reader at every width. */}
+                  its name for a screen reader at every width. The name is not
+                  translated: it is the archive's name, in any language. */}
             <span className="sr-only text-[26px] leading-none sm:not-sr-only">
               Fototeca La Pelada
             </span>
@@ -141,7 +189,7 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
               row in the order a thumb reaches it: field, settings, hamburger. */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-6">
             <nav
-              aria-label="Principal"
+              aria-label={t('nav')}
               className="order-last flex shrink-0 items-center sm:order-none"
             >
               {/* One `<details>` for both: a hamburger on a phone, the word from
@@ -154,7 +202,7 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
                     is what makes it safe here. */}
               <details name="header" className="menu menu-wide">
                 <summary className="t-credit link hover:text-text focus-visible:outline-focus flex h-11 items-center gap-1.5 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 sm:h-auto">
-                  <span className="sr-only sm:not-sr-only">Secciones</span>
+                  <span className="sr-only sm:not-sr-only">{t('sections')}</span>
                   <svg
                     width="22"
                     height="22"
@@ -193,7 +241,7 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
                     {sections.map((section) => (
                       <li key={section.slug}>
                         <Link
-                          href={`/categoria/${section.slug}`}
+                          href={localeHref(locale, `/categoria/${section.slug}`)}
                           className="t-credit link hover:bg-surface-high hover:text-text focus-visible:outline-focus flex min-h-11 items-baseline justify-between gap-4 px-3 py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2"
                         >
                           {section.name}
@@ -217,23 +265,23 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
                   reads first, and Tab still reaches the field before the button,
                   which is the order it makes sense to type in. */}
             <form
-              action="/buscar"
+              action={localeHref(locale, '/buscar')}
               method="get"
               className="flex min-w-0 flex-1 flex-row-reverse items-center gap-2 sm:flex-none"
             >
               <label className="sr-only" htmlFor="q">
-                Buscar en los epígrafes del archivo
+                {t('searchLabel')}
               </label>
               <input
                 id="q"
                 name="q"
                 type="search"
-                placeholder="Buscar"
+                placeholder={t('search')}
                 className="field text-text placeholder:text-muted min-w-0 flex-1 font-sans text-[15px] sm:w-32 sm:flex-none"
               />
               <button
                 type="submit"
-                aria-label="Buscar"
+                aria-label={t('search')}
                 className="link text-accent hover:text-text focus-visible:outline-focus shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 <svg
@@ -259,7 +307,7 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
 
             <details name="header" className="menu shrink-0">
               <summary className="t-credit link hover:text-text focus-visible:outline-focus flex h-11 items-center gap-2 whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2">
-                <span className="sr-only sm:not-sr-only sm:text-[15px]">Ajustes</span>
+                <span className="sr-only sm:not-sr-only sm:text-[15px]">{t('settings')}</span>
                 {/* A gear drawn as a hub and eight teeth rather than a toothed
                       outline: at 20 px the outline's notches close up into a dark
                       ring, the same legibility test the footer's marks were drawn
@@ -281,38 +329,54 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
               </summary>
 
               <div className="menu-panel">
-                <p className="t-label">Idioma</p>
-                {/* Stated, not offered: the archive is in Spanish until T13 puts
-                      `/[locale]` under these, and a control that changes nothing is
-                      worse than one that says so. T13 turns them into links. */}
-                <div className="mt-3 flex gap-1.5" role="group" aria-label="Idioma">
-                  {LOCALES.map(({ code, label }) => (
-                    <button
+                <p className="t-label">{t('language')}</p>
+                {/* Anchors, and the same four cells the header redesign drew: the
+                      control is not redesigned here, it is given its hrefs and loses
+                      `disabled`. `aria-current` rather than `aria-pressed`, which is
+                      a button's state and not a link's.
+
+                      `/idioma/<code>` and not the current page in the other
+                      language, because a layout cannot know the path it is wrapping
+                      -- the only way to read it on the server is a header, and
+                      reading one would make all 592 photo pages dynamic. The proxy
+                      answers this address with a redirect to the same page in the
+                      chosen language, so it is a real navigation with no client
+                      state and it works with JavaScript off. */}
+                <div className="mt-3 flex gap-1.5" role="group" aria-label={t('language')}>
+                  {locales.map((code) => (
+                    <a
                       key={code}
-                      type="button"
-                      disabled
-                      aria-pressed={code === CURRENT_LOCALE}
-                      className={`flex-1 border py-2 font-sans text-[14px] ${
-                        code === CURRENT_LOCALE
+                      href={`/idioma/${code}`}
+                      rel="nofollow"
+                      hrefLang={code}
+                      aria-current={code === locale ? 'true' : undefined}
+                      className={`focus-visible:outline-focus flex-1 border py-2 text-center font-sans text-[14px] focus-visible:outline-2 focus-visible:-outline-offset-2 ${
+                        code === locale
                           ? 'border-accent text-accent bg-surface-high'
-                          : 'border-rule text-muted'
+                          : 'border-rule text-muted hover:text-text'
                       }`}
                     >
-                      {label}
-                    </button>
+                      {LOCALE_LABELS[code]}
+                      {/* Spoken, not shown: "ENG" alone is a code, and the
+                          language's own name is what a screen reader should read.
+                          Appended rather than an `aria-label`, so the accessible
+                          name still contains the visible text -- WCAG 2.5.3, which
+                          is what lets a voice user say the word they can see. */}
+                      <span className="sr-only"> {tl(code)}</span>
+                    </a>
                   ))}
                 </div>
 
                 <div className="border-rule mt-5 flex items-start justify-between gap-4 border-t pt-4">
                   <div className="flex flex-col gap-1">
                     <span className="text-text font-sans text-[15px] leading-none">
-                      Contenido sensible
+                      {t('sensitive')}
                     </span>
                     <span className="text-muted font-sans text-[12.5px] leading-snug">
-                      Muestra sin difuminar las fotografías con imágenes de faena de animales.
+                      {t('sensitiveHint')}
                     </span>
                   </div>
-                  <SensitiveSwitch />
+                  <SensitiveSwitch label={t('sensitiveSwitch')} />
                 </div>
               </div>
             </details>
@@ -336,13 +400,25 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
           <div className="bg-rule h-px" />
 
           <div className="flex flex-col gap-1.5 pt-4.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-8 sm:pt-5">
-            <span className="t-label">El archivo hasta hoy</span>
+            <span className="t-label">{tf('archiveToDate')}</span>
             {/* Non-breaking inside each figure, so a wrap falls between them and
                   never between a number and its noun. The design pinned this with a
-                  `<br>`; this reflows on its own as the archive grows. */}
+                  `<br>`; this reflows on its own as the archive grows. The three
+                  counts are ICU plurals, which is the reason the nouns are not
+                  simply appended: "1 sección" and "11 secciones" do not share a
+                  suffix in any of the four languages. */}
             <span className="t-meta">
-              {facts.photos}&nbsp;fotografías · {sections.length}&nbsp;secciones · {facts.families}
-              &nbsp;familias · {facts.from}&ndash;{facts.to}
+              {[
+                tf('photos', { count: facts.photos }),
+                tf('sections', { count: sections.length }),
+                tf('families', { count: facts.families }),
+                `${facts.from}–${facts.to}`,
+              ]
+                // The only space inside a plural is the one that follows the
+                // number, so this is that space and no other: a wrap falls
+                // between the figures and never between a number and its noun.
+                .map((figure) => figure.replace(' ', ' '))
+                .join(' · ')}
             </span>
           </div>
 
@@ -360,13 +436,13 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
             <dl className="border-rule flex flex-col gap-6 border-l pl-4.5 sm:col-span-4 sm:col-start-9 sm:gap-7 sm:pl-7">
               {text.authors && (
                 <div className="flex flex-col gap-1.5 sm:gap-2">
-                  <dt className="t-label">A cargo del archivo</dt>
+                  <dt className="t-label">{tf('inCharge')}</dt>
                   <dd className="t-signature">{text.authors}</dd>
                 </div>
               )}
               {text.contact && (
                 <div className="flex flex-col gap-1.5 sm:gap-2">
-                  <dt className="t-label">Contacto</dt>
+                  <dt className="t-label">{tf('contact')}</dt>
                   <dd>
                     <a
                       href={`mailto:${text.contact}`}
@@ -379,7 +455,7 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
               )}
               {networks.length > 0 && (
                 <div className="flex flex-col gap-1 sm:gap-3">
-                  <dt className="t-label">Redes</dt>
+                  <dt className="t-label">{tf('networks')}</dt>
                   <dd className="flex flex-col sm:gap-2.5">
                     {networks.map(({ name, href }) => (
                       <a
@@ -400,6 +476,6 @@ export default async function PublicLayout({ children }: LayoutProps<'/'>) {
           </div>
         </div>
       </footer>
-    </>
+    </Document>
   )
 }

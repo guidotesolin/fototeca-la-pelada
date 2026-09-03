@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { A11y, EffectCoverflow, Keyboard } from 'swiper/modules'
 import { PhotoImage } from '@/components/photo-image'
+import { localeHref, type Locale } from '@/i18n/config'
+import type { PhotoImageLabels } from '@/components/photo-image'
 import type { Section } from '@/db/queries/gallery'
 import 'swiper/css'
 import 'swiper/css/effect-coverflow'
@@ -45,8 +47,23 @@ function useWideEnough(query = '(min-width: 900px)') {
  * Desktop only (>= 900 px): on phone and tablet the card list stays, which is also
  * what a reader browsing without JavaScript sees -- which is why the deck never
  * travels in the server HTML.
+ *
+ * The locale and the region's label arrive as props: this is the one client
+ * component that renders links, and reading the message files here would ship all
+ * four languages to the browser for one string.
  */
-export function SectionDeck({ sections }: { sections: Section[] }) {
+export function SectionDeck({
+  sections,
+  locale,
+  label,
+  labels,
+}: {
+  sections: Section[]
+  locale: Locale
+  label: string
+  /** The frame's own three, for the covers this draws. See `PhotoImageLabels`. */
+  labels: PhotoImageLabels
+}) {
   const wide = useWideEnough()
   /**
    * A card that is not active gets selected, not followed: navigating is the next
@@ -70,7 +87,7 @@ export function SectionDeck({ sections }: { sections: Section[] }) {
   if (!wide) return null
 
   return (
-    <div className="deck mt-6" role="region" aria-label="Explorar por sección">
+    <div className="deck mt-6" role="region" aria-label={label}>
       <Swiper
         modules={[EffectCoverflow, A11y, Keyboard]}
         effect="coverflow"
@@ -93,7 +110,7 @@ export function SectionDeck({ sections }: { sections: Section[] }) {
         {sections.map((section) => (
           <SwiperSlide key={section.slug} className="deck-card">
             <Link
-              href={`/categoria/${section.slug}`}
+              href={localeHref(locale, `/categoria/${section.slug}`)}
               prefetch={false}
               onPointerDown={arm}
               onClick={guard}
@@ -102,7 +119,9 @@ export function SectionDeck({ sections }: { sections: Section[] }) {
               {/* Never `priority`: on a phone the deck is absent, and an eager
                   high-priority image would be fetched all the same, stealing
                   bandwidth from the visible content. Lazy, it is not fetched. */}
-              {section.cover && <PhotoImage photo={section.cover} sizes="240px" fill />}
+              {section.cover && (
+                <PhotoImage photo={section.cover} sizes="240px" labels={labels} fill />
+              )}
               {/* The description, as in the reference: always in the DOM, shown on hover. */}
               <span className="deck-veil">
                 {section.intro && <span className="deck-intro">{section.intro}</span>}

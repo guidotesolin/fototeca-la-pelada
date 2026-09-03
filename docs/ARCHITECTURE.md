@@ -49,11 +49,61 @@ A three-tier rule, because the project has three distinct audiences:
 | **Admin panel**                                                                                                        | **Spanish, never translated**                                  | Only the two of them use it. It carries no i18n machinery: strings are written directly in Spanish.               |
 
 Practical consequence: `next-intl` wraps only the public `/[locale]` routes. `/admin` stays
-outside the localization system.
+outside the localization system, and since T13 that separation is physical rather than a
+convention: `[locale]` sits **above** the public root layout, so the panel needs a root layout of
+its own and there is no shared parent that could carry a translator. `src/components/document.tsx`
+is the `<html>`/`<body>`/fonts half the two of them share.
 
 Public routes stay in Spanish (`/categoria`, `/foto`, `/buscar`) because they are user-facing
-content for a Spanish-language audience and carry SEO weight. Admin routes are in English because
-they are internal.
+content for a Spanish-language audience and carry SEO weight — and they stay Spanish in **all four
+languages**: `/en/foto/espacios-001`, never `/en/photo/…`. The query parameters go with them
+(`?seccion=`, `?credito=`, `?decada=`), and so do the two fragment identifiers on the photo page
+(`#original`, `#restaurada`). Anything in an address is something somebody may already have shared.
+Admin routes are in English because they are internal.
+
+### Spanish carries no prefix
+
+**`as-needed`**, in next-intl's terms: `/foto/espacios-001` goes on being _the_ Spanish URL and
+`/en/foto/espacios-001` is added beside it. `always` was rejected, and the reason is the archive's
+own — the whole point of this site over Google Sites is a per-photo permalink that can be shared,
+and the link that will actually travel through the town's WhatsApp is the short one. It also spares
+every reader a redirect hop on a normal visit. `/es/foto/espacios-001` answers 307 to the
+unprefixed form, so one page never has two addresses.
+
+**Nothing detects the reader's language, and nothing is remembered.** next-intl's
+`localeDetection` and `localeCookie` are both off, which is a decision and not a default. With
+either on, `accept-language` or a previous visit could redirect a reader away from the address they
+were handed: the short Spanish link shared in the town would land an Italian-speaking descendant on
+`/it/foto/…`, and one address would serve two different pages to two people. The URL is the only
+thing that decides the language, the picker in the header is the only thing that changes it. Two
+things fall out for free — every public address stays cacheable at the CDN with no `Vary`, and the
+public site sets no cookie at all.
+
+**The picker is four links, and the redirect is what makes them keep the page.** A layout cannot
+know the path it is wrapping — the only way to read it on the server is a request header, and
+reading one would make all 592 pre-rendered photo pages dynamic, for a control in a dropdown. So
+each button is an `<a href="/idioma/en">`, and `proxy.ts` turns that into a 307 to the same page in
+the chosen language, from the `Referer`. No client state, works with JavaScript off, and answers
+`no-store` because the address is the same for every reader while the answer is not. With no
+`Referer` — a pasted link, a privacy extension — it lands on that language's home page, which is
+the whole of the degradation.
+
+**A `Referer` is attacker-controllable input, so the answer is checked rather than the input
+trusted**, and the first version of this got it wrong. Rejecting another origin is the obvious half
+and it is not enough: a referer that passes the same-origin test can still carry a pathname
+beginning with `//` — `https://site//evil.com`, which is also what a browser makes of
+`/\/evil.com` — and `new URL('//evil.com', origin)` resolves that as a **new origin**, so
+`/idioma/es` answered `Location: http://evil.com/`. Found in review, measured against the running
+build, and it fired on the **Spanish button only**, because that is the branch where `localeHref`
+returns the path untouched. Which is the point worth keeping: an asymmetry between one locale and
+the other three is exactly the kind of thing a reading passes over.
+
+The fix asserts the **built URL's** origin instead of pattern-matching the path, so `//`, `/\`,
+userinfo and whatever else `URL` chooses to interpret all fail the same check and all get the same
+answer as a missing `Referer`. It lives in `switchHref` in `src/i18n/config.ts` rather than in the
+proxy, so that it is a pure function with a test: `npm run i18n:smoke` runs the six hostile shapes
+against all four languages, and those assertions fail against the code that shipped into the build
+before the review.
 
 ---
 
@@ -68,7 +118,7 @@ they are internal.
 | **Masters**    | **Google Drive** (5 TB, already paid)    | Preservation vault: scans at maximum quality. Never served to the public.                                                                                                             |
 | **Web images** | **Cloudflare R2** (10 GB, free tier)     | Derivatives only, served from `img.fototecalapelada.com.ar`. 10 GB free and **free egress**: a gallery is pure egress.                                                                |
 | Auth           | **Auth.js v5 + Google**                  | They sign in with their Gmail or the archive's account. The same OAuth grants Drive access.                                                                                           |
-| i18n           | **next-intl**, routes `/es /en /fr /it`  | Public site only. Translations live in the database, falling back to Spanish.                                                                                                         |
+| i18n           | **next-intl**, Spanish unprefixed        | Public site only, `/`, `/en`, `/fr`, `/it`. Translations live in the database and fall back to Spanish in SQL; the site's own labels live in `src/i18n/messages/`.                    |
 | Hosting        | **Vercel** (Hobby)                       | Native Next.js and GitHub integration. The project is non-profit, so it complies with the non-commercial use policy.                                                                  |
 | Repo           | **GitHub** (public)                      | `github.com/guidotesolin/fototeca-la-pelada`. Public, which makes secret scanning and push protection free and on by default.                                                         |
 
@@ -104,6 +154,16 @@ and LCP goes to 5.1 s. Unthrottled, first paint is 109 ms, so what the simulatio
 round trips and bandwidth contention, and the largest thing contending is **137 KB of framework
 JavaScript on a page with no interactivity at all** — 47 KB above the estimate this section was
 written with. That is the condition under which the Astro alternative stops being theoretical.
+
+Re-measured on the way through T13, because the number is the argument: a gallery now loads
+**173 KB gzipped over eight chunks**, the growth belonging to T7-T12 and the header redesign rather
+than to any one decision. T13 itself adds **zero** — the same eight chunks and the same 173 KB, byte
+for byte, on `main` and on the branch and in all four languages. Localization is entirely
+server-side: `getTranslations` is called with an explicit locale in Server Components, the three
+client components take their strings as props, and no message file and no `use-intl` runtime reaches
+the browser. Which was not free to arrange: left to resolve the locale itself, next-intl reads a
+request header, and reading one opts the component into dynamic rendering — the whole pre-rendered
+archive rendered per request, for a label.
 
 ### Why Drive stores but does not serve
 
@@ -187,6 +247,35 @@ production, which removes the risk from Neon's free tier (100 CU-hours/month, wh
 database when exceeded**). It also means the site responds from CDN, which matters on slow
 connections.
 
+**Four languages do not multiply it by four, and T13 chose where they do.** 592 photographs in four
+languages is 2,368 pages, and 1,776 of them would be a Spanish caption rendered under an English
+`<html lang>` — because no translation exists yet, and because even a fully translated archive is
+translated a section at a time. So the split is: the home page and all 30 gallery pages pre-render
+in every language (they are the entry points, and cheap), and `/foto/[slug]` pre-renders **every
+photograph in Spanish and the first photograph of each section in the other three**. Counted off
+the build's own manifest: **756 routes** — 625 photographs (592 Spanish plus eleven in each of the
+other three), 120 galleries, four home pages and seven framework and icon routes. The rest render on first visit and become ISR entries under the same
+`GALLERY_TAG`, which is what `dynamicParams = true` was already turned on for.
+
+**The eleven per language are a framework constraint, not a hedge, and it was measured.** Returning
+`[]` from `generateStaticParams` for the other three locales — which the Next docs describe as
+"render these at runtime" — makes Next 16.3.3 discard the static params of that segment _entirely_,
+Spanish included: the build went from 592 pre-rendered photo pages to **zero**, silently, while
+`generateStaticParams` still returned all 592 for `es`. Verified in both directions by returning
+two slugs for every locale instead, which produced the expected eight pages. So every parent locale
+has to come back with something, and the something worth having is the head of each gallery.
+
+**Every cache on the public read path carries the locale in its key**, and this is the failure that
+would have been hardest to see: an entry keyed `['sections']` serves whichever language happened to
+fill it first to all the others, so the bug is intermittent and depends on the order of the first
+two requests after a deploy. `unstable_cache` fixes its key parts when it is created, so a locale
+arriving as an argument can only reach the key through the closure — which is exactly the case
+Next's own documentation says `keyParts` exists for. `perLocale` in `db/queries/gallery.ts` builds
+one cached reader per language and is the only way the public queries are cached. Verified by
+asking for the English route first from a cold cache and then the Spanish one, and then the same
+two in the opposite order: identical answers both ways. The four reads that are **not** per language
+are the ones that read no translation — counts, slugs and curatorial order.
+
 ### Cross-cutting decision: image variants are generated at import time
 
 Vercel Hobby includes only 5,000 image transformations per month; with 592 photos and several
@@ -205,8 +294,8 @@ browsers, on a phone, often on rural mobile data.
 
 **Hard requirement: the photo and its caption must be visible without JavaScript.** Embedded
 browsers are old and unpredictable. All archive content is server-rendered; JavaScript only adds
-conveniences (revealing a sensitive image, switching original/restored, instant filtering). If it
-fails, the archive is still readable.
+conveniences (revealing a sensitive image, switching original/restored, instant filtering,
+remembering the sensitive-content preference). If it fails, the archive is still readable.
 
 **Images are most of the weight, so that is where the fight is:**
 
@@ -225,7 +314,7 @@ infinite scroll, which breaks the back button, accumulates memory, and cannot be
 T6 built those URLs as paths — `/categoria/campo/2`, with page one at `/categoria/campo` — rather
 than the `?p=2` this document first sketched. A page that reads `searchParams` cannot be
 prerendered, and prerendering everything is the decision that keeps Neon out of the request path.
-Twenty-four photos to a page comes to 33 static pages for the whole archive.
+Twenty-four photos to a page comes to 30 static pages for the whole archive.
 
 **The photo detail page, which is the main screen.** Full-width image, caption immediately below
 in legible type, credit visible rather than buried. Pinch zoom **is not disabled**: someone will
@@ -463,6 +552,17 @@ Details that matter:
   unless the file happened to still be in Drive. A takedown must not cost anybody their work. One
   nullable column, and the restoration is now stored exactly like the photograph: master kept,
   derivatives regenerable.
+- **The fallback to Spanish is in the SQL, not in TypeScript.** Every public read joins the
+  asked-for translation _and_ the Spanish one — two aliases of the same table, both lookups on the
+  primary key `(photo_id, locale)` — and coalesces the fields. One round trip serves any language,
+  there is no N+1, and the rule is readable where the data is read rather than hidden in a helper.
+  `coalesce(nullif(asked.caption, ''), source.caption)`, and the `nullif` is not decoration: a
+  translation row can exist with nothing in it — the Drive import creates exactly that — and an
+  empty English caption means "not translated yet", not "this photograph has no caption". The same
+  shape covers `notes`, and `category_translation.name`/`intro`, where the **Spanish** row is the
+  inner join because a section with no Spanish name is not a section the panel could have made.
+  `site_text` is the one exception: a dozen rows per language, so both come back in one scan and
+  the merge is a spread rather than a self-join.
 - **`year_from`/`year_to`** feed the decade filter. The text as they wrote it ("circa 1960",
   "década del 40") already lives in the `caption`, so it needs no field of its own.
 - **`photo_category` is N:N**: a photo can sit in both Familias and Casamientos. A real improvement
@@ -480,7 +580,23 @@ Details that matter:
   the database now, not only in `archive.json`. The map's coordinates and the social URLs are in
   there for the same reason as the prose: moving the pin or adding a fourth network must not need a
   deploy. The only words in code are labels: "El archivo hasta hoy", "A cargo del archivo",
-  "Contacto", "Redes", "Secciones", "Buscar", "Todas las secciones".
+  "Contacto", "Redes", "Secciones", "Buscar", "Todas las secciones", and from the header's settings
+  panel "Ajustes", "Idioma" and "Contenido sensible". **Since T13 none of them is in code either**:
+  every label lives in `src/i18n/messages/{es,en,fr,it}.json`, and so do the two strings that are
+  copy rather than labels — the sensitive-content warning and the sentence explaining the switch —
+  which is where they belong instead of earning `site_text` keys of their own. The split is now
+  clean: the **database** carries what the authors wrote, the **message files** carry what the site
+  says as a product, and nothing is inline. **It took the review to make that true.** T13 left
+  three Spanish strings in `src/components/photo-image.tsx` — the sensitive-content warning and its
+  "Ver la fotografía" link, drawn over every sensitive thumbnail, plus the `alt` a captionless
+  photograph falls back to — because the photo page states its warning in a card of its own and
+  passes `veil={false}`, so the one screen anybody thought to check was the one screen that never
+  drew them. They were Spanish on every non-Spanish gallery card, search result, featured strip and
+  section cover. `PhotoImage` is imported by the deck, which is Swiper and therefore a client
+  component, so it takes those three as a **required** prop — required so that no caller can fall
+  back to Spanish silently again, which is what the type checker then proved for all four. Counts that read as prose ("592 fotografías · 11
+  secciones") are ICU plurals there, because "1 sección" and "11 secciones" do not share a suffix
+  in any of the four languages.
 - **A URL out of the database is a trust boundary.** `site_text` becomes editable from the panel in
   T11, and its values reach an `href` and an `<iframe src>`, so `src/lib/url.ts` guards them: the
   map embed against an exact hostname allowlist, the network links against the scheme only, since
@@ -494,7 +610,39 @@ Details that matter:
   search configurations (`es_unaccent` and friends), because the built-in dictionaries cannot be
   altered, and **fills `search_vector` from a trigger rather than from application code**: a
   generated column cannot pick its configuration from the row's `locale`, and a trigger means the
-  seed, the panel and the translation editor cannot forget.
+  seed, the panel and the translation editor cannot forget. **T13 made the query side pick the same
+  way**, so a search on `/en` is stemmed by English rules — measured: "tanks" and "streets" both
+  reach an English caption that "tanks" in Spanish does not touch.
+
+  **And it falls back, which it has to.** With no translations loaded, an English search over
+  English vectors alone would answer nothing at all for the whole archive — and once they arrive it
+  would answer nothing for whatever is still untranslated, which is a search box lying about what
+  is behind it.
+
+  **The public query therefore does not read `search_vector` at all; it re-tokenizes the text.**
+  The obvious version does read it — coalesce the asked locale's stored vector with the Spanish one
+  — and it is wrong, and it shipped once. A stored vector was stemmed by whatever configuration
+  wrote it: the trigger builds the Spanish row with `es_unaccent`, so it holds `'escuel'`, while
+  `/en` asks `websearch_to_tsquery('en_unaccent', 'escuela')` for `'escuela'`. Those never meet.
+  Measured against the archive: "escuela" found **25 photographs in Spanish and 0 in English**, on
+  the very pages that render those Spanish captions. French and Italian found all 25 — their
+  stemmers truncate "escuela" to `escuel` too — which is worse than failing outright, because it
+  made a structural defect look like an English one. Caught in review; the fix takes English from 0
+  back to 25.
+
+  One `to_tsvector` over the coalesced **text**, in the asked locale's configuration, fixes it by
+  construction: what the reader typed and what the archive holds go through the same stemmer. It
+  costs nothing the query was not already paying, since no index ever served it, and it buys a
+  second thing — the fallback becomes **field-level and identical to the one the page renders**, so
+  a result is matched on exactly the text the reader will see. `search_vector` is kept because the
+  trigger keeps it true for free and because it is where the ceiling below lands, but nothing
+  public reads it.
+
+  `npm run search:smoke` asserts both halves, and **the first version of that check was hollow**:
+  it searched "Tesolin" in four languages and passed while the caption path returned nothing,
+  because "Tesolin" is a _credit_ — 62 credits and exactly one caption — and the credit half of the
+  document is re-tokenized per locale either way. It now asserts a caption-only word as well.
+
 - **What is searched is the caption plus two things that are not text of the photograph**: its
   credit and the names of its sections. T8 found that the column alone answers neither acceptance
   criterion on this archive — 61 of the 62 Tesolín photographs carry the surname only in `credit`,
@@ -543,18 +691,34 @@ ways the new site would make worse:
 3. **It is all-or-nothing per section.**
 
 So the warning is **a property of the photo** — `photo.sensitive` — and travels with it. The text
-lives in the message files, translated once, because today exactly one kind of warning exists:
+lives in the message files, translated once in each of the four languages since T13, because today
+exactly one kind of warning exists. The two halves of the promise hold in every language: a
+sensitive photograph is never the `og:image` and its page carries `noimageindex` on `/en` exactly
+as on `/`.
 
-| Where                      | Behavior                                                                                                                                                                                     |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gallery grid               | Blurred thumbnail with a restrained label. One click reveals it. Not hidden: blurring gives informed choice, hiding would erase the archive.                                                 |
-| Photo detail page          | A card with the text **before** the image, the image blurred behind it, and a "Ver la fotografía" button. This is what fixes direct access.                                                  |
-| Search results             | Same as the grid. **Decision: sensitive photos appear everywhere, blurred** — excluding them from search would create the incoherence of searching "carneada" and not finding the carneadas. |
-| Viewer preference          | A "show sensitive images unblurred" toggle, remembered in `localStorage`. A researcher does not click 30 times; a casual visitor keeps them covered.                                         |
-| Sharing and search engines | If a photo is sensitive it is **never used as `og:image`**, and its page carries `noimageindex`.                                                                                             |
+| Where                      | Behavior                                                                                                                                                                                                      |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gallery grid               | Blurred thumbnail with a restrained label. One click reveals it. Not hidden: blurring gives informed choice, hiding would erase the archive.                                                                  |
+| Photo detail page          | A card with the text **before** the image, the image blurred behind it, and a "Ver la fotografía" button. This is what fixes direct access.                                                                   |
+| Search results             | Same as the grid. **Decision: sensitive photos appear everywhere, blurred** — excluding them from search would create the incoherence of searching "carneada" and not finding the carneadas.                  |
+| Viewer preference          | Built: the "Contenido sensible" switch in the header's settings panel, remembered in `localStorage`. A researcher does not click 30 times; a casual visitor keeps them covered. **Not a cookie** — see below. |
+| Sharing and search engines | If a photo is sensitive it is **never used as `og:image`**, and its page carries `noimageindex`.                                                                                                              |
 
 The per-section intro still exists (`category_translation.intro`), so they can keep the notice they
 wrote as context. It is no longer the mechanism, just courtesy.
+
+**The preference is `localStorage` and a class on `<html>`, never a cookie**, and that follows from
+the pre-rendering decision above rather than from taste. A cookie has to be read on the server, and
+reading one in the public layout would make every pre-rendered route dynamic — the whole archive
+rendered per request so that one reader can see a blur come off. So a small inline script writes the
+class before first paint and unlayered CSS does the rest. With JavaScript off nothing runs and the
+veil stays, which is the direction a failure here has to fail in.
+
+**The switch is authoritative in both directions.** Turning the veil back on also closes any photo
+page's own `<details class="reveal">`: the rule that lifts the blur for one photograph outlives the
+preference otherwise, so a reader who asked to be covered again would go on looking at the carneada.
+Caught in review and never shipped, which is the only reason it is worth a paragraph: the failing
+gesture is invisible, because the panel hides that card's label while the preference is on.
 
 **Wording criterion**, which matters in a historical archive: the warning describes, it does not
 judge. "Contains images of animal butchering", not "disturbing content". A carneada is a legitimate
@@ -584,14 +748,19 @@ How a takedown works:
 `notFound()` gives 404, `forbidden()` and `unauthorized()` give 403 and 401, and there is nothing
 else -- so the two ways out F29 recorded turned out not to exist, since a `route.ts` also cannot sit
 at the same path as a `page.tsx`. The one place in the framework that can put an arbitrary status on
-a URL is `proxy.ts`, so `src/proxy.ts` matches `/foto/:slug` and answers 410 for a slug that is on
-the takedown list. It reads that list from `/api/gone` rather than from the database, because a
+a URL is `proxy.ts`, so `src/proxy.ts` answers 410 for a slug that is on the takedown list — in any
+of the four languages, because it reads the slug out of the path with the locale prefix stripped.
+`/en/foto/campo-078` and `/foto/%63ampo-078` both answer 410; verified on all four, encoded
+spellings included. It reads that list from `/api/gone` rather than from the database, because a
 lookup per request would put Neon back in the request path -- the one thing the pre-rendered design
 exists to avoid -- and it memoizes the answer for two seconds. The proxy carries no authorization:
 T9's decision that a proxy is not an auth boundary still stands.
 
-**What the proxy costs, and what the memo actually bounds.** This runs on every `/foto/:slug`
-request, prefetches included, so it was measured on the production build rather than reasoned about.
+**What the proxy costs, and what the memo actually bounds.** T13 widened the matcher to every
+public path — the locale routing needs it there — so the guard moved from the matcher into the
+function: the takedown list is still read only for `/foto/…`, and a gallery pays nothing for it.
+This runs on every `/foto/:slug` request, prefetches included, so it was measured on the production
+build rather than reasoned about.
 The list is fetched **once per instance**, not once per request -- the first version fetched it 24
 times for 24 concurrent requests, which is precisely a gallery prefetching its page of photographs,
 and the in-flight promise is now shared. What remains is **180-191 ms** of TTFB on a cold instance
@@ -744,22 +913,25 @@ The rule that organizes the whole design: **whatever is content lives in the dat
 from the panel; only behavior and layout live in code.** The Campo notice is the perfect example of
 something that _looks_ like prose and is really structured data.
 
-| Change                                            | How                                                                                                         |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Fix a caption, a year, a credit                   | Panel → the photo → save. Revalidates its detail page and the galleries it appears in.                      |
-| Flag a photo as sensitive                         | Panel → the sensitive checkbox.                                                                             |
-| Add, rename, hide or reorder a category           | Panel → categories. The public route appears or disappears on its own.                                      |
-| Move a photo between categories, or put it in two | Panel → the photo. The relation is N:N.                                                                     |
-| Reorder photos within a category                  | Panel → drag (`photo_category.position`).                                                                   |
-| Organize the home page                            | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.      |
-| Change a section's intro text                     | Panel → category → intro, per language.                                                                     |
-| Change any of the site's own words                | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the map, the networks. |
-| Add new photos                                    | Panel → import from Drive.                                                                                  |
-| Attach an AI restoration                          | Panel → the photo → restored version.                                                                       |
-| Translate to English, French or Italian           | Panel → translations, which also lists what is missing.                                                     |
+| Change                                            | How                                                                                                                                                                                                                        |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fix a caption, a year, a credit                   | Panel → the photo → save. Revalidates its detail page and the galleries it appears in.                                                                                                                                     |
+| Flag a photo as sensitive                         | Panel → the sensitive checkbox.                                                                                                                                                                                            |
+| Add, rename, hide or reorder a category           | Panel → categories. The public route appears or disappears on its own.                                                                                                                                                     |
+| Move a photo between categories, or put it in two | Panel → the photo. The relation is N:N.                                                                                                                                                                                    |
+| Reorder photos within a category                  | Panel → drag (`photo_category.position`).                                                                                                                                                                                  |
+| Organize the home page                            | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.                                                                                                                     |
+| Change a section's intro text                     | Panel → category → intro, per language.                                                                                                                                                                                    |
+| Change any of the site's own words                | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the map, the networks.                                                                                                                |
+| Add new photos                                    | Panel → import from Drive.                                                                                                                                                                                                 |
+| Attach an AI restoration                          | Panel → the photo → restored version.                                                                                                                                                                                      |
+| See what is still untranslated                    | Panel → traducciones: per language, how much is done and which sections and site texts are missing. Only the seven `site_text` keys that are language are counted; the map, the address and the three social URLs are not. |
 
 These require touching code, and that is as it should be: visual design, viewer behavior, the
-structure of the detail page, and adding a new language to the list.
+structure of the detail page, adding a new language to the list, and — for now — **entering a
+translation**. T13 built the read path and the screen that says what is missing; the editor that
+writes a caption in English is T15's, and until it exists the translations are loaded into the
+database directly.
 
 ---
 
@@ -811,7 +983,8 @@ fototeca-la-pelada/
 │   └── TAKEOUT.md                 # the by-hand half of the archive rescue
 ├── src/
 │   ├── app/
-│   │   ├── [locale]/              # public, pre-rendered, localized
+│   │   ├── [locale]/              # public, pre-rendered, localized — a ROOT layout
+│   │   │   ├── layout.tsx         #   <html lang>, header, footer
 │   │   │   ├── page.tsx
 │   │   │   ├── categoria/[slug]/
 │   │   │   ├── foto/[slug]/
@@ -819,15 +992,21 @@ fototeca-la-pelada/
 │   │   │   ├── creditos/
 │   │   │   └── sobre/
 │   │   ├── admin/                 # dynamic, authenticated, Spanish strings
+│   │   │   ├── layout.tsx         #   the second ROOT layout: <html lang="es">
 │   │   │   ├── photos/
 │   │   │   ├── import/
 │   │   │   ├── categories/
-│   │   │   └── translations/
+│   │   │   ├── site-text/
+│   │   │   └── translations/      #   what is still untranslated, per language
 │   │   └── api/
 │   ├── db/{schema.ts,index.ts,queries/}
 │   ├── lib/{auth.ts,drive.ts,images.ts,r2.ts}
-│   ├── components/
-│   └── i18n/messages/{es,en,fr,it}.json
+│   ├── components/                # document.tsx is the two root layouts' shared half
+│   ├── proxy.ts                   # locale routing + the takedown 410 + the language switch
+│   └── i18n/
+│       ├── config.ts              # the four codes, localeHref, splitLocale, alternatesFor
+│       ├── request.ts             # next-intl reads the message files here
+│       └── messages/{es,en,fr,it}.json
 ├── drizzle/                       # migrations
 ├── tools/
 │   ├── extract-sites.py           # archive rescue
@@ -837,8 +1016,26 @@ fototeca-la-pelada/
     └── originals/                 # the image files: gitignored, ~105 MB
 ```
 
-A single Next.js app, no monorepo: the panel is a route group sharing types and model with the
-public site. Fewer moving parts, one deploy.
+A single Next.js app, no monorepo: the panel shares types and model with the public site. Fewer
+moving parts, one deploy. **There is no `app/layout.tsx`**: `[locale]` has to sit above the public
+root layout for `<html lang>` to be true, which leaves `/admin` needing a root layout of its own —
+Next's documented multiple-root-layouts case. Cross-navigating between them is a full page load,
+which the panel's links to the public site deliberately were anyway.
+
+**It also costs a `not-found.tsx`, and the review is what found that out.** Next inserts a default
+not-found boundary at the root layer and at a first layer that is a route _group_. `(public)` was a
+group, so the archive used to have one inside its own header and footer and another inside
+`<html lang="es">`; `[locale]` is a real segment and the root layout is gone, so the only remaining
+default boundary sat **above** the public site's only `<html>`. Every `notFound()` — a mistyped
+permalink, a gallery page past the end, a stale link off Facebook — answered with Next's bare
+fallback: `<html id="__next_error">`, no `lang`, no stylesheet, no dark ground. Measured on the
+production build. `src/app/[locale]/not-found.tsx` recovers the **words** — the archive's own copy,
+in the reader's language, read from `next/root-params` because a `not-found.tsx` receives no
+`params`, which is exactly what root parameters exist for — but **not the document**: the boundary
+is still above the only `<html>`, so a 404 is unstyled. Next's docs name both of this project's
+conditions, multiple root layouts and a root layout under a top-level dynamic segment, as the
+reason `experimental.globalNotFound` exists; that is a second experimental flag for a page nobody
+should reach, so it is F46 rather than a decision taken here.
 
 Directories are created by the task that needs them. Git does not track empty directories, so
 scaffolding them up front would require `.gitkeep` files — pure ceremony.
@@ -870,7 +1067,7 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
 | **Google's CDN rate-limits**                                     | Not a download quota: 592 downloads in a row never tripped it, while a token from a page left idle answered 403 at t+61s. The extractor downloads each section right after reading its page, and a 403 re-reads the page for fresh tokens. |
 | **Publishing stops being instantaneous**                         | Revalidation is targeted and takes seconds, not a full rebuild.                                                                                                                                                                            |
 | **Old Sites links will break**                                   | Sites cannot redirect. Section slugs are preserved and a notice is left on the old site.                                                                                                                                                   |
-| **Translations are human work**                                  | Partial translation is supported by design: fallback to Spanish, and the panel shows what is missing.                                                                                                                                      |
+| **Translations are human work**                                  | Partial translation is supported by design and built in T13: the fallback to Spanish is in the SQL, so a half-translated archive reads as one page, and `/admin/translations` says what is missing per language.                           |
 | **Photo rights**                                                 | The current site states the photos were digitized with their owners' permission. That notice and the per-photo credit are preserved as a requirement, not decoration.                                                                      |
 
 ---
@@ -886,9 +1083,20 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
   search still work; open a shared link in Facebook's embedded browser on a real phone; and check
   that pinch zoom works.
 - **Sensitive content**: flag a carneada and test all four paths — grid, search, direct link in a
-  new window, and the WhatsApp link preview, which must not show the image.
+  new window, and the WhatsApp link preview, which must not show the image. Then the preference,
+  both ways and in that order: turn it on, uncover a photograph on its own page, turn it off, and
+  confirm the blur is back. Checking only the first half is what made a real defect invisible until
+  review went looking for it.
 - **Takedown**: unpublish and confirm 410, removal from galleries, search and sitemap, and that
-  **the R2 URL stops responding**; then republish and verify derivatives are regenerated.
+  **the R2 URL stops responding**; then republish and verify derivatives are regenerated. The 410
+  in **all four languages**, encoded spellings included.
+- **Languages**: load one translation and leave its neighbours without, then check all three states
+  on the same section — a translated caption, a photograph with no translation row, and a row whose
+  caption is empty. `<html lang>` per route. The four picker buttons, clicked in a real browser and
+  followed with nothing but a `Referer`, which is the no-JavaScript path. `hreflang` reciprocal
+  across the four plus `x-default`, and a canonical per language. Then **the caches, in both
+  orders**: ask for the English route first from a cold cache and then the Spanish one, and then the
+  same two the other way round. And the panel, still Spanish end to end.
 - **Panel**: sign in with an account outside the allowlist and confirm rejection; import a test
   Drive folder, re-import it and confirm the counts do not move, and unpublish and republish one of
   the imported photographs — that last one is what proves the master is readable from Drive.

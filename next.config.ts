@@ -1,3 +1,4 @@
+import createNextIntlPlugin from 'next-intl/plugin'
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
@@ -41,15 +42,22 @@ const nextConfig: NextConfig = {
    * searching the same words still reach the database once, and a takedown drops
    * that entry with every other. What the CDN entry was saving was a function
    * invocation, which is not worth a promise the archive makes to a neighbour.
+   *
+   * Matched on the **incoming** path, which is why the prefixed languages need a
+   * source of their own: the proxy's rewrite to `/es/buscar` happens after this.
    */
   async headers() {
     return [
       {
-        source: '/buscar',
+        source: '/:path(buscar|en/buscar|fr/buscar|it/buscar)',
         headers: [{ key: 'Cache-Control', value: 'private, no-store' }],
       },
     ]
   },
 }
 
-export default nextConfig
+/**
+ * The plugin aliases `next-intl/config` to `src/i18n/request.ts`, which is where
+ * the message files are read. Nothing else about the build changes.
+ */
+export default createNextIntlPlugin()(nextConfig)

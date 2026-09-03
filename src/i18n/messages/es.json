@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "description": "Archivo digital fotográfico de La Pelada, Santa Fe. Fotografías digitalizadas con la autorización de sus dueños, con su epígrafe y la familia que las prestó."
+  },
+  "header": {
+    "nav": "Principal",
+    "sections": "Secciones",
+    "searchLabel": "Buscar en los epígrafes del archivo",
+    "search": "Buscar",
+    "settings": "Ajustes",
+    "language": "Idioma",
+    "sensitive": "Contenido sensible",
+    "sensitiveHint": "Muestra sin difuminar las fotografías con imágenes de faena de animales.",
+    "sensitiveSwitch": "Mostrar el contenido sensible sin difuminar"
+  },
+  "languages": {
+    "es": "español",
+    "en": "inglés",
+    "fr": "francés",
+    "it": "italiano"
+  },
+  "footer": {
+    "archiveToDate": "El archivo hasta hoy",
+    "photos": "{count, plural, one {# fotografía} other {# fotografías}}",
+    "sections": "{count, plural, one {# sección} other {# secciones}}",
+    "families": "{count, plural, one {# familia} other {# familias}}",
+    "inCharge": "A cargo del archivo",
+    "contact": "Contacto",
+    "networks": "Redes"
+  },
+  "home": {
+    "deck": "Explorar por sección",
+    "map": "Mapa de La Pelada",
+    "featured": "Destacadas",
+    "allSections": "Todas las secciones · {count, plural, one {# fotografía} other {# fotografías}}"
+  },
+  "notFound": {
+    "title": "Esta página no existe",
+    "body": "La dirección que buscás no está en el archivo. Puede que el enlace esté mal escrito o que la fotografía haya cambiado de lugar.",
+    "back": "Ir al archivo"
+  },
+  "gallery": {
+    "index": "Índice",
+    "photos": "{count, plural, one {# foto} other {# fotos}}",
+    "page": "página {page} de {pages}",
+    "pagination": "Paginación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageTitle": "{name}, página {page}"
+  },
+  "photo": {
+    "sensitive": "Contenido sensible",
+    "warning": "Contiene imágenes de faena de animales.",
+    "altNoCaption": "Fotografía sin epígrafe",
+    "reveal": "Ver la fotografía",
+    "hide": "Ocultar la fotografía",
+    "courtesy": "Cortesía: {credit}",
+    "original": "Original",
+    "restored": "Restaurada con IA",
+    "year": "Año",
+    "section": "Sección",
+    "sections": "Secciones",
+    "identifier": "Identificador",
+    "home": "Inicio",
+    "photographsOf": "Fotografías de {section}",
+    "position": "{index} de {total}",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "untitled": "Fotografía {slug}",
+    "description": "Fotografía del archivo de La Pelada.",
+    "descriptionWithCredit": "Fotografía del archivo de La Pelada. Cortesía: {credit}."
+  },
+  "search": {
+    "title": "Buscar",
+    "label": "Epígrafes, apellidos, secciones",
+    "placeholder": "Ingresá un término",
+    "section": "Sección",
+    "decade": "Década",
+    "credit": "Quién la prestó",
+    "allSections": "Todas",
+    "allDecades": "Todas",
+    "allCredits": "Todos",
+    "option": "{label} ({count})",
+    "submit": "Buscar",
+    "clear": "Quitar filtros",
+    "help": "Buscá una palabra del epígrafe, el apellido de la familia que prestó la fotografía o el nombre de una sección. También podés filtrar sin escribir nada.",
+    "empty": "No hay fotografías que respondan a esta búsqueda.",
+    "results": "{count, plural, one {# fotografía} other {# fotografías}}",
+    "query": "«{q}»",
+    "range": "{from}–{to}",
+    "pagination": "Paginación de resultados",
+    "titleWithQuery": "{q} · Buscar"
+  }
+}

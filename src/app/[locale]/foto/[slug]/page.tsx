@@ -1,10 +1,19 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { PhotoImage } from '@/components/photo-image'
-import { PER_PAGE, getPhoto, listCategoryOrder, listPhotoSlugs } from '@/db/queries/gallery'
+import {
+  PER_PAGE,
+  getPhoto,
+  listCategoryOrder,
+  listPhotoSlugs,
+  listSections,
+} from '@/db/queries/gallery'
 import { keyFor, publicUrl } from '@/lib/photo'
+import { alternatesFor, defaultLocale, isLocale, localeHref, type Locale } from '@/i18n/config'
+import { photoImageLabels } from '@/i18n/labels'
 
 /**
  * The photograph's own page, which is the screen the whole archive exists for: it
@@ -15,9 +24,11 @@ import { keyFor, publicUrl } from '@/lib/photo'
  * the original/restored switch -- are a native `<details>` and a `:target` pair,
  * so the page is complete with JavaScript off. Their rules live in globals.css.
  *
- * Not localized on purpose: T6 put the public routes at the root and T13 brings
- * next-intl, so the Spanish sits inline here rather than in a message file that
- * does not exist yet.
+ * Localized since T13. The caption, the note and the section names come out of the
+ * query already resolved -- the reader's language when it has been translated, the
+ * Spanish behind it when it has not -- so nothing on this page branches on which
+ * of the two it got. The words that are the site's own, not the archive's, come
+ * from the message files.
  */
 /**
  * **`true` since T12, and the premise it was `false` under is what changed.** The
@@ -30,22 +41,10 @@ import { keyFor, publicUrl } from '@/lib/photo'
  * `dynamicParams = true`, list it and link to it. The panel would report success
  * and produce a broken link on the public site.
  *
- * This is T11's fix for `/categoria/[slug]` one level down, for the same reason
- * and at the same price: an invented slug now costs a function invocation, which
- * is the exposure `/buscar` and both gallery routes already have and which F31's
- * rate limiting covers. `generateStaticParams` still pre-renders every
- * photograph at build time, so nothing the archive already holds gets slower, and
- * `getPhoto()` returns null for a slug that is not there, which is `notFound()`
- * exactly as before. The takedown still answers 410 through the proxy.
- *
- * It also retires the landmine that came with `false`: a route that can
- * regenerate cannot be left with nothing to serve, so `revalidatePath` on this
- * path is no longer the one-way door T10 measured. Nothing calls it either way.
+ * T13 leans on it a second time, for the other three languages: see
+ * `generateStaticParams` below.
  */
 export const dynamicParams = true
-
-/** Twelve of the 592, and the wording describes rather than judges. */
-const WARNING = 'Contiene imágenes de faena de animales.'
 
 /** The content box in globals.css: what the copy is allowed to grow to. */
 const CONTENT_WIDTH = 1248
@@ -53,8 +52,43 @@ const CONTENT_WIDTH = 1248
 /** A record narrower than this stops being readable, whatever the copy measures. */
 const MIN_COLUMN = 640
 
-export async function generateStaticParams() {
-  return (await listPhotoSlugs()).map((slug) => ({ slug }))
+/**
+ * **Every photograph in Spanish, and one per section in the other three.**
+ *
+ * 592 photographs in four languages is 2,368 pages, and 1,776 of them would be a
+ * Spanish caption rendered under an English `<html lang>` -- because not one
+ * translation exists yet, and because even a fully translated archive is
+ * translated a section at a time. So the Spanish pages are pre-rendered exactly
+ * as before, nothing the archive already holds got slower, and `/en/foto/…`
+ * renders on its first visit and is then an ISR entry like any other, revalidated
+ * by the same `GALLERY_TAG`. That is `dynamicParams = true` doing the work it was
+ * already turned on for.
+ *
+ * **The eleven are not a hedge, they are a framework constraint, and it was
+ * measured.** Returning `[]` for the other three languages -- which the docs
+ * describe as "render these at runtime" -- makes Next 16.3.3 discard the static
+ * params of this segment *entirely*, Spanish included: the build went from 592
+ * pre-rendered photo pages to **zero**, silently, with `generateStaticParams`
+ * still returning all 592 for `es`. Verified by returning two slugs for every
+ * locale instead, which produced the expected eight pages. So every parent locale
+ * has to come back with something, and the something worth having is the first
+ * photograph of each section -- the head of every gallery, in every language, and
+ * the one a reader reaches by clicking the first card.
+ *
+ * `params` here is the **parent's**, synchronously, which is how a nested
+ * `generateStaticParams` reads the segment above it.
+ */
+export async function generateStaticParams({ params }: { params: { locale: string } }) {
+  if (params.locale === defaultLocale) {
+    return (await listPhotoSlugs()).map((slug) => ({ slug }))
+  }
+
+  // `defaultLocale` and not `params.locale`: which sections exist and how they are
+  // ordered is the same in every language, so this shares the Spanish cache entry
+  // instead of minting three more for translations it does not read.
+  const sections = await listSections(defaultLocale)
+  const orders = await Promise.all(sections.map((s) => listCategoryOrder(s.slug)))
+  return orders.flatMap((order) => (order[0] ? [{ slug: order[0] }] : []))
 }
 
 /** A caption can be a paragraph. A title, a tab and a preview line cannot. */
@@ -63,19 +97,29 @@ function shorten(text: string, max: number): string {
   return line.length <= max ? line : `${line.slice(0, max - 1).trimEnd()}…`
 }
 
-export async function generateMetadata(props: PageProps<'/foto/[slug]'>): Promise<Metadata> {
-  const { slug } = await props.params
-  const photo = await getPhoto(slug)
+export async function generateMetadata(
+  props: PageProps<'/[locale]/foto/[slug]'>,
+): Promise<Metadata> {
+  const { locale, slug } = await props.params
+  if (!isLocale(locale)) return {}
+  const [photo, t] = await Promise.all([
+    getPhoto(locale, slug),
+    getTranslations({ locale, namespace: 'photo' }),
+  ])
   if (!photo) return {}
 
-  const title = photo.caption ? shorten(photo.caption, 70) : `Fotografía ${slug}`
+  const title = photo.caption ? shorten(photo.caption, 70) : t('untitled', { slug })
   const description = photo.caption
     ? shorten(photo.caption, 200)
-    : `Fotografía del archivo de La Pelada${photo.credit ? `. Cortesía: ${photo.credit}` : ''}.`
+    : photo.credit
+      ? t('descriptionWithCredit', { credit: photo.credit })
+      : t('description')
 
   return {
     title,
     description,
+    // The permalink in this language, and the same photograph in the other three.
+    alternates: alternatesFor(locale, `/foto/${slug}`),
     /**
      * The two halves of the same promise, and the reason a sensitive photograph
      * cannot arrive unannounced: it is never the preview image, so a link pasted
@@ -87,6 +131,7 @@ export async function generateMetadata(props: PageProps<'/foto/[slug]'>): Promis
     openGraph: {
       title,
       description,
+      locale,
       ...(photo.sensitive
         ? {}
         : {
@@ -111,9 +156,16 @@ export async function generateMetadata(props: PageProps<'/foto/[slug]'>): Promis
   }
 }
 
-export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
-  const { slug } = await props.params
-  const photo = await getPhoto(slug)
+export default async function PhotoPage(props: PageProps<'/[locale]/foto/[slug]'>) {
+  const { locale: askedLocale, slug } = await props.params
+  if (!isLocale(askedLocale)) notFound()
+  const locale: Locale = askedLocale
+
+  const [photo, t, labels] = await Promise.all([
+    getPhoto(locale, slug),
+    getTranslations({ locale, namespace: 'photo' }),
+    photoImageLabels(locale),
+  ])
   if (!photo) notFound()
 
   /**
@@ -135,11 +187,14 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
   const next = at >= 0 && at < order.length - 1 ? order[at + 1] : null
   // Back to the gallery page this photograph is actually on, not to its first.
   const page = Math.floor(Math.max(at, 0) / PER_PAGE) + 1
-  const back = section
-    ? page === 1
-      ? `/categoria/${section.slug}`
-      : `/categoria/${section.slug}/${page}`
-    : '/'
+  const back = localeHref(
+    locale,
+    section
+      ? page === 1
+        ? `/categoria/${section.slug}`
+        : `/categoria/${section.slug}/${page}`
+      : '/',
+  )
 
   /**
    * Never upscaled: the copy is shown at its own width or narrower, which is the
@@ -170,6 +225,7 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
       <PhotoImage
         photo={{ ...photo, webKey, ...size }}
         sizes={sizes}
+        labels={labels}
         priority={priority}
         veil={false}
       />
@@ -182,7 +238,7 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
         href={back}
         className="t-credit link text-muted hover:text-text focus-visible:outline-focus inline-block py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2"
       >
-        ← {section ? section.name : 'Inicio'}
+        ← {section ? section.name : t('home')}
       </Link>
 
       {/* Before the image in the document, so a reader who lands here from a shared
@@ -190,17 +246,17 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
       {photo.sensitive && (
         <details className="reveal bg-surface mt-6 p-5 sm:p-6">
           <summary className="focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2">
-            <span className="t-label">Contenido sensible</span>
+            <span className="t-label">{t('sensitive')}</span>
             {/* The warning stays put once the photograph is uncovered: it is the
-                context the caption is read in, not a gate that disappears. */}
-            <span className="t-intro text-muted mt-2 block">{WARNING}</span>
+                context the caption is read in, not a gate that disappears. It is
+                the site's own wording rather than the archive's, so it lives in
+                the message files -- translated once, for one kind of warning. */}
+            <span className="t-intro text-muted mt-2 block">{t('warning')}</span>
             {/* The two labels share one cell, so the card measures the same open or
                 closed and the photograph below it does not jump when it is revealed. */}
             <span className="reveal-action t-credit link mt-4">
-              <span className="reveal-closed underline underline-offset-4">Ver la fotografía</span>
-              <span className="reveal-open underline underline-offset-4">
-                Ocultar la fotografía
-              </span>
+              <span className="reveal-closed underline underline-offset-4">{t('reveal')}</span>
+              <span className="reveal-open underline underline-offset-4">{t('hide')}</span>
             </span>
           </summary>
         </details>
@@ -222,19 +278,22 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
               {frame(photo.webKey, true)}
             </div>
             {/* Two buttons and not a drag slider: a slider on a touchscreen fights
-                with the page scroll. The original is the document, so it opens. */}
+                with the page scroll. The original is the document, so it opens.
+                The two fragment identifiers stay Spanish in every language, for
+                the same reason the path segments do: they are part of an address
+                somebody may already have shared. */}
             <p className="ab-switch t-label mt-4 flex gap-5" style={{ maxWidth: width }}>
               <a
                 href="#original"
                 className="link hover:text-text focus-visible:outline-focus py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                Original
+                {t('original')}
               </a>
               <a
                 href="#restaurada"
                 className="link text-muted hover:text-text focus-visible:outline-focus py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
-                Restaurada con IA
+                {t('restored')}
               </a>
             </p>
           </>
@@ -245,7 +304,9 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
         <figcaption className="mt-7 sm:mt-9">
           {photo.caption && <p className="t-caption-photo">{photo.caption}</p>}
           {photo.credit && (
-            <p className={`t-credit ${photo.caption ? 'mt-4' : ''}`}>Cortesía: {photo.credit}</p>
+            <p className={`t-credit ${photo.caption ? 'mt-4' : ''}`}>
+              {t('courtesy', { credit: photo.credit })}
+            </p>
           )}
         </figcaption>
       </figure>
@@ -254,19 +315,19 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
 
       <dl className="border-rule mt-10 border-t sm:mt-12">
         {photo.yearFrom !== null && (
-          <Row label="Año">
+          <Row label={t('year')}>
             {!photo.yearTo || photo.yearTo === photo.yearFrom
               ? photo.yearFrom
               : `${photo.yearFrom}–${photo.yearTo}`}
           </Row>
         )}
         {photo.categories.length > 0 && (
-          <Row label={photo.categories.length > 1 ? 'Secciones' : 'Sección'}>
+          <Row label={photo.categories.length > 1 ? t('sections') : t('section')}>
             <span className="flex flex-wrap gap-x-4 gap-y-1">
               {photo.categories.map((category) => (
                 <Link
                   key={category.slug}
-                  href={`/categoria/${category.slug}`}
+                  href={localeHref(locale, `/categoria/${category.slug}`)}
                   className="link text-accent hover:text-text focus-visible:outline-focus py-1 focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   {category.name}
@@ -276,23 +337,36 @@ export default async function PhotoPage(props: PageProps<'/foto/[slug]'>) {
           </Row>
         )}
         {/* The permalink, spelled out: it is what makes a photograph citable, and it
-            does not change when the panel moves it between sections. */}
-        <Row label="Identificador">{photo.slug}</Row>
+            does not change when the panel moves it between sections -- or when the
+            reader changes language. */}
+        <Row label={t('identifier')}>{photo.slug}</Row>
       </dl>
 
       {section && at >= 0 && (
         <nav
-          aria-label={`Fotografías de ${section.name}`}
+          aria-label={t('photographsOf', { section: section.name })}
           className="border-rule mt-14 flex items-baseline justify-between gap-4 border-t pt-6"
         >
           <span className="grow basis-0">
-            {previous && <Step href={`/foto/${previous}`} rel="prev" label="← Anterior" />}
+            {previous && (
+              <Step
+                href={localeHref(locale, `/foto/${previous}`)}
+                rel="prev"
+                label={`← ${t('previous')}`}
+              />
+            )}
           </span>
           <span className="t-meta shrink-0">
-            {at + 1} de {order.length}
+            {t('position', { index: at + 1, total: order.length })}
           </span>
           <span className="grow basis-0 text-right">
-            {next && <Step href={`/foto/${next}`} rel="next" label="Siguiente →" />}
+            {next && (
+              <Step
+                href={localeHref(locale, `/foto/${next}`)}
+                rel="next"
+                label={`${t('next')} →`}
+              />
+            )}
           </span>
         </nav>
       )}

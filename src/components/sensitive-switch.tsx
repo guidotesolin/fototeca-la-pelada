@@ -22,6 +22,10 @@ const CLASS = 'show-sensitive'
  *
  * With JavaScript off the switch does nothing and the veil stays. The failure that
  * leaves a sensitive photograph covered is the right one.
+ *
+ * Its one string arrives as a prop, translated on the server. A client component
+ * that read the message files itself would ship them to the browser -- four
+ * languages of copy, paid for with rural mobile data, for one `aria-label`.
  */
 const listeners = new Set<() => void>()
 
@@ -30,7 +34,7 @@ function subscribe(onChange: () => void) {
   return () => void listeners.delete(onChange)
 }
 
-export function SensitiveSwitch() {
+export function SensitiveSwitch({ label }: { label: string }) {
   const shown = useSyncExternalStore(
     subscribe,
     () => document.documentElement.classList.contains(CLASS),
@@ -42,7 +46,7 @@ export function SensitiveSwitch() {
       type="button"
       role="switch"
       aria-checked={shown}
-      aria-label="Mostrar el contenido sensible sin difuminar"
+      aria-label={label}
       className="switch focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
       onClick={() => {
         const next = !shown

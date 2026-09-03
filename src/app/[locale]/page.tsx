@@ -1,9 +1,15 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
+import type { Metadata } from 'next'
 import { SectionDeck } from '@/components/section-deck'
 import { PhotoImage } from '@/components/photo-image'
 import { PhotoWall } from '@/components/photo-wall'
 import { archiveFacts, listFeatured, listSections, listSiteText } from '@/db/queries/gallery'
 import { mapEmbedUrl } from '@/lib/url'
+import { alternatesFor, isLocale, localeHref, type Locale } from '@/i18n/config'
+import { photoImageLabels } from '@/i18n/labels'
+import type { PhotoImageLabels } from '@/components/photo-image'
 import type { Section } from '@/db/queries/gallery'
 
 /**
@@ -19,12 +25,26 @@ import type { Section } from '@/db/queries/gallery'
 const CARD_RATIO = '4 / 3'
 const CARD_SIZES = '(min-width: 1280px) 288px, (min-width: 640px) 33vw, 50vw'
 
-export default async function Home() {
-  const [sections, facts, text, featured] = await Promise.all([
-    listSections(),
+/** The four hreflangs and this language's canonical. The title and the description
+ *  are the root layout's -- the index is the page the site is named after. */
+export async function generateMetadata(props: PageProps<'/[locale]'>): Promise<Metadata> {
+  const { locale } = await props.params
+  if (!isLocale(locale)) return {}
+  return { alternates: alternatesFor(locale, '/') }
+}
+
+export default async function Home(props: PageProps<'/[locale]'>) {
+  const { locale: asked } = await props.params
+  if (!isLocale(asked)) notFound()
+  const locale: Locale = asked
+
+  const [sections, facts, text, featured, t, labels] = await Promise.all([
+    listSections(locale),
     archiveFacts(),
-    listSiteText(),
-    listFeatured(),
+    listSiteText(locale),
+    listFeatured(locale),
+    getTranslations({ locale, namespace: 'home' }),
+    photoImageLabels(locale),
   ])
   const mapUrl = mapEmbedUrl(text.map_embed_url)
 
@@ -37,7 +57,7 @@ export default async function Home() {
             aria-label names it, so dropping the heading costs nothing spoken. It
             opens the page, and a phone never sees it — the component returns null
             below 900 px, so nothing here reserves space it will not use. */}
-        <SectionDeck sections={sections} />
+        <SectionDeck sections={sections} locale={locale} label={t('deck')} labels={labels} />
 
         {/* Centred under the centred title: left-aligned it read as an orphan in the
             corner of a symmetric composition. The four figures used to sit below it
@@ -59,7 +79,7 @@ export default async function Home() {
               <div className="print relative" style={{ aspectRatio: '4 / 3' }}>
                 <iframe
                   src={mapUrl}
-                  title="La Pelada map"
+                  title={t('map')}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                   className="absolute inset-0 h-full w-full border-0"
@@ -91,8 +111,8 @@ export default async function Home() {
           row of its own -- same mounted prints, same blur over a sensitive one. */}
       {featured.length > 0 && (
         <section className="mt-14 sm:mt-20" id="destacadas">
-          <h2 className="t-label border-rule border-b pb-3">Destacadas</h2>
-          <PhotoWall photos={featured} />
+          <h2 className="t-label border-rule border-b pb-3">{t('featured')}</h2>
+          <PhotoWall photos={featured} locale={locale} />
         </section>
       )}
 
@@ -100,12 +120,12 @@ export default async function Home() {
         {/* The list, which on a phone is all there is, and on desktop sits below.
             An h2: it is the section's only heading now, and h1 -> h3 would skip. */}
         <h2 className="t-label border-rule mt-6 border-b pb-3 xl:mt-10">
-          Todas las secciones · {facts.photos} fotografías
+          {t('allSections', { count: facts.photos })}
         </h2>
         <ul className="section-grid mt-6">
           {sections.map((section, index) => (
             <li key={section.slug}>
-              <SectionCard section={section} priority={index < 2} />
+              <SectionCard section={section} locale={locale} labels={labels} priority={index < 2} />
             </li>
           ))}
         </ul>
@@ -114,10 +134,20 @@ export default async function Home() {
   )
 }
 
-function SectionCard({ section, priority }: { section: Section; priority: boolean }) {
+function SectionCard({
+  section,
+  locale,
+  labels,
+  priority,
+}: {
+  section: Section
+  locale: Locale
+  labels: PhotoImageLabels
+  priority: boolean
+}) {
   return (
     <Link
-      href={`/categoria/${section.slug}`}
+      href={localeHref(locale, `/categoria/${section.slug}`)}
       className="group focus-visible:outline-focus block focus-visible:outline-2 focus-visible:outline-offset-4"
     >
       {section.cover && (
@@ -125,6 +155,7 @@ function SectionCard({ section, priority }: { section: Section; priority: boolea
           <PhotoImage
             photo={section.cover}
             sizes={CARD_SIZES}
+            labels={labels}
             ratio={CARD_RATIO}
             priority={priority}
           />
