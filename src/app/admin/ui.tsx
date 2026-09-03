@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 /**
@@ -26,9 +27,18 @@ export const BUTTON =
  */
 export const CONTROL = `${FIELD} h-10`
 
-/** A repeated search param is an array; the panel reads none of them that way. */
+/** A repeated search param is an array; most of the panel reads none of them that way. */
 export function one(value: string | string[] | undefined): string {
   return typeof value === 'string' ? value : ''
+}
+
+/**
+ * The one that is repeated on purpose: `?files=…&files=…` is how the import screen
+ * carries a selection across the redirect between one photograph and the next. A
+ * single value arrives as a string and has to be read as a list of one.
+ */
+export function many(value: string | string[] | undefined): string[] {
+  return typeof value === 'string' ? [value] : (value ?? [])
 }
 
 /**
@@ -89,14 +99,13 @@ export const FAILED: Record<string, string> = {
     'Esa fotografía no sirve como portada: tiene que estar en esta sección y estar publicada.',
 
   // --- site text ---
-  'url-mapa':
-    'La dirección del mapa no es válida. Tiene que ser un enlace https de Google Maps, el que sale de "Compartir → Insertar un mapa".',
   'url-red': 'Ese enlace de red social no es válido: tiene que empezar con https://',
   email: 'Esa dirección de correo no es válida.',
 
   // --- Drive import ---
   carpeta: 'Esa carpeta no es la carpeta de originales de Drive ni una de las que tiene adentro.',
   'nada-pendiente': 'No quedaba ninguna fotografía por importar en esa carpeta.',
+  'nada-elegido': 'No había ninguna elegida. Tocá las que quieras importar y probá de nuevo.',
   // Both name the *first pending* file, because that is the one the import
   // always takes next: nothing skips past it, so the folder has to be fixed.
   // The screen's list is anchored on that same file, so it is on screen.
@@ -115,6 +124,28 @@ export const FAILED: Record<string, string> = {
  */
 export function messageFor(map: Record<string, string>, code: string): string | null {
   return Object.hasOwn(map, code) ? map[code] : null
+}
+
+/**
+ * The way out of a screen, above its title. Every screen under `/admin` has one
+ * and five of the seven are the same link back to the panel's home, so the
+ * defaults are that link and the exceptions say where they go instead: a
+ * photograph goes back to the list it was in, a section to the list it is ordered
+ * in.
+ *
+ * Here rather than copied per screen for the reason at the top of this file: it is
+ * the sort of thing that drifts one screen at a time, and a back link that reads
+ * differently on each of them is a panel that feels assembled from parts.
+ */
+export function Back({ href = '/admin', label = 'Panel' }: { href?: string; label?: string }) {
+  return (
+    <Link
+      href={href}
+      className="t-credit link text-muted hover:text-text focus-visible:outline-focus inline-block py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2"
+    >
+      ← {label}
+    </Link>
+  )
 }
 
 /**

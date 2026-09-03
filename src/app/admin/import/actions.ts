@@ -71,11 +71,21 @@ export async function importNext(form: FormData) {
 
   const folder = form.get('folder')
   const section = form.get('section')
-  // A submit button's name reaches the form data only when it was the one
-  // pressed, so this is how "Importar todas" says so without a line of script.
-  const auto = form.get('auto') === '1'
   if (!isFileId(folder) || !isSectionSlug(section)) redirect('/admin/import?error=carpeta')
-  const back = `/admin/import?folder=${folder}&section=${section}`
+
+  /**
+   * The ticked files. **The only thing this action imports is what it was asked
+   * for**: there is no "and if nothing was ticked, take the first one", because
+   * that is exactly the guessing the screen used to do and got reported for.
+   *
+   * The selection rides in the address on the way back, because the next
+   * photograph of a run is a fresh render of this screen and the ticks have to
+   * survive it. `folder` and `section` are already narrowed to strings by the two
+   * guards above.
+   */
+  const chosen = new Set(form.getAll('files').filter(isFileId))
+  const back = new URLSearchParams({ folder, section })
+  for (const id of chosen) back.append('files', id)
 
   const result = await outcome('import', 'importada', async () => {
     if (!(await reachable(folder))) throw new Invalid('carpeta')
@@ -88,7 +98,18 @@ export async function importNext(form: FormData) {
     if (!found) throw new Invalid('seccion-no-existe')
 
     const [files, already] = await Promise.all([listImages(folder), importedFromDrive()])
-    const next = files.find((f) => !already.has(f.id))
+    const waiting = files.filter((f) => !already.has(f.id))
+
+    /**
+     * **One photograph per request, and the next one is the first ticked file that
+     * is not in yet.** What is already in is worked out from the database on every
+     * render, so a run picks up where it left off and re-importing is a no-op --
+     * and the selection needs no queue of its own, because a chosen file that is
+     * now in the archive simply is not in `waiting` any more. That is also what
+     * ends the run: the screen stops asking when nothing ticked is left.
+     */
+    if (chosen.size === 0) throw new Invalid('nada-elegido')
+    const next = waiting.find((f) => chosen.has(f.id))
     if (!next) throw new Invalid('nada-pendiente')
 
     // What Drive says it weighs, checked before the bandwidth is spent. The real
@@ -173,5 +194,6 @@ export async function importNext(form: FormData) {
 
   // `auto` is carried only on the way out of a success, so the loop the screen
   // runs stops at the first thing that goes wrong instead of hammering Drive.
-  redirect(`${back}&${result}${auto && result.startsWith('ok=') ? '&auto=1' : ''}`)
+  if (result.startsWith('ok=')) back.set('auto', '1')
+  redirect(`/admin/import?${back}&${result}`)
 }

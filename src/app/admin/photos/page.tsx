@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { ADMIN_PER_PAGE, FILTERS, isFilter, listCategories, listPhotos } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { publicUrl } from '@/lib/photo'
-import { BUTTON, CONTROL, FIELD, Notice, one } from '../ui'
+import { Back, BUTTON, CONTROL, FIELD, Notice, one } from '../ui'
 import { saveOrder } from './actions'
 
 /**
@@ -49,7 +49,9 @@ export default async function AdminPhotos(props: PageProps<'/admin/photos'>) {
 
   return (
     <>
-      <h1 className="t-section">Fotografías</h1>
+      <Back />
+
+      <h1 className="t-section mt-4">Fotografías</h1>
 
       <Notice params={params} />
       <form method="get" className="mt-8 flex flex-wrap items-end gap-3">

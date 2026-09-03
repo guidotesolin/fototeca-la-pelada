@@ -14,6 +14,7 @@
     "db:smoke": "tsx tools/db-smoke.ts",
     "images:smoke": "tsx tools/images-smoke.ts",
     "url:smoke": "tsx tools/url-smoke.ts",
+    "slug:smoke": "tsx tools/slug-smoke.ts",
     "search:smoke": "tsx --conditions=react-server tools/search-smoke.ts",
     "i18n:smoke": "tsx tools/i18n-smoke.ts",
     "takedown:smoke": "tsx tools/takedown-smoke.ts",

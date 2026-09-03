@@ -582,26 +582,28 @@ Details that matter:
   keys: `home_title`, `home_intro`, `rights_notice`, `thanks`, `authors`, `contact`, `town_title`,
   `town_intro`, `map_embed_url`, and the three network addresses. The last six arrived while
   building the home page and the footer, which is what closes F6 — the home copy T1 rescued is in
-  the database now, not only in `archive.json`. The map's coordinates and the social URLs are in
-  there for the same reason as the prose: moving the pin or adding a fourth network must not need a
-  deploy. The only words in code are labels: "El archivo hasta hoy", "A cargo del archivo",
-  "Contacto", "Redes", "Secciones", "Buscar", "Todas las secciones", and from the header's settings
-  panel "Ajustes", "Idioma" and "Contenido sensible". **Since T13 none of them is in code either**:
-  every label lives in `src/i18n/messages/{es,en,fr,it}.json`, and so do the two strings that are
-  copy rather than labels — the sensitive-content warning and the sentence explaining the switch —
-  which is where they belong instead of earning `site_text` keys of their own. The split is now
-  clean: the **database** carries what the authors wrote, the **message files** carry what the site
-  says as a product, and nothing is inline. **It took the review to make that true.** T13 left
-  three Spanish strings in `src/components/photo-image.tsx` — the sensitive-content warning and its
-  "Ver la fotografía" link, drawn over every sensitive thumbnail, plus the `alt` a captionless
-  photograph falls back to — because the photo page states its warning in a card of its own and
-  passes `veil={false}`, so the one screen anybody thought to check was the one screen that never
-  drew them. They were Spanish on every non-Spanish gallery card, search result, featured strip and
-  section cover. `PhotoImage` is imported by the deck, which is Swiper and therefore a client
-  component, so it takes those three as a **required** prop — required so that no caller can fall
-  back to Spanish silently again, which is what the type checker then proved for all four. Counts that read as prose ("592 fotografías · 11
-  secciones") are ICU plurals there, because "1 sección" and "11 secciones" do not share a suffix
-  in any of the four languages.
+  the database now, not only in `archive.json`. The social URLs are in there for the same reason as
+  the prose: adding a fourth network must not need a deploy. **The map is the exception, and it is
+  deliberate**: the panel no longer offers `map_embed_url` as a field, so the row is fixed. The home
+  page still renders whatever is stored, through the same `mapEmbedUrl` guard, but nothing writes it
+  — moving the pin is a database edit now. The only words in code are labels: "El archivo hasta
+  hoy", "A cargo del archivo", "Contacto", "Redes", "Secciones", "Buscar", "Todas las secciones",
+  and from the header's settings panel "Ajustes", "Idioma" and "Contenido sensible". **Since T13
+  none of them is in code either**: every label lives in `src/i18n/messages/{es,en,fr,it}.json`, and
+  so do the two strings that are copy rather than labels — the sensitive-content warning and the
+  sentence explaining the switch — which is where they belong instead of earning `site_text` keys of
+  their own. The split is now clean: the **database** carries what the authors wrote, the **message
+  files** carry what the site says as a product, and nothing is inline. **It took the review to make
+  that true.** T13 left three Spanish strings in `src/components/photo-image.tsx` — the
+  sensitive-content warning and its "Ver la fotografía" link, drawn over every sensitive thumbnail,
+  plus the `alt` a captionless photograph falls back to — because the photo page states its warning
+  in a card of its own and passes `veil={false}`, so the one screen anybody thought to check was the
+  one screen that never drew them. They were Spanish on every non-Spanish gallery card, search
+  result, featured strip and section cover. `PhotoImage` is imported by the deck, which is Swiper
+  and therefore a client component, so it takes those three as a **required** prop — required so
+  that no caller can fall back to Spanish silently again, which is what the type checker then proved
+  for all four. Counts that read as prose ("592 fotografías · 11 secciones") are ICU plurals there,
+  because "1 sección" and "11 secciones" do not share a suffix in any of the four languages.
 - **A URL out of the database is a trust boundary.** `site_text` becomes editable from the panel in
   T11, and its values reach an `href` and an `<iframe src>`, so `src/lib/url.ts` guards them: the
   map embed against an exact hostname allowlist, the network links against the scheme only, since
@@ -946,7 +948,8 @@ something that _looks_ like prose and is really structured data.
 | Reorder photos within a category                  | Panel → drag (`photo_category.position`).                                                                                                                                                                                  |
 | Organize the home page                            | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.                                                                                                                     |
 | Change a section's intro text                     | Panel → category → intro, per language.                                                                                                                                                                                    |
-| Change any of the site's own words                | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the map, the networks.                                                                                                                |
+| Change any of the site's own words                | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the networks.                                                                                                                         |
+| Move the map's pin                                | Not from the panel: `site_text.map_embed_url` is fixed and edited in the database. The home page renders it.                                                                                                               |
 | Add new photos                                    | Panel → import from Drive.                                                                                                                                                                                                 |
 | Attach an AI restoration                          | Panel → the photo → restored version.                                                                                                                                                                                      |
 | See what is still untranslated                    | Panel → traducciones: per language, how much is done and which sections and site texts are missing. Only the seven `site_text` keys that are language are counted; the map, the address and the three social URLs are not. |

@@ -1,10 +1,9 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getCategoryForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { publicUrl } from '@/lib/photo'
-import { BUTTON, FIELD, Field, Notice, Row } from '../../ui'
+import { Back, BUTTON, FIELD, Field, Notice, Row } from '../../ui'
 import { deleteCategory, saveCategory } from '../actions'
 
 /**
@@ -40,12 +39,7 @@ export default async function EditCategory(props: PageProps<'/admin/categories/[
 
   return (
     <>
-      <Link
-        href="/admin/categories"
-        className="t-credit link text-muted hover:text-text focus-visible:outline-focus inline-block py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        ← Portada
-      </Link>
+      <Back href="/admin/categories" label="Home" />
 
       <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h1 className="t-section">{section.name}</h1>

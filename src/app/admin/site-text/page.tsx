@@ -1,9 +1,8 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import { listSiteTextForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
-import { externalUrl, mapEmbedUrl } from '@/lib/url'
-import { BUTTON, FIELD, Field, Notice } from '../ui'
+import { externalUrl } from '@/lib/url'
+import { Back, BUTTON, FIELD, Field, Notice } from '../ui'
 import { LIMITS, SITE_TEXT, type SiteTextField } from './fields'
 import { saveSiteText } from './actions'
 
@@ -14,9 +13,9 @@ import { saveSiteText } from './actions'
  * notice, the agradecimiento and the paragraphs about the town look like prose
  * and are really rows.
  *
- * The map is previewed through `mapEmbedUrl` -- the same guard the action saves
- * through and the same one the home page renders through. A stored value predates
- * this screen, so the panel does not get to assume one is safe either.
+ * A `link` is offered with an "Abrir" beside it, and only once `externalUrl` has
+ * passed it: a row that predates this screen is no more trusted than one typed
+ * into it.
  */
 export const metadata: Metadata = { title: 'Editar textos' }
 
@@ -26,16 +25,10 @@ export default async function AdminSiteText(props: PageProps<'/admin/site-text'>
   const text = await listSiteTextForEdit()
 
   const groups = [...new Set(SITE_TEXT.map((field) => field.where))]
-  const mapUrl = mapEmbedUrl(text.map_embed_url)
 
   return (
     <>
-      <Link
-        href="/admin/categories"
-        className="t-credit link text-muted hover:text-text focus-visible:outline-focus inline-block py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        ← Portada
-      </Link>
+      <Back />
 
       <h1 className="t-section mt-4">Textos del sitio</h1>
 
@@ -62,27 +55,6 @@ export default async function AdminSiteText(props: PageProps<'/admin/site-text'>
           Guardar textos
         </button>
       </form>
-
-      <section className="mt-14">
-        <h2 className="t-label border-rule border-b pb-2">El mapa, como se ve</h2>
-        {mapUrl ? (
-          <div className="mount mt-5 max-w-lg">
-            <div className="print relative" style={{ aspectRatio: '4 / 3' }}>
-              <iframe
-                src={mapUrl}
-                title="Mapa de La Pelada"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="absolute inset-0 h-full w-full border-0"
-              />
-            </div>
-          </div>
-        ) : (
-          <p className="t-meta mt-4">
-            No hay ningún mapa cargado, así que la portada no lo muestra.
-          </p>
-        )}
-      </section>
     </>
   )
 }

@@ -5,9 +5,11 @@ import { requireAdmin } from '@/lib/auth'
 import { isFileId, listFolders, listImages, mastersFolderId } from '@/lib/drive'
 import type { DriveFile } from '@/lib/drive'
 import { isSectionSlug } from '@/lib/slug'
-import { BUTTON, CONTROL, Notice, one } from '../ui'
+import { Back, CONTROL, Notice, many, one } from '../ui'
+import { Submit } from '../submit'
 import { importNext } from './actions'
 import { AutoContinue } from './auto-continue'
+import { Pick } from './pick'
 
 /**
  * Importing from Drive: the screen where a folder of scans becomes rows in the
@@ -21,10 +23,17 @@ import { AutoContinue } from './auto-continue'
  *
  * **One photograph per request, and the screen is the loop.** A master download
  * plus six encodes plus six uploads is seconds per photograph, so a whole folder
- * in one request does not finish inside the function's duration limit. The
- * action imports the first pending file and returns; what is pending is worked
- * out from the database on every render, which is what makes it resumable -- and
- * what makes re-importing a no-op.
+ * in one request does not finish inside the function's duration limit. The action
+ * imports one pending file and returns; what is pending is worked out from the
+ * database on every render, which is what makes it resumable -- and what makes
+ * re-importing a no-op.
+ *
+ * **Nothing is imported that was not pointed at.** "Importar una" took the first
+ * pending file and never said so, and "Importar todas" wrote to the archive on one
+ * press; both are gone. What is left is one list of boxes and one button that
+ * writes: tick the scans -- by hand, or "Elegir todas" -- and then import them.
+ * The ticks ride in the address, because the next photograph of a run is a fresh
+ * render of this screen.
  *
  * Spanish, and never translated: only the two of them use it.
  */
@@ -36,8 +45,15 @@ import { AutoContinue } from './auto-continue'
  */
 export const maxDuration = 60
 
-/** Enough rows to see what is happening without printing the whole vault. */
-const SHOWN = 60
+/**
+ * Enough rows to see what is happening without printing the whole vault -- and
+ * since "Elegir todas" ticks the boxes that are on screen, enough that for every
+ * folder in this vault it means every file in the folder. The two biggest are
+ * Dandolo at 74 and Teresita at 71 (`npm run drive:smoke` prints the table), so
+ * 100 covers them with room; past that the note under the list says how many are
+ * not shown, and the next pass of the window reaches them.
+ */
+const SHOWN = 100
 
 export const metadata: Metadata = { title: 'Importar desde Drive' }
 
@@ -88,6 +104,17 @@ export default async function AdminImport(props: PageProps<'/admin/import'>) {
   const pending = rows.length - done
 
   /**
+   * The files somebody ticked, carried in the address because the next photograph
+   * of a run is a fresh render of this screen and the ticks have to survive it.
+   *
+   * `waiting` is the run's own remaining work, and it is the ticked files that are
+   * **still pending**: one that is now in the archive is finished, so it drops out
+   * by itself and the loop below stops when the list empties. No queue anywhere.
+   */
+  const ticked = new Set(many(params.files).filter(isFileId))
+  const waiting = rows.filter((row) => !row.slug && ticked.has(row.id))
+
+  /**
    * The window is anchored on the **first pending file** rather than on the top
    * of the folder: after sixty imports a list that always started at row one
    * would show sixty photographs that are already in and none of the ones about
@@ -97,14 +124,20 @@ export default async function AdminImport(props: PageProps<'/admin/import'>) {
   const from = frontier < 0 ? Math.max(0, rows.length - SHOWN) : Math.max(0, frontier - 3)
   const shown = rows.slice(from, from + SHOWN)
 
+  /**
+   * A ticked file the window does not reach. It is still part of the run, and a
+   * box that is not rendered is not submitted -- so the window sliding forward as
+   * the frontier moves would quietly drop it. It gets a box of its own below,
+   * hidden rather than a `type="hidden"` input, so that "todas" and the count both
+   * see one kind of control and not two.
+   */
+  const carried = waiting.filter((row) => !shown.includes(row))
+  /** How many boxes the form ends up with, which is what "todas" ticks. */
+  const boxes = shown.filter((row) => !row.slug).length + carried.length
+
   return (
     <>
-      <Link
-        href="/admin"
-        className="t-credit link text-muted hover:text-text focus-visible:outline-focus inline-block py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        ← Panel
-      </Link>
+      <Back />
 
       <h1 className="t-section mt-4">Importar desde Drive</h1>
 
@@ -159,9 +192,9 @@ export default async function AdminImport(props: PageProps<'/admin/import'>) {
                 ))}
               </select>
             </label>
-            <button type="submit" className={BUTTON}>
+            <Submit navigates busy="Buscando…">
               Ver la carpeta
-            </button>
+            </Submit>
           </form>
           <p className="t-meta mt-2">
             La sección decide en qué galería aparece y de dónde sale el identificador:{' '}
@@ -178,64 +211,135 @@ export default async function AdminImport(props: PageProps<'/admin/import'>) {
               <h2 className="t-label border-rule border-b pb-2">
                 {rows.length} {rows.length === 1 ? 'imagen' : 'imágenes'} · {done} ya{' '}
                 {done === 1 ? 'importada' : 'importadas'} · {pending} por importar
+                {waiting.length > 0 &&
+                  ` · ${waiting.length} ${waiting.length === 1 ? 'elegida' : 'elegidas'}`}
               </h2>
 
-              {pending === 0 ? (
-                <p className="t-intro text-muted mt-5">
-                  {rows.length === 0
-                    ? 'Esta carpeta no tiene imágenes.'
-                    : 'Ya está todo importado de esta carpeta.'}
-                </p>
-              ) : !section ? (
-                <p className="t-intro text-muted mt-5">
-                  Elegí una sección arriba para poder importar.
-                </p>
-              ) : (
-                <>
-                  <form action={importNext} className="mt-5 flex flex-wrap items-center gap-3">
-                    <input type="hidden" name="folder" value={folder} />
-                    <input type="hidden" name="section" value={section} />
-                    <button type="submit" className={BUTTON}>
-                      Importar una
-                    </button>
-                    <button type="submit" name="auto" value="1" className={BUTTON}>
-                      Importar todas
-                    </button>
-                    {/* Only after a success, so a failure stops the run instead
-                        of retrying the same file against Drive for ever. */}
-                    {one(params.auto) === '1' && !one(params.error) && <AutoContinue step={done} />}
-                  </form>
-                  <p className="t-meta mt-2">
-                    «Importar todas» sigue sola hasta terminar, y se puede cerrar la pestaña en
-                    cualquier momento. Con el navegador sin JavaScript, cada clic trae una.
-                  </p>
-                </>
-              )}
+              {/* One form for the picking and the importing both: the boxes are
+                  what the buttons send, so the list has to be inside it. */}
+              <form action={importNext}>
+                <input type="hidden" name="folder" value={folder} />
+                <input type="hidden" name="section" value={section} />
 
-              <ul className="border-rule mt-8 border-t">
-                {shown.map((row) => (
-                  <li
+                {carried.map((row) => (
+                  <input
                     key={row.id}
-                    className="border-rule flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b py-3"
-                  >
-                    <span className="t-meta min-w-0 break-all">{row.name}</span>
-                    <span className="t-meta">
-                      {row.size !== null &&
-                        `${Math.round(row.size / 1024).toLocaleString('es-AR')} KB · `}
-                      {row.slug ? (
-                        <Link
-                          href={`/admin/photos/${row.slug}`}
-                          className="link text-accent hover:text-text"
-                        >
-                          {row.slug}
-                        </Link>
-                      ) : (
-                        'por importar'
-                      )}
-                    </span>
-                  </li>
+                    type="checkbox"
+                    name="files"
+                    value={row.id}
+                    defaultChecked
+                    hidden
+                  />
                 ))}
-              </ul>
+
+                {pending === 0 ? (
+                  <p className="t-intro text-muted mt-5">
+                    {rows.length === 0
+                      ? 'Esta carpeta no tiene imágenes.'
+                      : 'Ya está todo importado de esta carpeta.'}
+                  </p>
+                ) : !section ? (
+                  <p className="t-intro text-muted mt-5">
+                    Elegí una sección arriba para poder importar.
+                  </p>
+                ) : (
+                  <>
+                    <Pick total={boxes} initial={waiting.length} />
+                    {/* Only after a success, so a failure stops the run instead of
+                        retrying the same file against Drive for ever -- and only
+                        while the run has something left, which is what ends it:
+                        the last ticked file going in, whatever else the folder
+                        still holds. */}
+                    {one(params.auto) === '1' && !one(params.error) && waiting.length > 0 && (
+                      <AutoContinue step={done} />
+                    )}
+                    <p className="t-meta mt-2">
+                      Tocá las que quieras —o «Elegir todas»— y después «Importar las elegidas».
+                      Entran de a una y la pantalla sigue sola hasta terminar con las elegidas; se
+                      puede cerrar la pestaña en cualquier momento. Con el navegador sin JavaScript,
+                      cada clic trae una.
+                    </p>
+                  </>
+                )}
+
+                <ul className="border-rule mt-8 border-t">
+                  {shown.map((row) => {
+                    /* The same row either way. What changes is what wraps it: a
+                       pending file is a `<label>`, so the picture itself is the
+                       thing you press -- and one already in the archive is not,
+                       because its only control is the link to its ficha. */
+                    const inside = (
+                      <>
+                        {/* Drive's own thumbnail, straight from
+                            `lh3.googleusercontent.com`: it needs no credentials of
+                            ours, so the preview costs the screen nothing but the
+                            `<img>` -- no master downloaded, no second Drive call,
+                            and nothing of it stored.
+
+                            `object-contain` and not the `object-cover` the other
+                            lists use, because this one is read for a different
+                            reason: those show a photograph already in the archive,
+                            and this is how you tell which scan is which before
+                            importing it. A square crop of an unknown scan hides
+                            the half that would have told you. */}
+                        {row.thumbnailLink ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={row.thumbnailLink}
+                            alt=""
+                            width={112}
+                            height={112}
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                            className="bg-surface h-28 w-28 shrink-0 object-contain"
+                          />
+                        ) : (
+                          <span className="bg-surface text-muted flex h-28 w-28 shrink-0 items-center justify-center text-center font-sans text-[10px] leading-tight">
+                            sin vista
+                          </span>
+                        )}
+
+                        <span className="t-meta min-w-0 grow break-all">{row.name}</span>
+                        <span className="t-meta shrink-0 text-right">
+                          {row.size !== null &&
+                            `${Math.round(row.size / 1024).toLocaleString('es-AR')} KB · `}
+                          {row.slug ? (
+                            <Link
+                              href={`/admin/photos/${row.slug}`}
+                              className="link text-accent hover:text-text"
+                            >
+                              {row.slug}
+                            </Link>
+                          ) : (
+                            'por importar'
+                          )}
+                        </span>
+                      </>
+                    )
+
+                    return (
+                      <li key={row.id} className="border-rule border-b">
+                        {row.slug ? (
+                          <div className="flex items-center gap-4 py-3 sm:gap-5">{inside}</div>
+                        ) : (
+                          <label className="has-[:checked]:bg-surface flex cursor-pointer items-center gap-4 py-3 sm:gap-5">
+                            <input
+                              type="checkbox"
+                              name="files"
+                              value={row.id}
+                              defaultChecked={ticked.has(row.id)}
+                              className="accent-accent focus-visible:outline-focus h-4 w-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
+                            />
+                            {inside}
+                          </label>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </form>
+
               {rows.length > shown.length && (
                 <p className="t-meta mt-3">
                   Se ven {shown.length} de {rows.length}

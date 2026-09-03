@@ -1,10 +1,9 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { getPhotoForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { keyFor, publicUrl } from '@/lib/photo'
-import { BUTTON, Check, FIELD, Field, Notice, Row, one } from '../../ui'
+import { Back, BUTTON, Check, FIELD, Field, Notice, Row, one } from '../../ui'
 import { attachRestoration, removeRestoration, saveDetails, setPublished } from '../actions'
 import { FilePicker } from '../file-picker'
 
@@ -49,12 +48,7 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
 
   return (
     <>
-      <Link
-        href="/admin/photos"
-        className="t-credit link text-muted hover:text-text focus-visible:outline-focus inline-block py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        ← Fotografías
-      </Link>
+      <Back href="/admin/photos" label="Fotografías" />
 
       <div className="mt-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <h1 className="t-section">{photo.slug}</h1>

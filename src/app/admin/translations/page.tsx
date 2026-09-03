@@ -1,9 +1,9 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import { translationProgress } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { SOURCE_LOCALE } from '@/db/queries/gallery'
 import { LOCALE_LABELS, isLocale, localeHref } from '@/i18n/config'
+import { Back } from '../ui'
 
 /**
  * What is still untranslated, per language.
@@ -48,12 +48,7 @@ export default async function AdminTranslations() {
 
   return (
     <>
-      <Link
-        href="/admin"
-        className="t-credit link text-muted hover:text-text focus-visible:outline-focus inline-block py-1.5 focus-visible:outline-2 focus-visible:outline-offset-2"
-      >
-        ← Panel
-      </Link>
+      <Back />
 
       <h1 className="t-section mt-4">Traducciones</h1>
 

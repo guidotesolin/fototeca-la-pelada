@@ -1,14 +1,18 @@
 /**
  * The site's own words, as the panel offers them. `site_text` is a key/value
- * table, and this is the list of keys that have somewhere to appear -- a
- * thirteenth key needs a component to render it, so a generic key/value editor
- * would only be a way to write text nobody ever sees.
+ * table, and this is the list of keys that have somewhere to appear -- a key that
+ * is not on it needs a component to render it, so a generic key/value editor would
+ * only be a way to write text nobody ever sees.
  *
  * `kind` is both what the control looks like and how the value is validated,
- * because they are the same decision: a map embed is a `<input type="url">` here
- * and an exact-hostname check in the action, and nothing else may be either.
+ * because they are the same decision: a `link` is an `<input type="url">` here and
+ * a scheme-and-host check in the action, and nothing else may be either.
+ *
+ * `map_embed_url` was on this list and is not any more: the home page still
+ * renders whatever row is stored, through its own `mapEmbedUrl`, but the panel no
+ * longer offers the address as something to edit.
  */
-export type Kind = 'line' | 'text' | 'email' | 'map' | 'link'
+export type Kind = 'line' | 'text' | 'email' | 'link'
 
 export type SiteTextField = {
   key: string
@@ -24,7 +28,6 @@ export const LIMITS: Record<Kind, number> = {
   line: 300,
   text: 4000,
   email: 300,
-  map: 2000,
   link: 2000,
 }
 
@@ -55,13 +58,6 @@ export const SITE_TEXT: SiteTextField[] = [
     label: 'Texto sobre el pueblo',
     hint: 'Dejá un renglón en blanco entre párrafo y párrafo.',
     kind: 'text',
-    where: 'Portada',
-  },
-  {
-    key: 'map_embed_url',
-    label: 'Mapa',
-    hint: 'La dirección del mapa de Google que se ve en la portada. Se saca con "Compartir → Insertar un mapa" y empieza con https://www.google.com/maps/embed o https://maps.google.com.',
-    kind: 'map',
     where: 'Portada',
   },
   {
@@ -121,14 +117,14 @@ export const SITE_TEXT: SiteTextField[] = [
  * scheme -- one `@`, a dot after it, no spaces.
  */
 /**
- * The keys that are language, which is `line` and `text` and not the other three.
+ * The keys that are language, which is `line` and `text` and not the other two.
  *
- * A map embed, an email address and three social URLs are not prose: _Anything
- * that is not language is not translated_ is the data model's own rule, and
- * `listSiteText` already behaves that way in effect — it merges the Spanish value
- * under whatever locale was asked for, so the URL is the same URL in four
- * languages. The translations screen needs to know, or it reports five items per
- * language that nobody can ever translate and can never reach 100%.
+ * An email address and three social URLs are not prose: _Anything that is not
+ * language is not translated_ is the data model's own rule, and `listSiteText`
+ * already behaves that way in effect — it merges the Spanish value under whatever
+ * locale was asked for, so the URL is the same URL in four languages. The
+ * translations screen needs to know, or it reports four items per language that
+ * nobody can ever translate and can never reach 100%.
  */
 export const TRANSLATABLE_SITE_TEXT = SITE_TEXT.filter(
   (field) => field.kind === 'line' || field.kind === 'text',

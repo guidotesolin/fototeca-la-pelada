@@ -39,11 +39,27 @@ export type DriveFile = {
   mimeType: string
   /** What Drive says it weighs. A pre-filter, never the ceiling: see `download`. */
   size: number | null
+  /**
+   * Drive's own thumbnail at `THUMB_PX` on its longest edge, or null for a file it
+   * has not made one of. It is a signed `lh3.googleusercontent.com` URL that needs
+   * no credentials of ours to fetch and **expires in about an hour**, which is why
+   * it is never stored: the import screen is rendered per request, so the link in
+   * the markup is always minutes old.
+   */
+  thumbnailLink: string | null
 }
 
 export function isFileId(value: unknown): value is string {
   return typeof value === 'string' && FILE_ID.test(value)
 }
+
+/**
+ * How big a thumbnail to ask Drive for. It hands out `=s220` by default and honours
+ * the suffix, and the import screen draws these at 112 px -- so 320 is that at three
+ * times the density, on a screen where the whole point of the picture is telling one
+ * scan from another before importing it.
+ */
+const THUMB_PX = 320
 
 /** The folder the masters live under, and the only root the panel offers. */
 export function mastersFolderId(): string {
@@ -260,11 +276,25 @@ export async function listFolders(folderId: string): Promise<{ id: string; name:
  */
 export async function listImages(folderId: string): Promise<DriveFile[]> {
   if (!isFileId(folderId)) throw new Error(`not a Drive folder id: ${folderId}`)
-  const files = await list<{ id: string; name: string; mimeType: string; size?: string }>(
+  const files = await list<{
+    id: string
+    name: string
+    mimeType: string
+    size?: string
+    thumbnailLink?: string
+  }>(
     `'${folderId}' in parents and mimeType contains 'image/' and trashed = false`,
-    'id, name, mimeType, size',
+    // `thumbnailLink` rides along on the listing that was already being made, so
+    // the screen's preview costs no second call and no download of a master.
+    'id, name, mimeType, size, thumbnailLink',
   )
-  return files.map((f) => ({ ...f, size: f.size ? Number(f.size) : null }))
+  return files.map((f) => ({
+    ...f,
+    size: f.size ? Number(f.size) : null,
+    // A link that is not shaped the way Drive shapes them is left alone rather
+    // than mangled: what comes back then is the 220 it always was.
+    thumbnailLink: f.thumbnailLink?.replace(/=s\d+$/, `=s${THUMB_PX}`) ?? null,
+  }))
 }
 
 /**

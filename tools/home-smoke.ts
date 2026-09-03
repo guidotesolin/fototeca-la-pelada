@@ -5,7 +5,7 @@
  * - creating a section makes its public route appear **with no deploy**;
  * - hiding one takes it out of the site without touching a single photograph;
  * - editing a piece of `site_text` changes the home page after revalidation;
- * - a hostile URL in the map field is refused, and the stored one is untouched;
+ * - a hostile URL in a network link is refused, and the stored one is untouched;
  * - and every one of those writes is refused to somebody who is not an admin,
  *   because a server action is a POST endpoint with a public URL of its own.
  *
@@ -436,56 +436,50 @@ async function main() {
       'a photograph from another section is refused as a cover',
     )
 
-    // --- 6. a hostile URL in the map field is refused, and nothing is stored ---
-    // The shapes that fool a check written as `endsWith` or as a substring. Same
-    // family as `url:smoke`, which covers the guards; this covers the wiring.
+    // --- 6. a hostile URL in a network link is refused, and nothing is stored ---
+    // The shapes that fool a check written as a substring. Same family as
+    // `url:smoke`, which covers the guards; this covers the wiring.
+    //
+    // The map used to be checked here too, and is not any more: its field is gone
+    // from the panel, so nothing writes `map_embed_url` and there is no wiring
+    // left on this side to have. The home page still renders whatever row is
+    // stored, and still through `mapEmbedUrl`, which is the check that matters
+    // now -- `url:smoke` is what covers that guard.
     const hostile = [
-      ['https://maps.google.com.evil.com/maps', 'a hostname that merely ends with the right one'],
-      ['https://www.google.com@evil.com/', 'userinfo standing in front of the real host'],
-      ['javascript:alert(1)', 'a scheme that executes'],
-      ['//maps.google.com/maps', 'a protocol-relative address'],
-      ['http://maps.google.com/maps?output=embed', 'a downgrade to http'],
+      ['javascript:alert(document.cookie)', 'a scheme that executes'],
+      ['//www.instagram.com/fototeca.lp', 'a protocol-relative address'],
+      ['http://www.instagram.com/fototeca.lp', 'a downgrade to http'],
     ] as const
     for (const [url, why] of hostile) {
       const refused = await post(
         '/admin/site-text',
         save,
-        { ...current, home_title: stamped, map_embed_url: url },
+        { ...current, home_title: stamped, instagram_url: url },
         session,
       )
       check(
-        refused.location === '/admin/site-text?error=url-mapa',
-        `the map field refuses ${why} (${url})`,
+        refused.location === '/admin/site-text?error=url-red',
+        `a network link refuses ${why} (${url})`,
       )
+      // The whole form is validated before anything is written, so a refusal
+      // leaves the ten other fields as they were as well as this one.
       const [stored] = await db
         .select({ value: siteText.value })
         .from(siteText)
-        .where(and(eq(siteText.key, 'map_embed_url'), eq(siteText.locale, 'es')))
+        .where(and(eq(siteText.key, 'instagram_url'), eq(siteText.locale, 'es')))
       check(
-        stored?.value === current.map_embed_url,
-        'and the map that was already there is untouched',
+        stored?.value === current.instagram_url,
+        'and the link that was already there is untouched',
       )
     }
-    // A network link is not pinned to a host, but its scheme is: which networks
-    // the archive is on is theirs to change, `javascript:` is not.
-    const badLink = await post(
-      '/admin/site-text',
-      save,
-      { ...current, home_title: stamped, instagram_url: 'javascript:alert(document.cookie)' },
-      session,
-    )
-    check(
-      badLink.location === '/admin/site-text?error=url-red',
-      'a network link refuses a scheme that executes',
-    )
     // The one it must accept, so the rejections above are a guard and not a wall.
     const accepted = await post(
       '/admin/site-text',
       save,
-      { ...current, home_title: stamped, map_embed_url: current.map_embed_url },
+      { ...current, home_title: stamped, instagram_url: current.instagram_url },
       session,
     )
-    check(accepted.location === '/admin/site-text?ok=textos', 'a real Google Maps embed is saved')
+    check(accepted.location === '/admin/site-text?ok=textos', 'a real profile URL is saved')
 
     // --- 7. a section with photographs is not deleted ---
     const section = await get(`/admin/categories/${HIDDEN}`, session)

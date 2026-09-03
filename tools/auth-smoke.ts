@@ -250,10 +250,14 @@ async function main() {
      * something still pending in that folder. Skipped otherwise, so this file
      * still runs before the Google Cloud Console work is done.
      *
-     * Scraped on `name="auto"` and not on `name="folder"`: the folder picker is
+     * Scraped on `name="files"` and not on `name="folder"`: the folder picker is
      * a **GET** form carrying `<select name="folder">` and it comes first in the
      * markup, so looking for that field finds a form with no server action on it
-     * at all. `auto` is the "Importar todas" button and exists nowhere else.
+     * at all. `files` is the checkbox on every pending row and exists nowhere
+     * else -- and this branch already only runs when something is pending, which
+     * is exactly when those boxes are on screen. **If it is ever renamed, rename
+     * it here**: a miss does not fail, it takes the branch below that skips the
+     * whole check.
      *
      * The folder id posted is deliberately not a Drive id, so the action refuses
      * it before it reaches Drive or the database: what is being tested is who
@@ -264,7 +268,9 @@ async function main() {
       `/admin/import?folder=${process.env.GOOGLE_DRIVE_MASTERS_FOLDER_ID ?? ''}&section=${section?.slug ?? ''}`,
       session,
     )
-    const importNext = screen.body.includes('name="auto"') ? actionIdOn(screen.body, 'auto') : null
+    const importNext = screen.body.includes('name="files"')
+      ? actionIdOn(screen.body, 'files')
+      : null
     if (!importNext) {
       console.log('  (the import form is not on screen -- Drive unconfigured or nothing pending)')
     } else {
