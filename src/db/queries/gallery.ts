@@ -403,6 +403,62 @@ export const listPhotoSlugs = cached('photo-slugs', async (): Promise<string[]> 
 })
 
 /**
+ * Every public address the archive wants indexed, for `app/sitemap.ts`.
+ *
+ * **Only what is published and visible**, which is the one line that separates
+ * this from `listPhotoSlugs` and `countSectionPhotos` directly above it. Those
+ * two feed `generateStaticParams` and deliberately include what is hidden, so a
+ * photograph published from the panel already has a pre-rendered page. A sitemap
+ * is the opposite promise: it is what the archive tells Google to go and fetch,
+ * and a hidden photograph's page answers 410 through the proxy. Listing it would
+ * be asking a crawler to come and be told the address is dead.
+ *
+ * Paths and not URLs, and no locale: the four languages of each of these are
+ * `localeHref` away, and the sitemap is where that multiplication belongs. It is
+ * the same in four languages, so it is `cached` rather than `perLocale`.
+ *
+ * Pagination is counted over published photographs here, where the gallery's own
+ * `generateStaticParams` counts all of them -- so a section whose last page holds
+ * nothing but hidden photographs is not offered to a crawler, while its
+ * pre-rendered page goes on existing. A visible section with nothing published
+ * still gets its page one: it is in the header's menu, so it is reachable, and a
+ * page that is linked and not listed is the inconsistency worth avoiding.
+ *
+ * It carries `GALLERY_TAG` like every other read on this side, so unpublishing
+ * drops the sitemap's entry with the same `revalidateTag` that drops the gallery
+ * the photograph was in.
+ */
+export const listPublicPaths = cached('public-paths', async (): Promise<string[]> => {
+  const [photos, sections] = await Promise.all([
+    db
+      .select({ slug: photo.slug })
+      .from(photo)
+      .where(eq(photo.published, true))
+      .orderBy(asc(photo.slug)),
+    db
+      .select({ slug: category.slug, n: sql<number>`count(${photo.id})::int` })
+      .from(category)
+      // Both joins outer, and `count(photo.id)` rather than `count(*)`: a visible
+      // section with nothing published still has to come back, with a zero.
+      .leftJoin(photoCategory, eq(photoCategory.categoryId, category.id))
+      .leftJoin(photo, and(eq(photo.id, photoCategory.photoId), eq(photo.published, true)))
+      .where(eq(category.visible, true))
+      .groupBy(category.slug, category.position)
+      .orderBy(asc(category.position)),
+  ])
+
+  return [
+    '/',
+    ...sections.flatMap(({ slug, n }) =>
+      Array.from({ length: Math.max(1, Math.ceil(n / PER_PAGE)) }, (_, i) =>
+        i === 0 ? `/categoria/${slug}` : `/categoria/${slug}/${i + 1}`,
+      ),
+    ),
+    ...photos.map((r) => `/foto/${r.slug}`),
+  ]
+})
+
+/**
  * One photograph, with everything its own page shows. The categories come back in
  * the panel's order and only if visible, because each one is rendered as a link to
  * a gallery that a hidden section does not have.

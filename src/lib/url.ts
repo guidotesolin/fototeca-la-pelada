@@ -15,7 +15,24 @@
  * a `javascript:` scheme, a protocol-relative `//host`.
  */
 
-const MAP_HOSTS = ['maps-api-ssl.google.com', 'maps.google.com', 'www.google.com']
+/**
+ * The site's own origin, and the one place it is read.
+ *
+ * The fallback is for `next dev` and for a build made without the variable; in
+ * production it is what `NEXT_PUBLIC_SITE_URL` says, which is also what the
+ * sitemap writes into every one of its addresses. Public by definition -- it is
+ * the address readers type -- so the `NEXT_PUBLIC_` prefix costs nothing.
+ */
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
+
+/**
+ * The hosts a Google Maps embed may come from. **Exported because the CSP is
+ * built from it**: `frame-src` in `next.config.ts` and this allowlist are the same
+ * fact, and two copies of one fact is how one of them goes stale -- a pin moved
+ * to a host this list allows and the header does not would render an empty frame
+ * and no error anybody would see.
+ */
+export const MAP_HOSTS = ['maps-api-ssl.google.com', 'maps.google.com', 'www.google.com']
 
 function parse(value: string | undefined): URL | null {
   if (!value) return null
