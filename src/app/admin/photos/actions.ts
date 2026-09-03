@@ -27,11 +27,18 @@ import { Invalid, outcome } from '../write'
  *   are trusted with the archive, which is not the same as being trusted to have
  *   sent a well-formed year.
  *
- * The takedown order is the part worth reading twice: **R2 first, the row after**.
- * If the delete fails, nothing changed and the action can be retried. If the row
- * update fails after the files are gone, the photograph shows up broken, which is
- * loud, and retrying finishes the job. The other order can null the keys while the
- * files stay, and then the takedown is a lie nobody can see.
+ * **Nothing here deletes a photograph's files.** Once an image is in the bucket it
+ * stays: unpublishing hides it from the site and leaves every rendition where it
+ * is, which is the archive's rule as of this change -- a photograph that took work
+ * to find is not something the panel gets to destroy. The only deletes left in
+ * this file are rollbacks: files written by the operation that is failing, which
+ * no row will ever name, and leaving those behind is not preservation but litter.
+ *
+ * What that costs is stated where it is decided, in _Exposure, indexing and
+ * takedown on request_ in ARCHITECTURE.md: a rendition keeps answering at its own
+ * URL after the photograph is hidden, because the bucket serves it directly and
+ * `published` is something only the site reads. Making a hidden photograph
+ * unreachable is bucket configuration, not a delete.
  */
 
 /** Longest we accept per kind of field. A caption can be a paragraph; a credit cannot. */
@@ -126,14 +133,21 @@ export async function saveDetails(form: FormData) {
 }
 
 /**
- * The takedown, and undoing it. Unpublishing deletes every derivative -- the
- * photograph's and its restoration's -- and nulls the keys, so nothing in the
- * database points at a file that is not there. Publishing reads the masters back
- * -- from R2 or from Drive, whichever holds this one -- and derives again under a
- * **new** random prefix: the addresses a takedown killed stay dead.
+ * Hiding a photograph from the site, and putting it back. **One boolean, and no
+ * file is touched in either direction.**
  *
- * No master is ever deleted here. That is what makes a takedown reversible, and
- * it is why the restoration needed a `restored_master_key` of its own.
+ * It used to be a takedown: unpublishing deleted every rendition and nulled the
+ * keys, and publishing derived the whole set again from the master under a new
+ * random prefix. The archive's rule is now that nothing it has is ever deleted, so
+ * the renditions stay and coming back is the flag flipping. What that gives up is
+ * the one thing the delete bought -- see the note at the top of this file.
+ *
+ * The generate-from-master branch below is **not** dead code, and it is not there
+ * for old rows either. `attachRestoration` deliberately derives nothing while the
+ * photograph is hidden, so a restoration attached in that state has a master and
+ * no renditions until this action publishes; and an import that failed midway
+ * leaves a row whose own renditions were rolled back. Both arrive here with a null
+ * key and a master to read, which is exactly what it handles.
  */
 export async function setPublished(form: FormData) {
   await requireAdmin()
@@ -145,23 +159,9 @@ export async function setPublished(form: FormData) {
     const row = await load(slug)
 
     if (!publishing) {
-      // R2 first: while the keys are still in the row, this is retryable.
-      await dropDerivatives(row.webKey)
-      await dropDerivatives(row.restoredWebKey)
-      await db
-        .update(photo)
-        .set({
-          published: false,
-          webKey: null,
-          webWidth: null,
-          webHeight: null,
-          thumbKey: null,
-          restoredWebKey: null,
-          restoredWebWidth: null,
-          restoredWebHeight: null,
-          restoredThumbKey: null,
-        })
-        .where(eq(photo.id, row.id))
+      // The keys stay. They are what makes publishing again a flag flip rather
+      // than six encodes and six uploads off a master that may live in Drive.
+      await db.update(photo).set({ published: false }).where(eq(photo.id, row.id))
       return
     }
 
@@ -220,13 +220,13 @@ export async function setPublished(form: FormData) {
 
 /**
  * Attaches a restoration: an interpretation, never the document. It gets a master
- * of its own for the same reason the photograph has one -- without it a takedown
- * would delete its derivatives and republishing could not bring them back, so
- * unpublishing would destroy somebody's retouching.
+ * of its own, which is the same rule the photograph follows -- what is uploaded is
+ * kept, and everything else about it is derived.
  *
- * Derivatives are generated only if the photograph is published. An unpublished
- * one has none by definition, and giving it half a set would put a live URL back
- * on a photograph that was taken down.
+ * Derivatives are generated only if the photograph is published, and now for a
+ * plainer reason than before: they are work, and a hidden photograph has nothing
+ * to show them on. `setPublished` derives them when it is published, which is the
+ * branch its own note points at.
  */
 export async function attachRestoration(form: FormData) {
   await requireAdmin()

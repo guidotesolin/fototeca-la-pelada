@@ -48,7 +48,7 @@ export function one(value: string | string[] | undefined): string {
 export const DONE: Record<string, string> = {
   guardado: 'Cambios guardados.',
   publicado: 'Se publicó: ya está en el sitio.',
-  despublicado: 'Se despublicó: salió del sitio y su imagen ya no está disponible.',
+  despublicado: 'Se despublicó: salió del sitio. La imagen queda guardada.',
   restaurada: 'Se adjuntó la versión restaurada.',
   'restauracion-quitada': 'Se quitó la versión restaurada.',
   orden: 'Se guardó el orden de la sección.',

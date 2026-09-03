@@ -1,7 +1,14 @@
 /**
- * Smoke test for the takedown, which is the half of T10's acceptance criterion
- * that has teeth: unpublishing has to make the image unreachable at its URL, and
- * republishing has to bring it back.
+ * Smoke test for `dropDerivatives`, which is the one door in the codebase that
+ * deletes images out of R2.
+ *
+ * **The panel no longer walks through it.** Unpublishing used to delete every
+ * rendition; the archive's rule is now that nothing it has is ever deleted, so
+ * hiding a photograph writes one boolean. What still reaches this function is the
+ * rollback path -- files written by an operation that then failed, which no row
+ * will ever name -- and the restoration lifecycle. That is a narrower caller set
+ * and a more dangerous one: a rollback runs while something is already going
+ * wrong, which is the worst moment to discover the prefix was computed wide.
  *
  * Three things are checked, and the first is the dangerous one. `removePrefix`
  * deletes **everything** below what it is handed, so a prefix computed wrong --
@@ -114,9 +121,9 @@ async function main() {
       `dropDerivatives must refuse "${prefix}": it would delete ${why}`,
     )
   }
-  // Nothing to delete is the ordinary case -- an unpublished photograph has no
-  // keys left -- and it must be a no-op rather than a refusal: a takedown that
-  // threw halfway would leave the restoration's derivatives alive behind it.
+  // Nothing to delete is the ordinary case -- a rollback hands it whichever of
+  // the two `generate()` calls had not run yet -- and it must be a no-op rather
+  // than a refusal, or the rollback throws on its way out of a throw.
   assert.equal(await dropDerivatives(null), 0, 'a null prefix deletes nothing')
   assert.equal(await dropDerivatives(undefined), 0, 'an absent prefix deletes nothing')
   assert.equal(await dropDerivatives(''), 0, 'and neither does an empty one')

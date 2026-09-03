@@ -181,8 +181,8 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         <h2 className="t-label border-rule border-b pb-2">Publicación</h2>
         <p className="t-intro text-muted mt-4">
           {photo.published
-            ? 'Está publicada. Al despublicarla sale del sitio: deja de aparecer en las secciones y en el buscador, su página deja de estar disponible, y la imagen se borra del servidor, así que un enlace directo a la foto tampoco funciona. La copia original queda guardada, así que podés volver a publicarla cuando quieras.'
-            : 'No está publicada: no aparece en el sitio y su imagen no está disponible. Al publicarla vuelve a estar en línea, armada de nuevo a partir de la copia original que quedó guardada.'}
+            ? 'Está publicada. Al despublicarla sale del sitio: deja de aparecer en las secciones y en el buscador, y su página deja de estar disponible. No se borra nada: la imagen queda guardada tal como está, así que volver a publicarla es inmediato. Lo único que sigue funcionando es el enlace directo al archivo de imagen, para quien ya lo tenga anotado.'
+            : 'No está publicada: no aparece en el sitio, ni en las secciones, ni en el buscador, y su página no está disponible. La imagen quedó guardada, así que al publicarla vuelve a estar en línea al instante.'}
         </p>
         <form action={setPublished} className="mt-5">
           <input type="hidden" name="slug" value={photo.slug} />

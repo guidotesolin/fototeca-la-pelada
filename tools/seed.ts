@@ -201,34 +201,42 @@ async function verify(sections: Section[]) {
   console.log(`\n  ${rows.length} photos in the database`)
 
   /**
-   * Scoped to the published ones, and that scope is the point. A takedown deletes
-   * the derivatives and nulls the keys on purpose, so from T10 on "every photo has
-   * a thumbnail" is false the moment the panel is used as intended -- this
-   * assertion turned red on the first takedown and would have gone on crying wolf
-   * over the invariant below, which is the one that matters.
+   * **Every row, published or not, and the scope is the point.** It used to be
+   * scoped to the published ones because a takedown deleted the derivatives and
+   * nulled the keys, so "every photo has a thumbnail" was false the moment the
+   * panel was used as intended. Hiding a photograph now writes one boolean and
+   * touches no file, so the unscoped form is true again -- and it is the assertion
+   * that has teeth under the new rule: it is what catches a hidden photograph
+   * whose files went missing anyway.
    */
   const published = rows.filter((r) => r.published)
-  const missingThumb = published.filter((r) => !r.tk).map((r) => r.slug)
+  const missingThumb = rows.filter((r) => !r.tk).map((r) => r.slug)
   const absent = (
     await inBatches(
-      published.filter((r) => r.tk),
+      rows.filter((r) => r.tk),
       16,
       async (r) => ((await exists(r.tk!)) ? null : r.slug),
     )
   ).filter(Boolean)
   console.log(
-    `  thumbnails: ${published.length} published, ${missingThumb.length} without a key, ` +
-      `${absent.length} missing from R2`,
+    `  thumbnails: ${rows.length} rows (${published.length} published), ` +
+      `${missingThumb.length} without a key, ${absent.length} missing from R2`,
   )
 
   /**
-   * And the other half of the same promise: an unpublished photograph must hold no
-   * derivative keys at all. A key left behind after a takedown is a row pointing at
-   * a file that is gone -- or worse, at one that is not.
+   * The same promise from the other side, and this check is the **inverse** of the
+   * one it replaces. It used to assert that a hidden photograph named no
+   * derivatives; now a hidden photograph that names none is the anomaly, because
+   * the only thing that can produce one is something having deleted its files.
+   *
+   * There is no legitimate keyless row left to excuse: the import is transactional
+   * and its rollback drops both the renditions and the row, so a half-finished
+   * import leaves neither.
    */
-  const stale = rows.filter((r) => !r.published && (r.wk || r.tk || r.rwk)).map((r) => r.slug)
+  const dropped = rows.filter((r) => !r.published && !r.wk).map((r) => r.slug)
   console.log(
-    `  takedowns: ${rows.length - published.length} unpublished, ${stale.length} still naming derivatives`,
+    `  hidden: ${rows.length - published.length} not on the site, ` +
+      `${dropped.length} that lost their renditions`,
   )
 
   const withMaster = rows.filter((r) => r.mk)
@@ -245,8 +253,10 @@ async function verify(sections: Section[]) {
   }
   console.log(`  sha256: ${sample.length} masters read back from R2, ${mismatched} mismatched`)
 
-  // An object no row points at is an object the panel can never delete, which is
-  // the takedown promise quietly broken. An interrupted seed is how they appear.
+  // An object no row points at is an object nothing can ever find again: the panel
+  // does not delete, so it will sit there paying for storage until somebody reads
+  // this line. An interrupted seed is how they appear, and a rollback that itself
+  // failed is the other way.
   // The restoration's two keys count as references from T10 on: a photograph can
   // now carry a second master and a second set of derivatives, and leaving them
   // out of this list would report every restoration in the archive as an orphan.
@@ -258,12 +268,8 @@ async function verify(sections: Section[]) {
   const total = sections.reduce((n, s) => n + s.photos.length, 0)
   assert.equal(rows.length, total, 'every photo in archive.json is in the database')
   assert.equal(bad, 0, 'every category count matches')
-  assert.equal(
-    missingThumb.length + absent.length,
-    0,
-    'every published photo has a thumbnail in R2',
-  )
-  assert.equal(stale.length, 0, 'no unpublished photo still names a derivative')
+  assert.equal(missingThumb.length + absent.length, 0, 'every photo has a thumbnail in R2')
+  assert.equal(dropped.length, 0, 'no hidden photo has lost the renditions it names')
   assert.equal(mismatched, 0, 'every sampled master matches its hash')
   assert.equal(orphans.length, 0, 'no object in R2 is unreachable from the database')
   console.log('\nverify ok')

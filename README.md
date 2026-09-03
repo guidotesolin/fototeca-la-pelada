@@ -229,25 +229,32 @@ which is the queue this design does without, and a scan nothing can decode deser
 than a silent skip. The message says so and the list on screen is anchored on that file. Take it out
 of the Drive folder and press the button again.
 
-## Taking a photograph down
+## Hiding a photograph
 
-When a neighbour asks for their photograph to be removed:
+**The archive never deletes anything.** Once an image is in, it is in: the only thing the panel can
+do is take it off the site.
 
 1. **Panel → Editar fotos**, find it (the search box takes a caption, a "Cortesía" or the
    identifier), open it and press **Despublicar**.
-2. That deletes its web derivatives from R2 — its restoration's too, if it has one — so the image
-   stops answering at its URL the moment the panel answers. Its page takes **a couple of seconds**
-   to catch up: for about two more it still shows the copy the site had already built, then it
-   answers **410 Gone**. If you check the instant you press the button you will see the old page,
-   and that is the cache turning over, not a failure. It leaves the galleries and the search in the
-   same few seconds.
-3. **Nothing is lost.** The masters and every word of the research stay where they are, and
-   **Publicar** regenerates the derivatives from them at new addresses. The ones the takedown killed
-   never come back.
-4. **Google keeps its own copy for a while.** The 410 is what tells it to drop the page, and it
+2. Its page takes **a couple of seconds** to catch up: for about two more it still shows the copy
+   the site had already built, then it answers **410 Gone**. If you check the instant you press the
+   button you will see the old page, and that is the cache turning over, not a failure. It leaves
+   the galleries and the search in the same few seconds.
+3. **Nothing is deleted and nothing is lost.** The image files, the masters and every word of the
+   research stay exactly where they are, which is why **Publicar** puts it back instantly instead of
+   rebuilding it.
+4. **The image file itself keeps answering at its own address.** Nothing on the site links it any
+   more and the address cannot be guessed, but somebody who wrote it down before still has it. So
+   this hides a photograph; it does not erase it from the internet.
+5. **Google keeps its own copy for a while.** The 410 is what tells it to drop the page, and it
    obeys on its next crawl. To hurry it, use the removal tool in Search Console
    (<https://search.google.com/search-console/removals>) on the photograph's URL. That step is done
    by hand and needs nobody from the outside.
+
+If a neighbour asks for their photograph to be **removed** rather than hidden, steps 1 and 5 are as
+far as the panel goes today, and step 4 is the part to be honest with them about. Actually revoking
+the file means changing the bucket's configuration in Cloudflare, which is not something the panel
+can do — see _Exposure, indexing and takedown on request_ in `docs/ARCHITECTURE.md`.
 
 ## Security
 
@@ -500,25 +507,32 @@ nada puede decodificar merece que alguien lo mire y no que se lo saltee en silen
 dice, y la lista en pantalla queda anclada en ese archivo. Se lo saca de la carpeta de Drive y se
 aprieta el botón de nuevo.
 
-## Dar de baja una fotografía
+## Ocultar una fotografía
 
-Cuando un vecino pide que saquen su foto:
+**El archivo no borra nunca nada.** Una vez que una imagen entró, entró: lo único que el panel puede
+hacer es sacarla del sitio.
 
 1. **Panel → Editar fotos**, buscala (el buscador toma el epígrafe, la "Cortesía" o el
    identificador), abrila y apretá **Despublicar**.
-2. Eso borra sus derivadas de R2 —y las de su restauración, si tiene— así que la imagen deja de
-   responder en su URL apenas el panel contesta. La ficha tarda **un par de segundos** en ponerse al
-   día: durante unos dos más sigue mostrando la copia que el sitio ya tenía armada, y después
-   responde **410 Gone**. Si mirás en el instante en que apretás el botón vas a ver la página vieja,
-   y eso es la caché dándose vuelta, no una falla. Sale de las galerías y del buscador en esos
-   mismos segundos.
-3. **No se pierde nada.** Los masters y todo el trabajo de investigación quedan donde están, y
-   **Publicar** regenera las derivadas a partir de ellos, en direcciones nuevas. Las que mató la
-   baja no vuelven nunca.
-4. **Google se queda un tiempo con su copia.** El 410 es lo que le dice que la saque, y obedece en
+2. La ficha tarda **un par de segundos** en ponerse al día: durante unos dos más sigue mostrando la
+   copia que el sitio ya tenía armada, y después responde **410 Gone**. Si mirás en el instante en
+   que apretás el botón vas a ver la página vieja, y eso es la caché dándose vuelta, no una falla.
+   Sale de las galerías y del buscador en esos mismos segundos.
+3. **No se borra ni se pierde nada.** Los archivos de imagen, los masters y todo el trabajo de
+   investigación quedan exactamente donde están, y por eso **Publicar** la devuelve al instante en
+   vez de rearmarla.
+4. **El archivo de imagen sigue respondiendo en su propia dirección.** Ya nada del sitio lo enlaza y
+   la dirección no se puede adivinar, pero quien la haya anotado antes la sigue teniendo. Así que
+   esto oculta una fotografía; no la borra de internet.
+5. **Google se queda un tiempo con su copia.** El 410 es lo que le dice que la saque, y obedece en
    el próximo rastreo. Para apurarlo, usá la herramienta de eliminación de Search Console
    (<https://search.google.com/search-console/removals>) sobre la URL de la fotografía. Ese paso es
    a mano y no necesita a nadie de afuera.
+
+Si un vecino pide que su foto se **borre** y no que se oculte, los pasos 1 y 5 son todo lo que el
+panel puede hacer hoy, y el paso 4 es la parte que hay que decirle de frente. Que el archivo deje de
+responder de verdad es configuración del bucket en Cloudflare, no algo que el panel pueda cambiar
+—ver _Exposure, indexing and takedown on request_ en `docs/ARCHITECTURE.md`.
 
 ## Seguridad
 

@@ -235,9 +235,12 @@ mimeType filter on the listing is a convenience — it keeps the brothers' `.txt
 count — and never a check.
 
 A photograph arrives **published**, at the end of its section, with no caption and no credit, which
-is the state 73 of the original 592 are in and what the "Sin epígrafe" filter exists for. Published
-because the alternative breaks the archive's one storage invariant: an unpublished photograph has no
-derivatives, since a takedown deletes them. **Despublicar** is one click if it should wait.
+is the state 73 of the original 592 are in and what the "Sin epígrafe" filter exists for. It was
+published because the alternative broke the storage invariant of the time -- an unpublished
+photograph had no derivatives, since a takedown deleted them. That invariant is gone: hiding deletes
+nothing, so arriving hidden would now be a coherent choice. It still arrives published, because 592
+of 592 are and the import is how the brothers see that a folder worked. **Despublicar** is one click
+if it should wait.
 
 ### Cross-cutting decision: the public site is pre-rendered
 
@@ -547,11 +550,13 @@ Details that matter:
 
 - **`restored_master_key`, added in T10**, and it is principle 1 applied to the second image.
   The schema shipped with `restored_drive_file_id` and the two derivative keys but no master for
-  the restoration, and a takedown deletes derivatives -- so unpublishing a photograph whose
+  the restoration, and unpublishing then deleted derivatives -- so hiding a photograph whose
   restoration had been uploaded by hand would have destroyed it, with nothing to regenerate from
-  unless the file happened to still be in Drive. A takedown must not cost anybody their work. One
+  unless the file happened to still be in Drive. Hiding must not cost anybody their work. One
   nullable column, and the restoration is now stored exactly like the photograph: master kept,
-  derivatives regenerable.
+  derivatives regenerable. The column outlived the danger that motivated it -- hiding deletes
+  nothing now -- and it is still what makes the restoration a first-class image rather than a
+  cache of one.
 - **The fallback to Spanish is in the SQL, not in TypeScript.** Every public read joins the
   asked-for translation _and_ the Spanish one — two aliases of the same table, both lookups on the
   primary key `(photo_id, locale)` — and coalesces the fields. One round trip serves any language,
@@ -734,15 +739,34 @@ point of a public archive and it is what will let a descendant in Italy find the
 great-grandfather's photo. But captions name living people, and while Sites is nearly invisible to
 Google, the new site will not be.
 
-How a takedown works:
+**Amended at the maintainer's request: the archive deletes nothing.** The escape valve is now
+hiding, not removal. What follows is the mechanism as it stands, and then what the amendment costs,
+because it costs something real and this is the place that has to say so.
 
-1. Panel → the photo → unpublish (`published = false`).
+How hiding a photograph works:
+
+1. Panel → the photo → **Despublicar** (`published = false`).
 2. The detail page starts answering 410, drops out of galleries, search and sitemap, and the
    affected routes are revalidated.
-3. **Derivatives are deleted from R2.** If we only removed it from listings, the image file would
-   remain reachable at its URL and the takedown would be a lie.
-4. The master stays intact in Drive and the metadata in the database: none of the research work is
-   lost. Republishing regenerates the derivatives.
+3. **No file is touched.** Every rendition stays in R2 under the key the row still names, which is
+   what makes publishing again one boolean instead of six encodes off a master that may live in
+   Drive.
+
+**What that gives up, stated plainly.** A rendition keeps answering at its own URL after the
+photograph is hidden. The bucket serves images directly -- that is the free-egress design a gallery
+depends on -- so `published` is something only the site reads, and hiding is invisible to anyone
+holding the file's address. Nothing links it once the photograph is hidden, and the keys carry a
+random component so it cannot be guessed or walked, but a link written down before still resolves.
+
+So **hiding is not a takedown**, and the `/sobre` page invites takedown requests. The gap is real
+and it is not closable in application code: honouring one means the bucket refusing to serve the
+object, which is bucket configuration -- the same change F16 and F35 already carry into T14, where
+`masters/` comes off the public domain. Until that exists, a neighbour who asks for their photograph
+to be removed gets it hidden from the site and the file survives. Whoever runs the archive should
+know that before promising otherwise.
+
+The metadata, the master and the renditions all stay, so no research work is ever lost by hiding
+something -- which is the reason the amendment was asked for in the first place.
 
 **How the 410 is produced, as built in T10.** No page in Next 16 can choose its status code:
 `notFound()` gives 404, `forbidden()` and `unauthorized()` give 403 and 401, and there is nothing
@@ -840,15 +864,15 @@ pre-rendered copy was the only copy, and nothing could make another until the ne
 Two technical consequences that must be decided before writing code, not after:
 
 - **R2 keys cannot be guessable.** If they were `photos/campo-078/web.avif`, anyone could derive
-  the rest of the archive and the takedown would be a lie again. They carry a random component per
-  photo.
-- **The masters sit in the same public bucket, and a takedown does not touch them.** By design the
-  master survives, and the design assumed it survives in Drive; today, for all 592, it is the copy
-  rescued from Sites and it lives in R2 behind the same public domain as the derivatives. Its key
-  carries the same random component and no page has ever linked it, so it is not reachable by
-  guessing or by walking the archive -- but it is reachable by anyone who wrote the URL down. Closing
-  that means keeping `masters/` off the public domain, which is bucket configuration rather than
-  code, and it belongs with F16 in T14.
+  the rest of the archive from a single URL. They carry a random component per photo. This mattered
+  more once hiding stopped deleting anything: unguessable is now the _whole_ of what keeps a hidden
+  photograph out of reach, rather than a second line behind the delete.
+- **Renditions and masters both sit in the same public bucket, and nothing the panel does removes
+  either.** The masters were always kept -- by design in Drive, and today, for all 592, as the copy
+  rescued from Sites living in R2 behind the same public domain as the derivatives. Since the
+  amendment the renditions are in exactly that position: random key, linked from nowhere, reachable
+  by anyone who wrote the URL down. Closing it means keeping both prefixes off the public domain,
+  which is bucket configuration rather than code, and it belongs with F16 and F35 in T14.
 - **Google keeps cached copies.** Unpublishing does not remove it from the index immediately; that
   needs the Search Console removal tool. It is procedure, not code, and it should be written down
   so the brothers can do it without the maintainer.
@@ -1087,9 +1111,12 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
   both ways and in that order: turn it on, uncover a photograph on its own page, turn it off, and
   confirm the blur is back. Checking only the first half is what made a real defect invisible until
   review went looking for it.
-- **Takedown**: unpublish and confirm 410, removal from galleries, search and sitemap, and that
-  **the R2 URL stops responding**; then republish and verify derivatives are regenerated. The 410
-  in **all four languages**, encoded spellings included.
+- **Hiding a photograph**: unpublish and confirm 410, removal from galleries, search and sitemap,
+  and that **the R2 URL still answers and the row still names it** -- which is the amendment, and
+  the reverse of what this line asked for until it landed; then republish and confirm the key is
+  **the same one**, since a new prefix would mean something re-encoded. The 410 in **all four
+  languages**, encoded spellings included. Watch the clock in both directions: the proxy memoizes
+  the gone list for two seconds, so hiding reads 200 for a moment and publishing reads 404 for one.
 - **Languages**: load one translation and leave its neighbours without, then check all three states
   on the same section — a translated caption, a photograph with no translation row, and a row whose
   caption is empty. `<html lang>` per route. The four picker buttons, clicked in a real browser and

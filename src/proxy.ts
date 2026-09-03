@@ -76,9 +76,12 @@ import { defaultLocale, isLocale, locales, splitLocale, switchHref } from '@/i18
  * instance, so the answer would almost always be the empty list and the 410
  * would essentially never fire.
  *
- * ponytail: an in-process memo, so a takedown reaches an instance up to
- * `MEMO_MS` late (F37) -- the files are deleted long before the page stops
- * being served. Anything fresher means a lookup per request; the way out is a
+ * ponytail: an in-process memo, so hiding a photograph reaches an instance up to
+ * `MEMO_MS` late (F37). That used to be softened by the delete -- the files went
+ * first, so a page still being served had no image in it -- and hiding deletes
+ * nothing now, so this window is the whole of it: for up to `MEMO_MS` the page
+ * serves as it was. Two seconds on a request that has to be the first one after
+ * the panel wrote. Anything fresher means a lookup per request; the way out is a
  * store the panel writes and the proxy reads in a microsecond, which is a
  * dependency this project does not have.
  */
