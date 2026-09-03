@@ -229,18 +229,29 @@ async function main() {
     // T12 added a page and an action, and the rule is per route and per action:
     // the layout above them is chrome and says so itself.
     await db.insert(appUser).values({ email: EMAIL, name: 'Auth Smoke' })
+
+    /**
+     * A sentence of the screen's own prose, and deliberately **not** its
+     * heading. The heading text is also the page's `title`, and Next flushes the
+     * document head -- and a copy of it in the flight payload, inside `<body>`
+     * -- before `requireAdmin()`'s `redirect()` gets to fire. So a refused
+     * request answers 307 with a body that carries "Importar desde Drive" twice
+     * and nothing else of the screen: asserting on that string proves nothing
+     * in either direction. This one is only ever rendered, and it sits above
+     * every branch of the screen, so the positive case below holds whether or
+     * not Drive is configured.
+     */
+    const SCREEN = 'Cada fotografía se importa de a una'
+
     const importAnonymous = await get('/admin/import')
     assert.equal(importAnonymous.status, 307, 'an anonymous GET /admin/import is redirected')
     assert.equal(importAnonymous.location, '/admin/signin')
-    assert.ok(
-      !importAnonymous.body.includes('Importar desde Drive'),
-      'and none of the screen is sent',
-    )
+    assert.ok(!importAnonymous.body.includes(SCREEN), 'and none of the screen is sent')
 
     const importAllowed = await get('/admin/import', session)
     assert.equal(importAllowed.status, 200, 'an allowlisted session reaches the import screen')
     assert.ok(
-      importAllowed.body.includes('Importar desde Drive'),
+      importAllowed.body.includes(SCREEN),
       'and the screen renders whether or not Drive is configured yet',
     )
 
