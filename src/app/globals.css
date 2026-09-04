@@ -123,6 +123,23 @@ body {
   color: var(--color-muted);
 }
 
+/*
+ * The page you are standing on, in the pagination. `text-accent` on the span did
+ * nothing: the rule above is unlayered author CSS and Tailwind's utilities sit in
+ * `@layer utilities`, which loses to it whatever the specificity -- the same
+ * cascade-layer note as `body > header` further down. So the marker is unlayered
+ * too.
+ *
+ * The rule under it is not decoration: `aria-current` marks it for the reader that
+ * speaks, and colour alone does not mark it for the one that looks (WCAG 1.4.1).
+ */
+.t-meta[aria-current='page'] {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
 @media (min-width: 640px) {
   .t-headline {
     font-size: 64px;

@@ -128,7 +128,7 @@ export async function Pagination({
 
   const number = (n: number, hidden = false) =>
     n === page ? (
-      <span aria-current="page" className="t-meta text-accent px-1">
+      <span aria-current="page" className="t-meta px-1">
         {n}
       </span>
     ) : (
