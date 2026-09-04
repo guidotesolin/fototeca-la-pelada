@@ -116,6 +116,11 @@ async function main() {
     const allowed = await get('/admin', session)
     assert.equal(allowed.status, 200, 'an allowlisted session reaches the panel')
     assert.ok(allowed.body.includes(EMAIL), 'and the header shows the address that was let in')
+    assert.ok(
+      allowed.body.includes("localStorage.setItem('admin'"),
+      'and it marks the browser, which is what puts the way back into the public ' +
+        "site's settings menu -- a hint the public layout can read without a session",
+    )
 
     // --- 3. the sign-in screen is not a dead end for someone already in ---
     const signin = await get('/admin/signin', session)
@@ -143,6 +148,12 @@ async function main() {
     const door = await get('/admin/signin')
     assert.equal(door.status, 200, 'the sign-in screen is public')
     assert.ok(door.body.includes('Entrar con Google'), 'and offers the one way in')
+    assert.ok(door.body.includes('Volver al sitio'), 'and is not a dead end')
+    assert.ok(
+      door.body.includes("localStorage.removeItem('admin')"),
+      'and rubs the mark out: this is the screen sign-out lands on, so it is what ' +
+        'takes the panel back out of the public settings menu',
+    )
 
     // --- 7. an outage and a rejection do not read the same ---
     // Auth.js reports anything thrown in the `signIn` callback as AccessDenied,

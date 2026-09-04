@@ -392,6 +392,24 @@ body {
 }
 
 /*
+ * The way into the panel, in the settings menu, for the browsers that have been
+ * in it. It is in every page's HTML and CSS is what decides who sees it: the
+ * public site is pre-rendered, so the layout cannot read a session without
+ * turning the whole archive dynamic -- the same trade `show-sensitive` is drawn
+ * around, and the marker that sets this class is written in `/admin`'s layout.
+ *
+ * A hint and never a gate: `requireAdmin()` is the boundary, and a stale marker
+ * buys a reader nothing but a redirect to the sign-in screen -- which clears it.
+ */
+.admin-only {
+  display: none;
+}
+
+.show-admin .admin-only {
+  display: flex;
+}
+
+/*
  * The one switch on the site. A `<button role="switch">`, so the keyboard and the
  * screen reader get it for free; the knob is a `::before` rather than a span,
  * because a control whose only child is decoration should not have to ship one.

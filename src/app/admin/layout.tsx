@@ -50,6 +50,25 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
 
   return (
     <Document lang="es">
+      {/* The mark the public site's settings menu reads, so that an administrator
+          browsing the archive has a way back in here. Written on every screen of
+          the panel and rubbed out on every screen that is not signed in -- which
+          includes the one `signOut` lands on -- so it corrects itself the moment
+          the session ends, expires or is revoked from the allowlist.
+
+          `localStorage` and not a cookie: the public site sets none, and a cookie
+          read in its layout would make the whole pre-rendered archive dynamic.
+          It says a browser was in the panel and nothing more; the boundary is
+          `requireAdmin()`, and a stale mark buys a redirect to the sign-in
+          screen. */}
+      <script
+        dangerouslySetInnerHTML={{
+          __html: admin
+            ? "try{localStorage.setItem('admin','1')}catch(e){}"
+            : "try{localStorage.removeItem('admin')}catch(e){}",
+        }}
+      />
+
       {admin && (
         /* The public site's bar, with the parts the panel has no use for taken
            out: the mark and the name on the left, one `<details>` on the right.

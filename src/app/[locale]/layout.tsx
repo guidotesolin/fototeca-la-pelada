@@ -204,12 +204,18 @@ export default async function PublicLayout({ children, params }: LayoutProps<'/[
           reader who already lifted it never watches the blur come off. `try`
           because a private window throws on the first `localStorage` touch, and a
           throw here would take the rest of the document with it. The failure is
-          the safe one either way: no class, so the photographs stay covered. */}
+          the safe one either way: no class, so the photographs stay covered.
+
+          The second mark is the panel's, written by `/admin`'s layout on the way
+          in and rubbed out on the way out, and it is read here for the same
+          reason: this layout is pre-rendered, and asking the server who is signed
+          in would make all 592 photo pages dynamic for one link in a dropdown. */}
       <script
         dangerouslySetInnerHTML={{
           __html:
-            "try{if(localStorage.getItem('sensitive'))" +
-            "document.documentElement.classList.add('show-sensitive')}catch(e){}",
+            'try{var c=document.documentElement.classList;' +
+            "if(localStorage.getItem('sensitive'))c.add('show-sensitive');" +
+            "if(localStorage.getItem('admin'))c.add('show-admin')}catch(e){}",
         }}
       />
 
@@ -433,6 +439,26 @@ export default async function PublicLayout({ children, params }: LayoutProps<'/[
                   </div>
                   <SensitiveSwitch label={t('sensitiveSwitch')} />
                 </div>
+
+                {/* Only for a browser that has signed into the panel, which is
+                    `.admin-only` in globals.css and the mark the script above
+                    reads. Signing in is still `/admin` typed into the address bar:
+                    this is the way back to a panel you are already in, not a door,
+                    so it never appears for a reader.
+
+                    An anchor and not a `Link`, for two reasons at once: `/admin`
+                    has a root layout of its own, which a client navigation cannot
+                    cross, and a prefetch would put the allowlist lookup behind a
+                    dropdown every reader can open. `nofollow` for the same reason
+                    `/idioma/<code>` carries it. */}
+                {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+                <a
+                  href="/admin"
+                  rel="nofollow"
+                  className="admin-only border-rule t-credit link hover:text-text focus-visible:outline-focus mt-5 min-h-11 items-center border-t pt-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  {t('admin')}
+                </a>
               </div>
             </details>
           </div>

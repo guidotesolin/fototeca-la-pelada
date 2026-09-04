@@ -11,7 +11,8 @@
     "language": "Idioma",
     "sensitive": "Contenido sensible",
     "sensitiveHint": "Muestra sin difuminar las fotografías con imágenes de faena de animales.",
-    "sensitiveSwitch": "Mostrar el contenido sensible sin difuminar"
+    "sensitiveSwitch": "Mostrar el contenido sensible sin difuminar",
+    "admin": "Ir al panel"
   },
   "languages": {
     "es": "español",

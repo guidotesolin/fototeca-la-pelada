@@ -11,7 +11,8 @@
     "language": "Lingua",
     "sensitive": "Contenuto sensibile",
     "sensitiveHint": "Mostra senza sfocatura le fotografie con immagini di macellazione di animali.",
-    "sensitiveSwitch": "Mostra il contenuto sensibile senza sfocatura"
+    "sensitiveSwitch": "Mostra il contenuto sensibile senza sfocatura",
+    "admin": "Vai al pannello"
   },
   "languages": {
     "es": "spagnolo",

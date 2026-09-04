@@ -11,7 +11,8 @@
     "language": "Langue",
     "sensitive": "Contenu sensible",
     "sensitiveHint": "Affiche sans floutage les photographies montrant l'abattage d'animaux.",
-    "sensitiveSwitch": "Afficher le contenu sensible sans floutage"
+    "sensitiveSwitch": "Afficher le contenu sensible sans floutage",
+    "admin": "Aller au panneau"
   },
   "languages": {
     "es": "espagnol",

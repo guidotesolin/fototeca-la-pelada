@@ -11,7 +11,8 @@
     "language": "Language",
     "sensitive": "Sensitive content",
     "sensitiveHint": "Shows photographs containing images of animal butchering without a blur.",
-    "sensitiveSwitch": "Show sensitive content without a blur"
+    "sensitiveSwitch": "Show sensitive content without a blur",
+    "admin": "Go to the panel"
   },
   "languages": {
     "es": "Spanish",
