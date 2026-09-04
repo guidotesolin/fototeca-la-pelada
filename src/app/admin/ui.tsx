@@ -67,6 +67,7 @@ export const DONE: Record<string, string> = {
   'seccion-guardada': 'Se guardó la sección.',
   'seccion-borrada': 'Se borró la sección.',
   textos: 'Se guardaron los textos del sitio.',
+  traducciones: 'Se guardaron las traducciones. Ya están en el sitio.',
   importada: 'Se importó una fotografía desde Drive y ya está en el sitio.',
 }
 
@@ -97,6 +98,12 @@ export const FAILED: Record<string, string> = {
     'Esa sección todavía tiene fotografías, así que no se puede borrar. Ocultala: sale del menú y de la portada, y no se pierde ninguna.',
   portada:
     'Esa fotografía no sirve como portada: tiene que estar en esta sección y estar publicada.',
+
+  // --- translations ---
+  // Anything the queue or a translation box sends that is not one of the three
+  // languages the editor writes. Spanish included: it is the source language and
+  // it is edited on the screens that own it, never through a translation form.
+  idioma: 'Ese idioma no se edita desde acá.',
 
   // --- site text ---
   'url-red': 'Ese enlace de red social no es válido: tiene que empezar con https://',

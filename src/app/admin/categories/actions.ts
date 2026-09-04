@@ -7,6 +7,8 @@ import { SOURCE_LOCALE } from '@/db/queries/gallery'
 import { category, categoryTranslation, photo, photoCategory } from '@/db/schema'
 import { requireAdmin } from '@/lib/auth'
 import { isSectionSlug } from '@/lib/slug'
+import { readTranslations } from '../translations/items'
+import { writeTranslations } from '../translations/save'
 import { Invalid, outcome } from '../write'
 
 /**
@@ -150,6 +152,9 @@ export async function saveCategory(form: FormData) {
       }
     }
 
+    // Same form, same button: see the note in `admin/photos/actions.ts`.
+    const translations = readTranslations(form)
+
     await db.transaction(async (tx) => {
       await tx.update(category).set({ coverPhotoId }).where(eq(category.id, row.id))
       await tx
@@ -159,6 +164,7 @@ export async function saveCategory(form: FormData) {
           target: [categoryTranslation.categoryId, categoryTranslation.locale],
           set: { name, intro },
         })
+      await writeTranslations(tx, translations)
     })
   })
   redirect(`/admin/categories/${slug}?${result}`)

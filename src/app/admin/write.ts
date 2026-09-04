@@ -4,6 +4,7 @@ import { TAKEDOWN_TAG } from '@/db/queries/admin'
 import { GALLERY_TAG } from '@/db/queries/gallery'
 import { currentAdmin } from '@/lib/auth'
 import { overLimit } from '@/lib/rate-limit'
+import { Invalid } from './invalid'
 
 /**
  * What every write in the panel has in common: it either works or it does not,
@@ -45,8 +46,10 @@ import { overLimit } from '@/lib/rate-limit'
  * render.
  */
 
-/** A message code from `./ui`, thrown where the mistake is found. */
-export class Invalid extends Error {}
+// Re-exported so that every `import { Invalid, outcome } from '../write'` in the
+// panel goes on reading the way it did. It lives in `./invalid` because that file
+// pulls in nothing: see the note there.
+export { Invalid } from './invalid'
 
 /**
  * Writes one administrator may make in a minute.

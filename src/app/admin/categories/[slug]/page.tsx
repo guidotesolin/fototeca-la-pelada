@@ -1,10 +1,13 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getCategoryForEdit } from '@/db/queries/admin'
+import { categoryTranslations, getCategoryForEdit } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { publicUrl } from '@/lib/photo'
 import { Back, BUTTON, FIELD, Field, Notice, Row } from '../../ui'
 import { deleteCategory, saveCategory } from '../actions'
+import { TARGET_LOCALES } from '../../translations/items'
+import { proposalsFor } from '../../translations/proposals'
+import { TranslationsFor } from '../../translations/row'
 
 /**
  * One section: its name, the text that introduces it, and the photograph that
@@ -36,6 +39,8 @@ export default async function EditCategory(props: PageProps<'/admin/categories/[
   if (!section) notFound()
 
   const params = await props.searchParams
+  const stored = await categoryTranslations(slug)
+  const proposals = Object.fromEntries(TARGET_LOCALES.map((l) => [l, proposalsFor(l)]))
 
   return (
     <>
@@ -156,6 +161,16 @@ export default async function EditCategory(props: PageProps<'/admin/categories/[
             Esta sección todavía no tiene fotografías publicadas para elegir.
           </p>
         )}
+
+        {/* Inside this form: one Guardar saves the Spanish and the three
+            languages in one transaction. See `TranslationsFor`. */}
+        <TranslationsFor
+          id={section.slug}
+          kinds={['name', 'intro']}
+          source={{ name: section.name, intro: section.intro ?? '' }}
+          stored={stored}
+          proposals={proposals}
+        />
 
         <button type="submit" className={`${BUTTON} mt-8`}>
           Guardar cambios
