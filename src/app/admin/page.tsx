@@ -74,13 +74,14 @@ export default async function AdminHome() {
 
       {/* The same border, ground and hover as `BUTTON` in `ui.tsx`, because that
           is what these are: the five things you came here to press. */}
-      <nav aria-label="Secciones del panel" className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <nav aria-label="Secciones del panel" className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
           ['/admin/photos', 'Editar fotos'],
           ['/admin/categories', 'Editar secciones'],
           ['/admin/site-text', 'Editar textos'],
           ['/admin/import', 'Importar desde Drive'],
           ['/admin/translations', 'Traducciones'],
+          ['/admin/videos', 'Videoteca'],
         ].map(([href, label]) => (
           <Link
             key={href}

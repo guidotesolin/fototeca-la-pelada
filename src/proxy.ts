@@ -143,7 +143,7 @@ const REFRESH_TIMEOUT_MS = 1_500
 const SEARCH_LIMIT = 30
 const SEARCH_WINDOW_MS = 60_000
 
-let memo: { at: number; slugs: Set<string> } | null = null
+let memo: { at: number; paths: Set<string> } | null = null
 
 /** The refresh in flight, so a page of prefetches asks once between them. */
 let refreshing: Promise<void> | null = null
@@ -155,11 +155,11 @@ function refresh(origin: string): Promise<void> {
   })
     .then(async (response) => {
       if (!response.ok) throw new Error(`/api/gone answered ${response.status}`)
-      const slugs: unknown = await response.json()
-      // `new Set(null)` is an empty set and `new Set('campo-078')` is a set of
-      // letters: either would install a wrong list and never say so.
-      if (!Array.isArray(slugs)) throw new Error('/api/gone did not answer with a list')
-      memo = { at: Date.now(), slugs: new Set(slugs.map(String)) }
+      const paths: unknown = await response.json()
+      // `new Set(null)` is an empty set and `new Set('/foto/campo-078')` is a set
+      // of letters: either would install a wrong list and never say so.
+      if (!Array.isArray(paths)) throw new Error('/api/gone did not answer with a list')
+      memo = { at: Date.now(), paths: new Set(paths.map(String)) }
     })
     .catch((error) => {
       /**
@@ -173,8 +173,8 @@ function refresh(origin: string): Promise<void> {
       // A fresh stamp, not `??=`: keeping the old one leaves the memo permanently
       // stale, so every request -- a gallery's whole prefetch burst included --
       // would start its own fetch at a broken endpoint instead of one per window.
-      // The slugs already known are kept, because they are still the best answer.
-      memo = { at: Date.now(), slugs: memo?.slugs ?? new Set() }
+      // The paths already known are kept, because they are still the best answer.
+      memo = { at: Date.now(), paths: memo?.paths ?? new Set() }
     })
     .finally(() => {
       refreshing = null
@@ -228,32 +228,57 @@ function plainPage(title: string, message: string): string {
 }
 
 /**
- * The photograph a public path names, in any language, or null if the path is not
- * a photograph's.
+ * The two kinds of address that can be taken down, and the sentence each one gets.
+ * A section is added here and in `listGonePaths`, and nowhere else -- the rest of
+ * this function does not care which is which.
+ */
+const GONE = [
+  {
+    prefix: '/foto/',
+    title: 'Fotografía retirada',
+    body: 'Esta fotografía fue retirada del archivo.',
+  },
+  {
+    prefix: '/videoteca/',
+    title: 'Entrevista retirada',
+    body: 'Esta entrevista fue retirada del archivo.',
+  },
+] as const
+
+/**
+ * The address a public path names, in any language, or null if it is not one that
+ * can be taken down.
  *
  * Next matches the route on the decoded path, so the takedown list has to be read
  * the same way: `/foto/%63ampo-078` is `/foto/campo-078` to everything downstream,
  * and comparing the raw segment lets an encoded spelling walk past the 410.
  * A malformed escape is not a slug, so it decodes to nothing and passes through.
+ *
+ * **Only the last segment is decoded, and that is not fussiness**: decoding the
+ * whole path would turn a `%2F` into structure, so a slug carrying one would be
+ * compared as two segments and miss its own entry.
  */
-const PHOTO = '/foto/'
+type Gone = (typeof GONE)[number]
 
-function slugOf(pathname: string): string | null {
+function gonePath(pathname: string): (Gone & { path: string }) | null {
   const { path } = splitLocale(pathname)
-  if (!path.startsWith(PHOTO)) return null
-  const raw = path.slice(PHOTO.length)
+  const kind = GONE.find((k) => path.startsWith(k.prefix))
+  if (!kind) return null
+  const raw = path.slice(kind.prefix.length)
   if (!raw || raw.includes('/')) return null
+  let slug: string
   try {
-    return decodeURIComponent(raw)
+    slug = decodeURIComponent(raw)
   } catch {
-    return raw
+    slug = raw
   }
+  return { ...kind, path: kind.prefix + slug }
 }
 
-/** The 410 response, or null when this photograph is not on the takedown list. */
+/** The 410 response, or null when this address is not on the takedown list. */
 async function takenDown(request: NextRequest): Promise<NextResponse | null> {
-  const slug = slugOf(request.nextUrl.pathname)
-  if (!slug) return null
+  const gone = gonePath(request.nextUrl.pathname)
+  if (!gone) return null
 
   let settled: Promise<void> | null = null
   let list = memo
@@ -269,31 +294,28 @@ async function takenDown(request: NextRequest): Promise<NextResponse | null> {
     }
   }
 
-  if (!list?.slugs.has(slug)) return null
+  if (!list?.paths.has(gone.path)) return null
 
   /**
-   * The list says this photograph is gone, and 410 is the one answer that cannot
-   * be taken back -- it tells a search engine the address is finished. So a stale
-   * list does not get to say it: a photograph republished a moment ago would
-   * otherwise be declared permanently gone for as long as the memo lasts.
+   * The list says this is gone, and 410 is the one answer that cannot be taken
+   * back -- it tells a search engine the address is finished. So a stale list does
+   * not get to say it: something republished a moment ago would otherwise be
+   * declared permanently gone for as long as the memo lasts.
    *
-   * This costs a blocking refresh, and it is charged only to requests for
-   * photographs the archive has already taken down, which are rare and are not
-   * the ones the LCP budget is written for.
+   * This costs a blocking refresh, and it is charged only to requests for pages
+   * the archive has already taken down, which are rare and are not the ones the
+   * LCP budget is written for.
    */
   if (settled) {
     // The same refresh already in flight, not a second one.
     await settled
-    if (!memo?.slugs.has(slug)) return null
+    if (!memo?.paths.has(gone.path)) return null
   }
 
-  return new NextResponse(
-    plainPage('Fotografía retirada', 'Esta fotografía fue retirada del archivo.'),
-    {
-      status: 410,
-      headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
-    },
-  )
+  return new NextResponse(plainPage(gone.title, gone.body), {
+    status: 410,
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  })
 }
 
 /** The 429 for a search flood, or null when this is not one. */

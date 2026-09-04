@@ -1,7 +1,11 @@
-import { listGoneSlugs } from '@/db/queries/admin'
+import { listGonePaths } from '@/db/queries/admin'
 
 /**
- * The slugs whose page must answer 410, for the proxy that answers it.
+ * The addresses whose page must answer 410, for the proxy that answers it.
+ *
+ * Whole paths -- `/foto/campo-078`, `/videoteca/videoteca-002` -- because a bare
+ * slug cannot say which of the two tables it came from, and the two namespaces
+ * are free to collide.
  *
  * It exists because a proxy cannot reach the database on every request without
  * putting Neon back in the request path, which is the one thing this design keeps
@@ -11,13 +15,13 @@ import { listGoneSlugs } from '@/db/queries/admin'
  * it exactly once. Measured: a cold server reads it from the on-disk data cache
  * without touching Neon at all.
  *
- * Public, and deliberately so: a slug in here is a slug whose own page already
- * answers 410 to anyone who asks, and the archive's slugs are sequential and
- * guessable by design (`campo-078`). This hands out nothing that probing does not,
+ * Public, and deliberately so: a path in here is a page that already answers 410
+ * to anyone who asks, and the archive's slugs are sequential and guessable by
+ * design (`campo-078`). This hands out nothing that probing does not,
  * and putting a shared secret in front of it would only add a variable to lose.
  */
 export async function GET() {
-  return Response.json(await listGoneSlugs(), {
+  return Response.json(await listGonePaths(), {
     headers: {
       'X-Robots-Tag': 'noindex',
       // The proxy keeps its own short memo; this stops anything in between from

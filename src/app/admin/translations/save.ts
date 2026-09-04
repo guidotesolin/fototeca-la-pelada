@@ -1,7 +1,15 @@
 import 'server-only'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/db'
-import { category, categoryTranslation, photo, photoTranslation, siteText } from '@/db/schema'
+import {
+  category,
+  categoryTranslation,
+  photo,
+  photoTranslation,
+  siteText,
+  video,
+  videoTranslation,
+} from '@/db/schema'
 import type { Locale } from '@/i18n/config'
 import { Invalid } from '../invalid'
 import type { Entry } from './items'
@@ -34,18 +42,28 @@ type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 /**
  * The write itself, inside whatever transaction the caller already opened.
  *
- * Grouped by table because the three tables disagree about what "no translation"
+ * Grouped by table because the four tables disagree about what "no translation"
  * looks like, and that disagreement is the schema's rather than this file's:
- * `photo_translation.caption` is nullable, so an empty one is a row with a null
- * in it; `category_translation.name` and `site_text.value` are `NOT NULL`, so
- * there the only way to say "not translated" is for the row not to be there.
+ * `photo_translation.caption` and `video_translation.title` are nullable, so an
+ * empty one is a row with a null in it; `category_translation.name` and
+ * `site_text.value` are `NOT NULL`, so there the only way to say "not translated"
+ * is for the row not to be there.
  */
 export async function writeTranslations(tx: Tx, entries: Entry[]): Promise<void> {
   if (!entries.length) return
   await writePhotos(tx, entries)
   await writeCategories(tx, entries)
+  await writeVideos(tx, entries)
   await writeSiteText(tx, entries)
 }
+
+/**
+ * ponytail: these four **filter** rather than switch, so a kind that no branch
+ * claims is dropped in silence -- `parseItem` would accept it and nothing would
+ * be written. TypeScript cannot see it, because `Array.filter` is not an
+ * exhaustive match. Adding a fifth table is the moment to turn this into one
+ * `switch` over `FIELDS[kind].where`.
+ */
 
 async function writePhotos(tx: Tx, entries: Entry[]): Promise<void> {
   const mine = entries.filter(
@@ -182,6 +200,58 @@ async function writeCategories(tx: Tx, entries: Entry[]): Promise<void> {
       .onConflictDoUpdate({
         target: [categoryTranslation.categoryId, categoryTranslation.locale],
         set: { name, intro },
+      })
+  }
+}
+
+/**
+ * The shape of `writePhotos`, not of `writeCategories`, and the difference was a
+ * defect before it was a decision.
+ *
+ * The first version treated title and description as a pair the way a section's
+ * name and intro are one, because `title` was `NOT NULL`. That refused a
+ * translated description whose title had been left blank -- which is every
+ * interview in this archive, since "Memorias de La Pelada -- <a name>" is a series
+ * and a person and reads the same in four languages. Translating the description
+ * would have meant inventing a translation of a proper noun. `title` is nullable
+ * now, so each field stands on its own and falls back to Spanish by itself.
+ */
+async function writeVideos(tx: Tx, entries: Entry[]): Promise<void> {
+  const mine = entries.filter(
+    (e) => e.target.item.kind === 'title' || e.target.item.kind === 'description',
+  )
+  if (!mine.length) return
+
+  const slugs = [...new Set(mine.map((e) => e.target.item.id))]
+  const found = await tx
+    .select({ id: video.id, slug: video.slug })
+    .from(video)
+    .where(inArray(video.slug, slugs))
+  const ids = new Map(found.map((r) => [r.slug, r.id]))
+  if (ids.size !== slugs.length) throw new Invalid('video-no-existe')
+
+  for (const { target, value } of mine) {
+    const videoId = ids.get(target.item.id)!
+    const set = target.item.kind === 'title' ? { title: value } : { description: value }
+
+    // An empty box updates and never inserts: F51's rule, and the same reason --
+    // a page of the queue posts every box on it whether or not anybody typed.
+    if (value === null) {
+      await tx
+        .update(videoTranslation)
+        .set(set)
+        .where(
+          and(eq(videoTranslation.videoId, videoId), eq(videoTranslation.locale, target.locale)),
+        )
+      continue
+    }
+
+    await tx
+      .insert(videoTranslation)
+      .values({ videoId, locale: target.locale, ...set })
+      .onConflictDoUpdate({
+        target: [videoTranslation.videoId, videoTranslation.locale],
+        set,
       })
   }
 }
