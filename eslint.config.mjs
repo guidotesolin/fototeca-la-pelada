@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     // gitignored, but the flat config does not read .gitignore, and its noise was
     // burying the findings from src/.
     '.design-ref/**',
+    // Local worktrees for parallel sessions, gitignored for the same reason.
+    '.claude/worktrees/**',
   ]),
 ])
 
