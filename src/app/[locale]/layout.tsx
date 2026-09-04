@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata, Viewport } from 'next'
 import { archiveFacts, listSections, listSiteText } from '@/db/queries/gallery'
+import { keyFor, publicUrl } from '@/lib/photo'
 import { SITE_URL, externalUrl } from '@/lib/url'
 import { Document, THEME_COLOR } from '@/components/document'
 import { MenuDismiss } from '@/components/menu-dismiss'
@@ -41,18 +42,72 @@ export function generateStaticParams() {
 }
 
 /**
- * `metadataBase` arrives with this task, because `alternates` is written as
- * paths: a relative alternate with no base is a build error, and an absolute one
- * would hard-code the origin into every page of the archive.
+ * `metadataBase` arrives with T14, because `alternates` is written as paths: a
+ * relative alternate with no base is a build error, and an absolute one would
+ * hard-code the origin into every page of the archive.
+ *
+ * ### The preview image
+ *
+ * A link to the archive pasted into WhatsApp used to show the words and no
+ * picture, which for a photographic archive is the wrong first impression -- and
+ * _Mobile first_ is written around exactly that arrival: "links shared on
+ * Facebook, Instagram and WhatsApp". `/foto/[slug]` already had its own
+ * `og:image`; everything above it had none.
+ *
+ * **The image is the first visible section's cover**, not a file in the
+ * repository, so it is the panel that decides it: reordering the sections or
+ * changing that section's cover changes the preview with no deploy, which is the
+ * rule the whole design is organised by. It is skipped if that cover is
+ * sensitive, and the search walks on to the next section -- the promise in
+ * _Sensitive content_ is that such a photograph is **never** the `og:image`, and
+ * a section cover is a photograph like any other.
+ *
+ * **WebP**, which is the format `/foto/[slug]` settled on for the same reason: it
+ * is what the site already serves and what the scrapers document support for.
+ * They do not read AVIF, and the JPEG masters are not servable -- an imported
+ * photograph has no `master_key` at all, and T14 took `masters/` off the public
+ * domain.
+ *
+ * ponytail: whatever the cover happens to measure, which today is 664 px and
+ * square. WhatsApp draws a small thumbnail under about 1200 px rather than the
+ * wide card, so the way to a big preview is a purpose-made 1200x630 image -- a
+ * design decision and a static asset, which is more than "show something".
  */
 export async function generateMetadata(props: LayoutProps<'/[locale]'>): Promise<Metadata> {
   const { locale } = await props.params
-  const t = await getTranslations({ locale, namespace: 'meta' })
+  // Guarded because the reads below are typed on `Locale` and one of them reaches
+  // the database: an unknown first path segment would otherwise hand Postgres a
+  // value its `locale` enum refuses, turning a 404 into an error.
+  if (!isLocale(locale)) return {}
+
+  const [t, sections] = await Promise.all([
+    getTranslations({ locale, namespace: 'meta' }),
+    listSections(locale),
+  ])
+  const description = t('description')
+  const cover = sections.find((section) => section.cover && !section.cover.sensitive)?.cover
 
   return {
     metadataBase: new URL(SITE_URL),
     title: { default: 'Fototeca La Pelada', template: '%s · Fototeca La Pelada' },
-    description: t('description'),
+    description,
+    openGraph: {
+      type: 'website',
+      siteName: 'Fototeca La Pelada',
+      title: 'Fototeca La Pelada',
+      description,
+      locale,
+      images: cover
+        ? [
+            {
+              url: publicUrl(keyFor(cover.webKey, cover.webWidth, 'webp')),
+              width: cover.webWidth,
+              height: cover.webHeight,
+              alt: cover.caption ?? '',
+            },
+          ]
+        : undefined,
+    },
   }
 }
 

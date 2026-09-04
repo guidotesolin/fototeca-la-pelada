@@ -300,6 +300,20 @@ browsers are old and unpredictable. All archive content is server-rendered; Java
 conveniences (revealing a sensitive image, switching original/restored, instant filtering,
 remembering the sensitive-content preference). If it fails, the archive is still readable.
 
+**The link preview is part of that arrival.** Pasted into WhatsApp, the archive used to show its
+words and no picture, which for a photographic archive is the wrong first impression. `/foto/[slug]`
+had its own `og:image` from T7; everything above it had none until the site was live and somebody
+shared it. The image is now **the first visible section's cover**, so the panel decides it -- reorder
+the sections or change that cover and the preview follows, with no deploy -- and a sensitive cover is
+skipped for the next one, because _Sensitive content_ promises such a photograph is never the
+`og:image` and a cover is a photograph like any other. Verified rather than assumed: with the layout
+declaring an image, a sensitive photograph's page still emits none, so Next replaces `openGraph`
+instead of merging it field by field.
+
+WebP, for the reason `/foto/[slug]` already recorded: the scrapers do not read AVIF, and the JPEG
+masters are not servable -- an imported photograph has no `master_key`, and `masters/` came off the
+public domain in T14.
+
 **Images are most of the weight, so that is where the fight is:**
 
 | Decision                                                   | Why                                                                                                                                                     |
@@ -1205,17 +1219,44 @@ The `.com.ar` is registered at NIC Argentina and is the only recurring cost in t
 billed yearly, and it is the one item on this page that stops working on a date rather than on a
 change: put the renewal somewhere that is not one person's memory.
 
-**`pub-….r2.dev` is turned off once `img.` answers.** It is R2's development URL, it exposes the
-bucket at a second public address, and while it is on there are two ways to reach every rendition
-and only one of them is in the CSP. That is F16.
+**`pub-….r2.dev` is off.** It was R2's development URL -- the "Public Development URL" in the
+bucket's settings -- and it exposed the bucket at a second public address, so while it was on there
+were two ways to reach every rendition and only one of them was in the CSP. Disabled once `img.`
+answered; it now returns **401** for `photos/` and for `masters/` alike. That was F16, and note the
+one thing it takes with it: `.env.local` has to move to `img.` too, or local development loses its
+images.
 
-**`masters/` is kept off the public domain**, which is F35 and the amendment's unfinished half. The
-bucket holds two prefixes -- `photos/` for the renditions and `masters/` for the 592 copies rescued
-from Sites -- and nothing in the application ever links a master. It is not application code that
-can close this: the bucket serves images directly, which is the free-egress design a gallery depends
-on, so `published` is something only the site reads. The mechanism is an edge rule on the custom
-domain that blocks `/masters/` and answers 404. Until it exists, a master is reachable by anyone who
-wrote its URL down, and _Exposure, indexing and takedown on request_ is where that is stated in full.
+**`masters/` is off the public domain**, which closes F35 and with it the amendment's unfinished
+half. The bucket holds two prefixes -- `photos/` for the renditions and `masters/` for the 592
+copies rescued from Sites -- and nothing in the application ever links a master. No application code
+could close it: the bucket serves images directly, which is the free-egress design a gallery depends
+on, so `published` is something only the site reads.
+
+The mechanism is a **WAF custom rule on the zone**, which the free plan allows five of:
+
+```
+(starts_with(http.request.uri.path, "/masters/") and http.host eq "img.fototecalapelada.com.ar")
+```
+
+Action **Block**, which answers **403** -- not the 404 this section first claimed, because a custom
+response body is a paid feature and the status is not ours to choose. It is scoped to the hostname so
+it can never reach the apex, and it lives at the **zone** level: the account-level WAF that the
+dashboard offers first is an Enterprise add-on and is not what this needs.
+
+Measured after saving it, because a rule like this fails in two directions and the expensive one is
+the false positive:
+
+| Request                                         | Answer                                                                           |
+| ----------------------------------------------- | -------------------------------------------------------------------------------- |
+| `photos/…-480.webp`, `…-480.avif`, `…-649.avif` | 200 -- the galleries are untouched                                               |
+| `masters/…jpg` and `masters/`                   | **403**                                                                          |
+| `/%6Dasters/…jpg` (the `m` percent-encoded)     | **403** -- Cloudflare normalises before evaluating                               |
+| `/./masters/…` and `/photos/../masters/…`       | **403**                                                                          |
+| `/Masters/…jpg`                                 | 404 -- `starts_with` is case-sensitive and so are R2 keys, so no object is there |
+
+The encoded spelling is the one worth checking rather than assuming: it is the same class of bypass
+the proxy already handles for the 410, where `/foto/%63ampo-078` had to be decoded before the slug
+was compared.
 
 ### Environment variables
 
@@ -1244,7 +1285,41 @@ may ever carry that prefix.
 The production redirect URI is `https://fototecalapelada.com.ar/api/auth/callback/google`, added to
 the **same** OAuth client the development one uses rather than to a second client -- a second client
 is a second pair of secrets to rotate for no gain, and Google accepts several redirect URIs on one.
-The localhost URI stays, because that is how the panel is developed.
+The localhost URI stays, because that is how the panel is developed. The value is not guessed: Auth.js
+publishes it at `/api/auth/providers`, and reading it there also confirmed the origin is **detected**
+rather than configured, which is the whole reason `AUTH_URL` is absent from Vercel.
+
+**The consent screen stays in "Testing", and that is a decision.** Publishing was the obvious move
+and it is the wrong one here. In Testing only the accounts listed as test users can complete the
+Google flow at all, which is a **second gate** in front of the `app_user` allowlist; publishing would
+remove it and let anyone reach the rejection. The limitation everyone knows about -- refresh tokens
+expiring after seven days in Testing -- does not touch this app: `session.strategy` is `'jwt'` with no
+adapter and no refresh logic, so Google is used once at sign-in and the session afterwards is Auth.js's
+own thirty-day cookie.
+
+What it costs, and it is worth writing down because it contradicts a promise made elsewhere: **adding
+an administrator is now two steps, not one.** `npm run admin:add` writes the allowlist row, and the
+address also has to be added as a test user in the Google console. No deploy, so _Admin allowlist in
+the database_ still holds -- but a console the brothers do not have. The four addresses in `app_user`
+and the four test users have to stay in step, and a mismatch fails in a confusing place: the account
+is refused by Google with "this app hasn't been verified" rather than by the archive.
+
+### Search Console
+
+A **Domain** property, `fototecalapelada.com.ar`, verified by a DNS `TXT` record in Cloudflare, and
+owned by **`fototecalp@gmail.com`** -- the archive's own account, not the maintainer's. That last part
+is the point rather than a detail: the takedown procedure in the panel tells Lautaro and Marcos to
+sign in with the archive's account, and a property verified against a personal one would make the
+whole runbook depend on the maintainer, which is what it exists to avoid.
+
+Domain rather than URL prefix for three reasons: it covers the apex, `www`, `img` and both protocols
+in one property; it verifies by DNS, so it needs no code, where the meta-tag method would mean editing
+a layout and deploying for a tag; and it is displayed as `fototecalapelada.com.ar`, which is exactly
+what the panel's instructions tell them to look for. A URL-prefix property would show
+`https://fototecalapelada.com.ar/` and the words on screen would not match the words in the panel.
+
+The sitemap is submitted as the **full URL** -- `https://fototecalapelada.com.ar/sitemap.xml`. A domain
+property has no base to prefix, so the bare `sitemap.xml` a URL-prefix property accepts is refused.
 
 ---
 
