@@ -11,7 +11,9 @@
     "language": "Idioma",
     "sensitive": "Contenido sensible",
     "sensitiveHint": "Muestra sin difuminar las fotografías con imágenes de faena de animales.",
-    "sensitiveSwitch": "Mostrar el contenido sensible sin difuminar"
+    "sensitiveSwitch": "Mostrar el contenido sensible sin difuminar",
+    "admin": "Ir al panel",
+    "videoteca": "Videoteca"
   },
   "languages": {
     "es": "español",
@@ -47,6 +49,16 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "pageTitle": "{name}, página {page}"
+  },
+  "videoteca": {
+    "title": "Videoteca",
+    "interviews": "{count, plural, one {# entrevista} other {# entrevistas}}",
+    "index": "Índice",
+    "play": "Reproducir la entrevista",
+    "watchOnYoutube": "Ver en YouTube",
+    "description": "Entrevistas a vecinas y vecinos de La Pelada.",
+    "previous": "Anterior",
+    "next": "Siguiente"
   },
   "photo": {
     "sensitive": "Contenido sensible",

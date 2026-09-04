@@ -5,7 +5,13 @@ import type { Metadata } from 'next'
 import { SectionDeck } from '@/components/section-deck'
 import { PhotoImage } from '@/components/photo-image'
 import { PhotoWall } from '@/components/photo-wall'
-import { archiveFacts, listFeatured, listSections, listSiteText } from '@/db/queries/gallery'
+import {
+  archiveFacts,
+  listFeatured,
+  listSections,
+  listSiteText,
+  listVideos,
+} from '@/db/queries/gallery'
 import { mapEmbedUrl } from '@/lib/url'
 import { alternatesFor, isLocale, localeHref, type Locale } from '@/i18n/config'
 import { photoImageLabels } from '@/i18n/labels'
@@ -38,12 +44,14 @@ export default async function Home(props: PageProps<'/[locale]'>) {
   if (!isLocale(asked)) notFound()
   const locale: Locale = asked
 
-  const [sections, facts, text, featured, t, labels] = await Promise.all([
+  const [sections, facts, text, featured, videos, t, tv, labels] = await Promise.all([
     listSections(locale),
     archiveFacts(),
     listSiteText(locale),
     listFeatured(locale),
+    listVideos(locale),
     getTranslations({ locale, namespace: 'home' }),
+    getTranslations({ locale, namespace: 'videoteca' }),
     photoImageLabels(locale),
   ])
   const mapUrl = mapEmbedUrl(text.map_embed_url)
@@ -128,6 +136,31 @@ export default async function Home(props: PageProps<'/[locale]'>) {
               <SectionCard section={section} locale={locale} labels={labels} priority={index < 2} />
             </li>
           ))}
+          {/* **Always last, and never in the deck.** Last because the eleven are
+              ordered from the panel and this one is not a `category` row, so
+              anywhere else it would be a card the brothers can see and cannot
+              move. Not in the deck for the same reason the heading above says
+              "592 fotografías": the deck and that count are both about
+              photographs, and a twelfth card holding none would make the sentence
+              untrue. It carries interviews instead, and says so. */}
+          {videos.length > 0 && videos[0] && (
+            <li>
+              <SectionCard
+                section={{
+                  slug: 'videoteca',
+                  name: tv('title'),
+                  intro: null,
+                  photos: videos.length,
+                  cover: videos[0].poster,
+                }}
+                href={localeHref(locale, '/videoteca')}
+                count={tv('interviews', { count: videos.length })}
+                locale={locale}
+                labels={labels}
+                priority={false}
+              />
+            </li>
+          )}
         </ul>
       </section>
     </>
@@ -139,15 +172,21 @@ function SectionCard({
   locale,
   labels,
   priority,
+  href,
+  count,
 }: {
   section: Section
   locale: Locale
   labels: PhotoImageLabels
   priority: boolean
+  /** Defaults to the section's gallery. The Videoteca is the one card that is not one. */
+  href?: string
+  /** Defaults to the photograph count. The Videoteca counts interviews. */
+  count?: string
 }) {
   return (
     <Link
-      href={localeHref(locale, `/categoria/${section.slug}`)}
+      href={href ?? localeHref(locale, `/categoria/${section.slug}`)}
       className="group focus-visible:outline-focus block focus-visible:outline-2 focus-visible:outline-offset-4"
     >
       {section.cover && (
@@ -165,7 +204,7 @@ function SectionCard({
         <h3 className="t-credit link text-accent group-hover:text-text leading-none">
           {section.name}
         </h3>
-        <span className="t-meta shrink-0">{section.photos}</span>
+        <span className="t-meta shrink-0">{count ?? section.photos}</span>
       </div>
     </Link>
   )

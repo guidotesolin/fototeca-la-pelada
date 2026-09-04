@@ -8,6 +8,8 @@ import {
   photoCategory,
   photoTranslation,
   siteText,
+  video,
+  videoTranslation,
 } from '@/db/schema'
 import { isSectionSlug } from '@/lib/slug'
 import { TRANSLATABLE_SITE_TEXT } from '@/app/admin/site-text/fields'
@@ -22,12 +24,12 @@ import { REVALIDATE, SOURCE_LOCALE } from './gallery'
  * right now. A day-old count of what is waiting to be published is worse than no
  * count at all.
  *
- * The one exception is `listGoneSlugs`, which is read on the public side.
+ * The one exception is `listGonePaths`, which is read on the public side.
  */
 
 /**
  * The takedown list's own tag, kept apart from `GALLERY_TAG` because the two need
- * opposite revalidation profiles -- see `listGoneSlugs` and the actions.
+ * opposite revalidation profiles -- see `listGonePaths` and the actions.
  */
 export const TAKEDOWN_TAG = 'takedown'
 
@@ -251,9 +253,9 @@ export async function getPhotoForEdit(slug: string) {
 }
 
 /**
- * The slugs whose page must answer 410, read by `/api/gone` and from there by the
- * proxy. Cached, so an archive nobody has taken anything down from touches Neon
- * for it once.
+ * The addresses whose page must answer 410, read by `/api/gone` and from there by
+ * the proxy. Cached, so an archive nobody has taken anything down from touches
+ * Neon for it once.
  *
  * `TAKEDOWN_TAG` and not `GALLERY_TAG`, because this is the one read that must
  * never be served stale: it is revalidated with `{ expire: 0 }`, which the public
@@ -261,20 +263,34 @@ export async function getPhotoForEdit(slug: string) {
  * `dynamicParams = false`, so expiring their entry leaves nothing to serve and no
  * way to make it again. This is a route handler, which always regenerates.
  *
- * It carries **every** unpublished slug rather than only recent ones: "gone" is a
+ * It carries **every** hidden address rather than only recent ones: "gone" is a
  * state, not an event, and a list that forgets would quietly turn 410 back into
  * 404 later.
+ *
+ * **Whole paths and not slugs, since T16.** A hidden video needs the same answer a
+ * hidden photograph gets, and a bare slug cannot say which of the two it is --
+ * `photo.slug` and `video.slug` are two namespaces, so a flat list of names would
+ * eventually take one down with the other. The proxy compares the path it already
+ * has, which is one `Set` and one fetch for both, and any prefix added later joins
+ * by appearing here.
  */
-export const listGoneSlugs = unstable_cache(
+export const listGonePaths = unstable_cache(
   async (): Promise<string[]> => {
-    const rows = await db
-      .select({ slug: photo.slug })
-      .from(photo)
-      .where(eq(photo.published, false))
-      .orderBy(asc(photo.slug))
-    return rows.map((r) => r.slug)
+    const [photos, videos] = await Promise.all([
+      db
+        .select({ slug: photo.slug })
+        .from(photo)
+        .where(eq(photo.published, false))
+        .orderBy(asc(photo.slug)),
+      db
+        .select({ slug: video.slug })
+        .from(video)
+        .where(eq(video.published, false))
+        .orderBy(asc(video.slug)),
+    ])
+    return [...photos.map((r) => `/foto/${r.slug}`), ...videos.map((r) => `/videoteca/${r.slug}`)]
   },
-  ['gone-slugs'],
+  ['gone-paths'],
   { tags: [TAKEDOWN_TAG], revalidate: REVALIDATE },
 )
 
@@ -520,6 +536,8 @@ export type TranslationProgress = {
   names: number
   intros: number
   texts: number
+  titles: number
+  descriptions: number
   /** Small enough to name, unlike the captions: twelve keys and eleven sections. */
   missingTexts: string[]
   missingNames: string[]
@@ -563,6 +581,10 @@ export async function translationProgress(): Promise<{
       (select count(*) from site_text s
         where s.locale = l.locale and coalesce(s.value, '') <> ''
           and s.key in (${TRANSLATABLE_KEYS}))::int as texts,
+      (select count(*) from video_translation vt
+        where vt.locale = l.locale and coalesce(vt.title, '') <> '')::int as titles,
+      (select count(*) from video_translation vt
+        where vt.locale = l.locale and coalesce(vt.description, '') <> '')::int as descriptions,
       (select coalesce(array_agg(s.key order by s.key), '{}')
          from site_text s
         where s.locale = ${SOURCE_LOCALE}::locale
@@ -629,7 +651,7 @@ export type QueueItem = { id: string; source: string; current: string }
  * is the list somebody is working through, so a stale page would hand them work
  * they just finished.
  *
- * The three branches are three tables and cannot be one query, but they answer
+ * The four branches are four tables and cannot be one query, but they answer
  * the same shape so the screen does not care which it got. `count(*) over ()` is
  * the pagination total in the same round trip, the way `listPhotos` already does
  * it.
@@ -692,7 +714,31 @@ export async function listTranslationQueue(
        order by c.position, c.slug
        limit ${opts.limit} offset ${opts.offset}
     `)
+  } else if (kind === 'title' || kind === 'description') {
+    const col = sql.raw(kind)
+    rows = await db.execute<Row>(sql`
+      select v.slug as id,
+             es.${col} as source,
+             coalesce(t.${col}, '') as current,
+             count(*) over ()::int as total
+        from video v
+        join video_translation es
+          on es.video_id = v.id and es.locale = ${SOURCE_LOCALE}::locale
+        left join video_translation t
+          on t.video_id = v.id and t.locale = ${locale}::locale
+       where coalesce(es.${col}, '') <> ''
+         and coalesce(t.${col}, '') ${state}
+       order by v.position, v.slug
+       limit ${opts.limit} offset ${opts.offset}
+    `)
   } else {
+    /**
+     * Only `'text'` can reach here, and this line is what says so. It used to be
+     * a bare `else`, which meant a new `ItemKind` landed in the `site_text` query
+     * and ran `select <that kind> from site_text` -- a 500 rather than a type
+     * error. T16's `title` would have been exactly that.
+     */
+    kind satisfies 'text'
     rows = await db.execute<Row>(sql`
       select es.key as id,
              es.value as source,
@@ -761,4 +807,90 @@ export async function siteTextTranslations(): Promise<Record<string, Record<stri
   const byLocale: Record<string, Record<string, string>> = {}
   for (const row of rows) (byLocale[row.locale] ??= {})[row.key] = row.value
   return byLocale
+}
+
+/**
+ * The Videoteca as the panel sees it: hidden interviews included, uncached, in
+ * the order the public list uses. `listVideos()` in `gallery.ts` cannot serve
+ * this screen for the same reason `listSections` cannot serve the sections one --
+ * it filters `published = true`, which is the state this screen exists to change.
+ */
+export async function listVideosForAdmin() {
+  return db
+    .select({
+      id: video.id,
+      slug: video.slug,
+      youtubeId: video.youtubeId,
+      title: videoTranslation.title,
+      position: video.position,
+      published: video.published,
+      thumbKey: video.thumbKey,
+    })
+    .from(video)
+    .innerJoin(
+      videoTranslation,
+      and(eq(videoTranslation.videoId, video.id), eq(videoTranslation.locale, SOURCE_LOCALE)),
+    )
+    .orderBy(asc(video.position), asc(video.slug))
+}
+
+/** One interview's Spanish, for its edit screen. Null is a 404. */
+export async function getVideoForEdit(slug: string) {
+  const [row] = await db
+    .select({
+      id: video.id,
+      slug: video.slug,
+      youtubeId: video.youtubeId,
+      position: video.position,
+      published: video.published,
+      webKey: video.webKey,
+      webWidth: video.webWidth,
+      webHeight: video.webHeight,
+      thumbKey: video.thumbKey,
+      title: videoTranslation.title,
+      description: videoTranslation.description,
+    })
+    .from(video)
+    .innerJoin(
+      videoTranslation,
+      and(eq(videoTranslation.videoId, video.id), eq(videoTranslation.locale, SOURCE_LOCALE)),
+    )
+    .where(eq(video.slug, slug))
+    .limit(1)
+  return row ?? null
+}
+
+export type AdminVideo = NonNullable<Awaited<ReturnType<typeof getVideoForEdit>>>
+
+export type VideoText = { title: string; description: string }
+
+export async function videoTranslations(slug: string): Promise<Record<string, VideoText>> {
+  const rows = await db
+    .select({
+      locale: videoTranslation.locale,
+      title: videoTranslation.title,
+      description: videoTranslation.description,
+    })
+    .from(videoTranslation)
+    .innerJoin(video, eq(video.id, videoTranslation.videoId))
+    .where(eq(video.slug, slug))
+  return Object.fromEntries(
+    rows.map((r) => [r.locale, { title: r.title ?? '', description: r.description ?? '' }]),
+  )
+}
+
+/**
+ * The next free `videoteca-NNN`, counted the same way `nextPhotoSlug` counts and
+ * carrying the same ceiling: two administrators adding a video in the same second
+ * compute the same number and the unique index refuses the second, which costs one
+ * retry.
+ */
+export async function nextVideoSlug(): Promise<string> {
+  const [{ next }] = await db
+    .select({
+      next: sql<number>`coalesce(max(substring(${video.slug} from '[0-9]+$')::int), 0) + 1`,
+    })
+    .from(video)
+    .where(sql`${video.slug} ~ '^videoteca-[0-9]+$'`)
+  return `videoteca-${String(next).padStart(3, '0')}`
 }

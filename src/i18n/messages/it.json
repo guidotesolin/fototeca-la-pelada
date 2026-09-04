@@ -11,7 +11,9 @@
     "language": "Lingua",
     "sensitive": "Contenuto sensibile",
     "sensitiveHint": "Mostra senza sfocatura le fotografie con immagini di macellazione di animali.",
-    "sensitiveSwitch": "Mostra il contenuto sensibile senza sfocatura"
+    "sensitiveSwitch": "Mostra il contenuto sensibile senza sfocatura",
+    "admin": "Vai al pannello",
+    "videoteca": "Videoteca"
   },
   "languages": {
     "es": "spagnolo",
@@ -47,6 +49,16 @@
     "previous": "Precedente",
     "next": "Successiva",
     "pageTitle": "{name}, pagina {page}"
+  },
+  "videoteca": {
+    "title": "Videoteca",
+    "interviews": "{count, plural, one {# intervista} other {# interviste}}",
+    "index": "Indice",
+    "play": "Riproduci l'intervista",
+    "watchOnYoutube": "Guarda su YouTube",
+    "description": "Interviste ad abitanti di La Pelada.",
+    "previous": "Precedente",
+    "next": "Successiva"
   },
   "photo": {
     "sensitive": "Contenuto sensibile",

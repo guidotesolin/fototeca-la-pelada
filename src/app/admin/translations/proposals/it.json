@@ -734,6 +734,18 @@
       "proposed": "L'ingresso dell'estancia «La Gerda»."
     },
     {
+      "source": "Entrevista a Manuel Díaz, trabajador de la estancia «Eucaliptus».",
+      "proposed": "Intervista a Manuel Díaz, lavoratore dell’estancia «Eucaliptus» (una grande tenuta rurale)."
+    },
+    {
+      "source": "Entrevista a Marilu Ravasio de Bauducco, en esta ocasión nos relata sobre los siguientes temas: El Molino «La Esmeralda»; fábrica de gaseosa, soda y hielo; la usina eléctrica; los carnavales; el paso del ferrocarril; el papel de «Boterón» Zunino.",
+      "proposed": "Intervista a Marilu Ravasio de Bauducco, che qui racconta i seguenti temi: il mulino «La Esmeralda»; la fabbrica di bibite gassate, seltz e ghiaccio; la centrale elettrica; i carnevali; il passaggio della ferrovia; il ruolo di «Boterón» Zunino."
+    },
+    {
+      "source": "Entrevista a Sunilda Rizzo, hija de Nicolás Emilio Rizzo, inventor de la máquina de hacer caminos. En los primeros minutos de la entrevista relata la historia del invento de su padre.",
+      "proposed": "Intervista a Sunilda Rizzo, figlia di Nicolás Emilio Rizzo, inventore della macchina per fare le strade. Nei primi minuti racconta la storia dell’invenzione del padre."
+    },
+    {
       "source": "Equipo \"CHARRUAS\". El pequeño es Raúl Marengo.",
       "proposed": "La squadra «CHARRUAS». Il piccolo è Raúl Marengo."
     },
@@ -1082,6 +1094,10 @@
       "proposed": "Inaugurazione del monolito di Santa Ana. Padre Benjamín — anni Novanta."
     },
     {
+      "source": "Incendios rurales",
+      "proposed": ""
+    },
+    {
       "source": "Inferiores del Club Independiente en Soledad. Año 2005 (aproximadamente).",
       "proposed": "Le giovanili del Club Independiente a Soledad. Intorno al 2005."
     },
@@ -1232,6 +1248,18 @@
     {
       "source": "MEMORIAS DE LA PELADA - Maria Luisa Ravasio Entrevista a Marilu Ravasio de Bauducco, en esta ocasión nos relata sobre los siguientes temas: El Molino \"La Esmeralda\"; Fabrica de gaseosa, soda y hielo; La usina eléctrica; Los carnavales; El paso del ferrocarril; El papel de \"Boteron\" Zunino.",
       "proposed": "MEMORIE DI LA PELADA — Maria Luisa Ravasio. Un'intervista a Marilu Ravasio de Bauducco, che questa volta ci racconta del mulino «La Esmeralda»; della fabbrica di bibite, soda e ghiaccio; della centrale elettrica; dei carnevali; del passaggio della ferrovia; e del ruolo di «Boteron» Zunino."
+    },
+    {
+      "source": "Memorias de La Pelada — Manuel Díaz",
+      "proposed": ""
+    },
+    {
+      "source": "Memorias de La Pelada — María Luisa Ravasio",
+      "proposed": ""
+    },
+    {
+      "source": "Memorias de La Pelada — Sunilda Rizzo",
+      "proposed": ""
     },
     {
       "source": "Molino Esmeralda de Juan Cardini. Actualmente calle 20 de Agosto.",

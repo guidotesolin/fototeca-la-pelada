@@ -371,6 +371,59 @@ time. Each option states how many photographs it holds, which is what lets a rea
 spending a request — and the request is why the filters do not apply on change: a navigation costs
 a median 677 ms at 562 ms RTT, so the button gathers three choices into one of them.
 
+### The Videoteca, as built in T16
+
+The archive's own YouTube channel holds three interviews with neighbours, and the old Google Sites
+announced each one at the foot of its section. They are a **section of their own** now, `/videoteca`,
+with a shareable address per interview -- the same criterion the whole move was made for, applied to
+the one kind of item that had been left out of it.
+
+**A YouTube embed is the opposite of everything this section argues for.** The player is hundreds of
+KB of Google's JavaScript, fetched before anybody has decided to watch anything, over the rural
+mobile data the archive is read on. So the page carries a **facade**: the poster, served from R2 like
+every other image, and the player created on the click. Measured on the production build by reading
+the network log rather than the code -- a loaded ficha makes **zero** requests to any
+Google-controlled domain, and `youtube-nocookie.com` appears on the click and not before.
+
+**With no JavaScript it is a link, and that is the whole degradation.** The poster sits inside a real
+anchor with a real `href` to YouTube, so the server HTML holds no iframe at all and an embedded
+WhatsApp browser with a broken bundle still gets somebody to the interview. A CSS-only version does
+not exist and it is worth saying why: an `<iframe>` inside a closed `<details>` still loads its
+`src`, and a server-rendered `?ver=1` reads `searchParams`, which Next 16 documents as a request-time
+API -- the whole pre-rendered page traded for a button.
+
+**The poster is in R2 rather than hotlinked, and that buys two things.** Hotlinking `i.ytimg.com`
+would add a third-party host to `img-src`, which is a real header in production, and it would make
+every visit to the list announce itself to Google. Downloading it once at import instead leaves
+`img-src` untouched and gives the ficha an `og:image` of the archive's own -- WebP, for the reason
+`/foto/[slug]` already records: the scrapers do not read AVIF.
+
+**It is cropped to 16:9 at import, and the crop is YouTube's own geometry.** `hqdefault` is 480×360
+and pads a 16:9 video with 45 px bars, so the first version drew the one card on the home page with
+black edges beside eleven photographs -- a defect found by looking at the running build. Its central
+16:9 region is exactly the frame YouTube itself publishes as `mqdefault`: measured against the
+archive's three, the two agree to a mean of 4-7 of 255 per pixel, which is the difference between two
+JPEG encodes of one image. `sharp.trim()` was the other candidate and needs a threshold; on these
+three it landed anywhere between 1.69 and 1.75 depending on the number picked, which is the kind of
+calibrated constant the packed wall above already taught this repository to distrust. For a 16:9
+source the same arithmetic is the identity, so there is no branch.
+
+**Where it appears was decided rather than defaulted.** Not in the home page's deck: the deck and the
+heading over the section grid both count photographs, so a twelfth card holding none would make
+"592 fotografías" untrue. It is a card in that grid, **always last**, because the eleven are ordered
+from the panel and this one is not a `category` row -- anywhere else it would be a card the authors
+can see and cannot move. In the header it rides the existing _Secciones_ menu as a last entry after
+the eleven, because at 375 px the bar is already the mark, the hamburger, the search field and the
+settings. Both are absent while nothing is published, which is the instinct the featured strip
+already had.
+
+**Unpublishing is the photographs' path and not a second one.** `listGoneSlugs` became
+`listGonePaths` and returns whole addresses, so a hidden video and a hidden photograph are one list,
+one memo and one fetch in `proxy.ts`; a bare slug could not have said which of two namespaces it came
+from. The 410 answers in all four languages, encoded spellings included, the entry leaves the sitemap
+with the same `revalidateTag`, and the poster stays in R2 under the key the row still names -- so
+publishing again is one boolean, verified by the key coming back identical.
+
 **Typography**: a single display family for headings, subset to Latin, with `font-display: swap`;
 body text on the system stack.
 
@@ -536,6 +589,16 @@ photo_category                   app_user
   category_id ──┘                  email unique
   position                         name
 
+video                            video_translation
+  id                               video_id ─────┐
+  slug            unique           locale        │ pk
+  youtube_id      -- the id only   title         │
+  position                         description ──┘
+  published
+  -- poster (R2), derived once at import
+  web_key / web_width / web_height
+  thumb_key
+
 site_text                        -- every word the site says about itself
   key ──────────┐ pk               home_title, home_intro, rights_notice, thanks,
   locale ───────┘                  authors, contact, town_title, town_intro,
@@ -618,6 +681,34 @@ Details that matter:
   that no caller can fall back to Spanish silently again, which is what the type checker then proved
   for all four. Counts that read as prose ("592 fotografías · 11 secciones") are ICU plurals there,
   because "1 sección" and "11 secciones" do not share a suffix in any of the four languages.
+- **`video` is a table and not a `site_text` key, and that is the product decision made
+  structural.** The Videoteca is a list that grows, each item carries a title per language, and each
+  item is published or hidden on its own -- none of which fits in a keyed string without becoming a
+  blob nothing can query. Three rows is thin for a table and ponytail pushes the other way; the
+  answer is that a section is a list, and this one is a section.
+
+  **It stores the video's id and never a URL**, which is the same reasoning as `MAP_HOSTS` one step
+  further: `videoEmbedUrl` builds the address in code, so no value an administrator can type reaches
+  an `<iframe src>` as an address. An allowlist enforced by construction beats accepting a URL and
+  sanitising it, because there is nothing left to get wrong.
+
+  **And it has no master, which is principle 1 rather than an omission.** The master is the document,
+  and this document is the video, which lives on YouTube. What is stored is the poster, downloaded
+  once when the video is added and put through the same pipeline as any photograph -- a derivative of
+  something the archive does not hold, regenerable by downloading it again, so it needs neither
+  `master_source` nor `readMaster`. The four derivative columns carry `photo`'s own names on purpose:
+  a row then satisfies `PhotoCard`, and `PhotoImage` draws the poster with the whole AVIF/WebP ladder
+  and zero layout shift with no component of its own.
+
+  **Both translated fields are nullable, unlike `category_translation`'s, and that was a correction.**
+  `title` shipped `NOT NULL`, copied from the section's `name`, and `writeTranslations` therefore
+  refused a description whose title was blank -- which is the state all three interviews are in,
+  since `Memorias de La Pelada — <a person's name>` is a series and a name and so the same in four
+  languages while the description is prose that is not. The rule made translating the description
+  impossible without inventing a translation of a proper noun, which `glossary.ts` exists to prevent.
+  Found by running `translations:load`, which refused all three. Migration `0008` drops the
+  constraint; "not translated" is a null here, exactly as it is for a caption.
+
 - **A URL out of the database is a trust boundary.** `site_text` becomes editable from the panel in
   T11, and its values reach an `href` and an `<iframe src>`, so `src/lib/url.ts` guards them: the
   map embed against an exact hostname allowlist, the network links against the scheme only, since
@@ -1013,8 +1104,9 @@ unpublishing drops the sitemap entry with the same `revalidateTag` that drops th
 **Every address is listed once per language, and each entry carries all four `hreflang` links plus
 `x-default`.** That is the shape Google documents: an entry has to name every version _including
 itself_, and a version with no entry of its own has no return link from the sitemap. It comes to
-**2,492 entries** -- 623 addresses (the home page, 30 galleries, 592 photographs) times four --
-against Google's 50,000 limit, so `generateSitemaps` would be ceremony. The pages already emit the
+**2,508 entries** -- 627 addresses (the home page, 30 galleries, 592 photographs, the Videoteca and
+its three interviews) times four -- against Google's 50,000 limit, so `generateSitemaps` would be
+ceremony. The pages already emit the
 same set in `<head>` through `alternatesFor`, and both are built from `locales` and `localeHref`,
 which is what stops the two from disagreeing.
 
@@ -1105,7 +1197,8 @@ default-src 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none';
 form-action 'self' https://accounts.google.com;
 img-src 'self' data: <NEXT_PUBLIC_IMAGE_BASE_URL>;
 font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline';
-connect-src 'self'; frame-src https://maps-api-ssl.google.com https://maps.google.com https://www.google.com
+connect-src 'self'; frame-src https://maps-api-ssl.google.com https://maps.google.com
+https://www.google.com https://www.youtube-nocookie.com
 ```
 
 Four things in it are load-bearing and were checked against the running build rather than reasoned
@@ -1114,10 +1207,13 @@ about:
 - **`img-src` is built from `NEXT_PUBLIC_IMAGE_BASE_URL`**, the same variable the `<img>` tags are
   built from, so the header follows the bucket from `pub-….r2.dev` to `img.fototecalapelada.com.ar`
   with no second place to remember.
-- **`frame-src` is built from `MAP_HOSTS` in `src/lib/url.ts`**, the same list `mapEmbedUrl`
-  enforces. Two copies of one fact is how one of them goes stale, and the failure would be silent:
-  a pin moved to a host the guard allows and the header does not renders an empty frame and no
-  error anybody would look for.
+- **`frame-src` is built from `MAP_HOSTS` and `VIDEO_HOSTS` in `src/lib/url.ts`**, the same lists
+  `mapEmbedUrl` and `videoEmbedUrl` are built from. Two copies of one fact is how one of them goes
+  stale, and the failure would be silent: a pin moved to a host the guard allows and the header does
+  not renders an empty frame and no error anybody would look for. T16 added the second list the same
+  way rather than writing `youtube-nocookie.com` into the header, which is the invariant that comment
+  defends. **`img-src` did not change**, and that is the Videoteca's poster living in R2 rather than
+  on `i.ytimg.com`.
 - **`font-src 'self'` is enough**, because `next/font/google` downloads the files at build time and
   serves them from `/_next/static/media`. Verified: the build contains the `.woff2` files and no
   reference to `fonts.gstatic.com` anywhere, and the rendered page carries no external stylesheet.
@@ -1340,6 +1436,7 @@ something that _looks_ like prose and is really structured data.
 | Change a section's intro text                                                | Panel → category → intro, per language.                                                                                                                                                                                     |
 | Change any of the site's own words                                           | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the networks.                                                                                                                          |
 | Move the map's pin                                                           | Not from the panel: `site_text.map_embed_url` is fixed and edited in the database. The home page renders it.                                                                                                                |
+| Add an interview to the Videoteca, or take one down                          | Panel → Videoteca: the video's YouTube id, its title per language, the order. The poster is fetched once and stored; the video stays on YouTube.                                                                            |
 | Add new photos                                                               | Panel → import from Drive.                                                                                                                                                                                                  |
 | Attach an AI restoration                                                     | Panel → the photo → restored version.                                                                                                                                                                                       |
 | See what is still untranslated                                               | Panel → traducciones: per language, how much is done and which sections and site texts are missing. Only the seven `site_text` keys that are language are counted; the map, the address and the three social URLs are not.  |
@@ -1408,6 +1505,7 @@ fototeca-la-pelada/
 │   │   │   ├── categoria/[slug]/
 │   │   │   ├── foto/[slug]/
 │   │   │   ├── buscar/
+│   │   │   ├── videoteca/        #   the interviews: a list and a page each
 │   │   │   └── creditos/         #   planned, never built (F13); `/sobre` was dropped
 │   │   ├── admin/                 # dynamic, authenticated, Spanish strings
 │   │   │   ├── layout.tsx         #   the second ROOT layout: <html lang="es">
@@ -1415,6 +1513,7 @@ fototeca-la-pelada/
 │   │   │   ├── import/
 │   │   │   ├── categories/
 │   │   │   ├── site-text/
+│   │   │   ├── videos/            #   the Videoteca: add by id, title per language, publish
 │   │   │   ├── translations/      #   the editor: dashboard, queue per language, one writer
 │   │   │   └── takedown-help.tsx  #   the Search Console half of a takedown, shown on a hidden photo
 │   │   ├── api/
@@ -1423,6 +1522,7 @@ fototeca-la-pelada/
 │   ├── db/{schema.ts,index.ts,queries/}
 │   ├── lib/{auth.ts,drive.ts,glossary.ts,images.ts,r2.ts,rate-limit.ts,url.ts}
 │   ├── components/                # document.tsx is the two root layouts' shared half
+│   │                              # video-facade.tsx is the poster-until-clicked player
 │   ├── proxy.ts                   # locale routing + the takedown 410 + the language switch
 │   └── i18n/
 │       ├── config.ts              # the four codes, localeHref, splitLocale, alternatesFor
@@ -1538,6 +1638,15 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
 - **Rate limiting**: `npm run ratelimit:smoke` for the counter, then against the build: 31 searches
   in a minute from one client, expecting 30 × 200 and then 429 with `Retry-After`, and a gallery and
   a photo page in the middle of it expecting 200 -- the limit is on the database, not on reading.
+- **Videoteca**: on the production build, load a ficha and read the **network log** rather than the
+  code -- nothing may reach a Google-controlled domain until the play button is pressed, and
+  `youtube-nocookie.com` must appear when it is. Then the header, for `frame-src` carrying YouTube
+  and `img-src` unchanged; the page with scripting off, for a poster inside a working link and no
+  iframe in the HTML; the four languages, for a title falling back to Spanish under a translated
+  description; and unpublishing, for the 410 in all four, the entry leaving the list and the sitemap,
+  and the same poster key coming back on republishing. And **look at the home page**: the card sits
+  last in the grid and its poster carries no black edge, which is the defect the import-time crop
+  exists for and the one that only shows up on screen.
 - **Sitemap**: count the `<url>` entries and the distinct photograph slugs, and confirm the number
   matches `select count(*) from photo where published` and not `count(*)`. Then look for an
   unpublished slug by name and confirm it is absent, and for `/buscar` and confirm the same. Then

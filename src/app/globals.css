@@ -392,6 +392,24 @@ body {
 }
 
 /*
+ * The way into the panel, in the settings menu, for the browsers that have been
+ * in it. It is in every page's HTML and CSS is what decides who sees it: the
+ * public site is pre-rendered, so the layout cannot read a session without
+ * turning the whole archive dynamic -- the same trade `show-sensitive` is drawn
+ * around, and the marker that sets this class is written in `/admin`'s layout.
+ *
+ * A hint and never a gate: `requireAdmin()` is the boundary, and a stale marker
+ * buys a reader nothing but a redirect to the sign-in screen -- which clears it.
+ */
+.admin-only {
+  display: none;
+}
+
+.show-admin .admin-only {
+  display: flex;
+}
+
+/*
  * The one switch on the site. A `<button role="switch">`, so the keyboard and the
  * screen reader get it for free; the knob is a `::before` rather than a span,
  * because a control whose only child is decoration should not have to ship one.
@@ -810,6 +828,63 @@ body > header {
    composited, where animating a layout property would judder. `.print` clips it,
    so nothing spills over the mount. Scoped to the index cover on purpose: the
    gallery wall shares `.mount` and must not move. */
+/**
+ * The play badge on a video's poster, which is the whole of the Videoteca's own
+ * chrome. A disc behind the triangle rather than a bare triangle: over a scanned
+ * photograph a triangle disappears into whatever is behind it, so the mark sits on
+ * the archive's own ground at the opacity that keeps it legible over a bright
+ * frame -- the same test the sensitive veil was drawn to.
+ *
+ * The disc is a `<circle>` in the SVG and not padding on the element: see the note
+ * in `components/play-badge.tsx` for what padding on an inline `<svg>` actually
+ * does. It is `aria-hidden` in the markup and the anchor carries the words, so this
+ * is decoration and nothing depends on it.
+ */
+.play-badge {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-text);
+  pointer-events: none;
+}
+
+.play-badge-disc {
+  fill: oklch(from var(--color-ground) l c h / 0.66);
+  stroke: oklch(from var(--color-text) l c h / 0.3);
+  stroke-width: 1.5;
+}
+
+.play-badge-mark {
+  transition:
+    color 200ms ease,
+    transform 200ms ease;
+}
+
+.group:hover .play-badge-mark,
+.group:focus-visible .play-badge-mark {
+  transform: scale(1.06);
+  /* `--ground` is what ARCHITECTURE calls `--on-accent`: the same value, and the
+     only text colour that clears AA on the accent fill below. */
+  color: var(--color-ground);
+}
+
+.group:hover .play-badge-disc,
+.group:focus-visible .play-badge-disc {
+  fill: oklch(from var(--color-accent) l c h / 0.92);
+  stroke: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .play-badge-mark {
+    transition: none;
+  }
+  .group:hover .play-badge-mark,
+  .group:focus-visible .play-badge-mark {
+    transform: none;
+  }
+}
+
 .mount-cover img {
   transition:
     transform 400ms ease-out,

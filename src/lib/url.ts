@@ -34,6 +34,46 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:30
  */
 export const MAP_HOSTS = ['maps-api-ssl.google.com', 'maps.google.com', 'www.google.com']
 
+/**
+ * The hosts a video embed may come from, exported for exactly the reason
+ * `MAP_HOSTS` above is: **`frame-src` in `next.config.ts` is built from this
+ * list**, so the allowlist and the header cannot drift into two versions of one
+ * fact. `youtube-nocookie.com` rather than `youtube.com`, which is the whole of
+ * what the reader gains by us hosting the poster ourselves.
+ */
+export const VIDEO_HOSTS = ['www.youtube-nocookie.com']
+
+/**
+ * A YouTube video id, which is what the archive stores instead of a URL.
+ *
+ * Eleven characters of base64url, and checked rather than trusted for the same
+ * reason `isFileId` in `lib/drive.ts` is: the value arrives from a form and ends
+ * up inside an `<iframe src>`. Storing an id and building the address in code
+ * means the panel cannot point the frame anywhere -- which is a stronger promise
+ * than accepting a URL and sanitising it, because there is nothing left to get
+ * wrong.
+ */
+const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/
+
+export function isYoutubeId(value: unknown): value is string {
+  return typeof value === 'string' && YOUTUBE_ID.test(value)
+}
+
+/** The `<iframe src>` on a video's page. `rel=0` keeps the end card off other channels. */
+export function videoEmbedUrl(youtubeId: string): string {
+  return `https://${VIDEO_HOSTS[0]}/embed/${youtubeId}?rel=0`
+}
+
+/**
+ * Where the facade's link goes with no JavaScript, and where a middle click goes
+ * with it. `youtube.com` and not the nocookie host on purpose: this one is a real
+ * navigation the reader chose, so it should land on the page they expect, with the
+ * channel and the description around it.
+ */
+export function videoWatchUrl(youtubeId: string): string {
+  return `https://www.youtube.com/watch?v=${youtubeId}`
+}
+
 function parse(value: string | undefined): URL | null {
   if (!value) return null
   try {

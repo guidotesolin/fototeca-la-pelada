@@ -27,9 +27,19 @@ import { locales, localeHref } from '@/i18n/config'
  *
  * Wording follows `ui.tsx`: the archive's terms, never the storage's.
  */
-export function TakedownHelp({ slug }: { slug: string }) {
-  const url = (locale: (typeof locales)[number]) =>
-    new URL(localeHref(locale, `/foto/${slug}`), SITE_URL).href
+export function TakedownHelp({
+  path,
+  noun = 'fotografía',
+}: {
+  path: string
+  /**
+   * What this page holds, so the instructions name it. A default rather than a
+   * required prop: 592 of the archive's pages are photographs and one screen was
+   * calling this before there was anything else to call it about.
+   */
+  noun?: 'fotografía' | 'entrevista'
+}) {
+  const url = (locale: (typeof locales)[number]) => new URL(localeHref(locale, path), SITE_URL).href
 
   return (
     /* `.menu` from `globals.css`, which gives exactly three things: position
@@ -97,7 +107,7 @@ export function TakedownHelp({ slug }: { slug: string }) {
               <strong>Retirar temporalmente la URL</strong>.
             </li>
             <li>
-              Pegá esta dirección, que es la de esta fotografía:
+              Pegá esta dirección, que es la de esta {noun}:
               {/* The string to paste, not an example to adapt: selectable, whole, and
                 built from the same origin the sitemap writes. */}
               <code className="border-rule bg-surface-high text-text mt-2 block border px-3 py-2 break-all select-all">
@@ -119,12 +129,12 @@ export function TakedownHelp({ slug }: { slug: string }) {
             fue retirada, que es lo que ya hace desde que la despublicaste: cuando Google vuelva a
             pasar y vea esa respuesta, la borra definitivamente. Hacen falta las dos cosas.
             Despublicarla sin este trámite tarda semanas, y el trámite sin despublicarla se vence y
-            la fotografía vuelve a aparecer.
+            la {noun} vuelve a aparecer.
           </p>
 
           <div className="flex flex-col gap-2">
             <p>
-              <strong>Si aparece en otro idioma.</strong> Cada fotografía tiene una dirección por
+              <strong>Si aparece en otro idioma.</strong> Cada {noun} tiene una dirección por
               idioma. Si en Google ves la versión en inglés, francés o italiano, repetí el trámite
               con esa dirección. Las cuatro contestan que fue retirada; esto es sólo para apurar a
               Google.

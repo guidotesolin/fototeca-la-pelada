@@ -80,6 +80,19 @@ export default async function SignIn(props: PageProps<'/admin/signin'>) {
           Entrar con Google
         </button>
       </form>
+
+      {/* The one screen of the panel that draws no header, so it is also the one
+          with no way out of it: somebody who signed out, or who followed `/admin`
+          by mistake, is otherwise left with a Google button and the Back button.
+          An anchor, like the header's own -- a client navigation cannot cross into
+          the public site's root layout. */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      <a
+        href="/"
+        className="t-credit link hover:text-text focus-visible:outline-focus mt-8 inline-flex min-h-11 items-center focus-visible:outline-2 focus-visible:outline-offset-2"
+      >
+        Volver al sitio
+      </a>
     </div>
   )
 }

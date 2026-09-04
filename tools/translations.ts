@@ -33,7 +33,13 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { TRANSLATABLE_SITE_TEXT } from '../src/app/admin/site-text/fields'
 import { POSTGRES_OPTIONS } from '../src/db/connect'
-import { category, categoryTranslation, photoTranslation, siteText } from '../src/db/schema'
+import {
+  category,
+  categoryTranslation,
+  photoTranslation,
+  siteText,
+  videoTranslation,
+} from '../src/db/schema'
 import { defaultLocale, locales } from '../src/i18n/config'
 import { missingTerms } from '../src/lib/glossary'
 
@@ -80,6 +86,15 @@ async function sources(): Promise<string[]> {
   for (const row of sections) {
     keep(row.name)
     keep(row.intro)
+  }
+
+  const videos = await db
+    .select({ title: videoTranslation.title, description: videoTranslation.description })
+    .from(videoTranslation)
+    .where(eq(videoTranslation.locale, defaultLocale))
+  for (const row of videos) {
+    keep(row.title)
+    keep(row.description)
   }
 
   const texts = await db

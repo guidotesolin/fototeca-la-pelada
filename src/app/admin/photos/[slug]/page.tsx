@@ -242,7 +242,7 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         {/* Only while it is hidden, because only then is there something left to
             do. On a published photograph this would be a panel announcing a next
             step that does not exist, which is how a panel teaches you to ignore it. */}
-        {!photo.published && <TakedownHelp slug={photo.slug} />}
+        {!photo.published && <TakedownHelp path={`/foto/${photo.slug}`} />}
       </section>
 
       <section className="mt-14">
@@ -284,134 +284,158 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
           <p className="t-meta mt-5">Esta fotografía no tiene versión restaurada.</p>
         )}
 
-        {/* Drive first, because it is where the restorations actually land, and it
-            is the only one of the two without the 3,5 MB ceiling a server action
-            body imposes. */}
-        <h3 className="t-label mt-10">Desde Drive</h3>
-        {!wantsDrive ? (
-          <p className="t-intro text-muted mt-3">
+        {/* One way in at a time. The two forms used to sit one under the other, and
+            a screen that offers both is asking a question it has already answered:
+            the restoration comes from Drive or from this machine, never from both.
+            `?restaurar=` is the switch, so the choice is in the address -- no client
+            state, it survives a reload, and the Drive listing stays behind a click.
+
+            Drive is on the left because it is where the restorations actually land
+            and it is the one without the 3,5 MB ceiling a server action body
+            imposes. The file is what opens, for the reason `wantsDrive` is written
+            around: listing the folder is two Drive calls, and this screen is opened
+            to write a caption far more often than to attach a restoration. */}
+        <div className="mt-8 flex max-w-lg gap-1.5">
+          {[
+            {
+              label: 'Desde Drive',
+              href: `/admin/photos/${photo.slug}?restaurar=drive`,
+              active: wantsDrive,
+            },
+            { label: 'Subir un archivo', href: `/admin/photos/${photo.slug}`, active: !wantsDrive },
+          ].map(({ label, href, active }) => (
             <Link
-              href={`/admin/photos/${photo.slug}?restaurar=drive`}
-              className="link text-accent hover:text-text focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
+              key={href}
+              href={href}
+              /* Not colour alone: `aria-current` is what marks the open one for a
+                 reader who does not see the border (WCAG 1.4.1). The text keeps
+                 `.t-label`'s own colour in both -- it is unlayered author CSS, so a
+                 `text-accent` here would lose to it and do nothing. */
+              aria-current={active ? 'true' : undefined}
+              className={`t-label focus-visible:outline-focus flex h-11 flex-1 items-center justify-center border text-center focus-visible:outline-2 focus-visible:-outline-offset-2 ${
+                active ? 'border-accent bg-surface-high' : 'border-rule hover:border-accent'
+              }`}
             >
-              Ver la carpeta «{RESTORED_FOLDER_NAME}»
-            </Link>{' '}
-            para elegir una de ahí.
-          </p>
-        ) : !folder ? (
-          <p className="t-intro text-muted mt-3">
-            No encontramos una carpeta «{RESTORED_FOLDER_NAME}» dentro de la carpeta de originales
-            de Drive. Revisá que exista y que se llame así.
-          </p>
-        ) : sorted.length === 0 ? (
-          <p className="t-intro text-muted mt-3">
-            La carpeta «{RESTORED_FOLDER_NAME}» no tiene imágenes.
-          </p>
-        ) : (
-          <form action={attachRestorationFromDrive} className="mt-3">
-            <input type="hidden" name="slug" value={photo.slug} />
-            <p className="t-meta">
-              {sorted.length} {sorted.length === 1 ? 'imagen' : 'imágenes'} · tocá una y después
-              «Adjuntar la elegida». Los nombres los pone quien exporta, así que la miniatura es lo
-              que dice cuál es.
+              {label}
+            </Link>
+          ))}
+        </div>
+
+        {wantsDrive ? (
+          !folder ? (
+            <p className="t-intro text-muted mt-5">
+              No encontramos una carpeta «{RESTORED_FOLDER_NAME}» dentro de la carpeta de originales
+              de Drive. Revisá que exista y que se llame así.
             </p>
+          ) : sorted.length === 0 ? (
+            <p className="t-intro text-muted mt-5">
+              La carpeta «{RESTORED_FOLDER_NAME}» no tiene imágenes.
+            </p>
+          ) : (
+            <form action={attachRestorationFromDrive} className="mt-5">
+              <input type="hidden" name="slug" value={photo.slug} />
+              <p className="t-meta">
+                {sorted.length} {sorted.length === 1 ? 'imagen' : 'imágenes'} · tocá una y después
+                «Adjuntar la elegida». Los nombres los pone quien exporta, así que la miniatura es
+                lo que dice cuál es.
+              </p>
 
-            {/* A radio and not a checkbox: a photograph has one restored version,
-                and the control should say so rather than accept two and complain.
-                `has-[:checked]:` marks the choice on the frame, so what is ticked
-                is legible without hunting for a small dot. */}
-            <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {sorted.map((file) => {
-                const owner = usedBy.get(file.id)
-                return (
-                  <li key={file.id}>
-                    <label className="has-[:checked]:outline-accent border-rule hover:bg-surface flex h-full cursor-pointer flex-col gap-2 border p-2 has-[:checked]:outline-2">
-                      <span className="flex items-start gap-2">
-                        <input
-                          type="radio"
-                          name="file-id"
-                          value={file.id}
-                          className="accent-accent focus-visible:outline-focus mt-0.5 h-4 w-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
-                        />
-                        <span className="t-meta min-w-0 grow break-all">
-                          {file.size !== null &&
-                            `${Math.round(file.size / 1024).toLocaleString('es-AR')} KB`}
+              {/* A radio and not a checkbox: a photograph has one restored version,
+                  and the control should say so rather than accept two and complain.
+                  `has-[:checked]:` marks the choice on the frame, so what is ticked
+                  is legible without hunting for a small dot. */}
+              <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {sorted.map((file) => {
+                  const owner = usedBy.get(file.id)
+                  return (
+                    <li key={file.id}>
+                      <label className="has-[:checked]:outline-accent border-rule hover:bg-surface flex h-full cursor-pointer flex-col gap-2 border p-2 has-[:checked]:outline-2">
+                        <span className="flex items-start gap-2">
+                          <input
+                            type="radio"
+                            name="file-id"
+                            value={file.id}
+                            className="accent-accent focus-visible:outline-focus mt-0.5 h-4 w-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
+                          />
+                          <span className="t-meta min-w-0 grow break-all">
+                            {file.size !== null &&
+                              `${Math.round(file.size / 1024).toLocaleString('es-AR')} KB`}
+                          </span>
                         </span>
-                      </span>
-                      {/* Drive's own thumbnail, signed and short-lived: the screen
-                          is rendered per request, so the link in the markup is
-                          always minutes old. `object-contain` for the same reason
-                          the import screen uses it -- a square crop of an unknown
-                          scan hides the half that would have told you which it is. */}
-                      {file.thumbnailLink ? (
-                        /* A signed lh3 URL that expires in an hour is not something to
-                           put through the image optimiser's cache. */
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={file.thumbnailLink}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          referrerPolicy="no-referrer"
-                          className="bg-surface h-32 w-full object-contain"
-                        />
-                      ) : (
-                        <span className="bg-surface text-muted flex h-32 w-full items-center justify-center text-center font-sans text-[10px]">
-                          sin vista
-                        </span>
-                      )}
-                      <span className="t-meta block break-all">{file.name}</span>
-                      {/* Advisory, and it says whose rather than just "taken": the
-                          useful question when a file is already attached is which
-                          ficha to go and look at. Reattaching stays allowed -- a
-                          better pass of the same source is the ordinary case. */}
-                      {owner && (
-                        <span className="t-meta text-accent block">
-                          {owner === photo.slug ? 'es la de esta ficha' : `ya es la de ${owner}`}
-                        </span>
-                      )}
-                    </label>
-                  </li>
-                )
-              })}
-            </ul>
+                        {/* Drive's own thumbnail, signed and short-lived: the screen
+                            is rendered per request, so the link in the markup is
+                            always minutes old. `object-contain` for the same reason
+                            the import screen uses it -- a square crop of an unknown
+                            scan hides the half that would have told you which it is. */}
+                        {file.thumbnailLink ? (
+                          /* A signed lh3 URL that expires in an hour is not something to
+                             put through the image optimiser's cache. */
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={file.thumbnailLink}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            referrerPolicy="no-referrer"
+                            className="bg-surface h-32 w-full object-contain"
+                          />
+                        ) : (
+                          <span className="bg-surface text-muted flex h-32 w-full items-center justify-center text-center font-sans text-[10px]">
+                            sin vista
+                          </span>
+                        )}
+                        <span className="t-meta block break-all">{file.name}</span>
+                        {/* Advisory, and it says whose rather than just "taken": the
+                            useful question when a file is already attached is which
+                            ficha to go and look at. Reattaching stays allowed -- a
+                            better pass of the same source is the ordinary case. */}
+                        {owner && (
+                          <span className="t-meta text-accent block">
+                            {owner === photo.slug ? 'es la de esta ficha' : `ya es la de ${owner}`}
+                          </span>
+                        )}
+                      </label>
+                    </li>
+                  )
+                })}
+              </ul>
 
-            <button type="submit" className={`${BUTTON} mt-6`}>
-              Adjuntar la elegida
+              <button type="submit" className={`${BUTTON} mt-6`}>
+                Adjuntar la elegida
+              </button>
+            </form>
+          )
+        ) : (
+          <form action={attachRestoration} className="mt-5 grid max-w-lg gap-5">
+            <input type="hidden" name="slug" value={photo.slug} />
+            {/* Not a `Field`: that puts its hint under the control, and under a
+                preview the size of a thumbnail the hint lands nowhere near what it
+                is describing. Here it sits between the label and the button. */}
+            <div>
+              <span className="t-label block pb-1.5">
+                {photo.restoredMasterKey ? 'Reemplazar por' : 'Adjuntar archivo'}
+              </span>
+              <span className="t-meta mb-3 block">
+                JPEG, PNG, WebP o TIFF, hasta 3,5 MB. Se guarda aparte, así que no se pierde si
+                despublicás la fotografía.
+              </span>
+              {/* Keyed on the outcome, so the redirect that announces a successful
+                  upload also remounts the picker. Without it React reconciles the
+                  same tree position, the file input keeps its file and the preview
+                  its thumbnail, and pressing the button again re-uploads it. */}
+              <FilePicker
+                key={one(params.ok) || one(params.error) || 'nuevo'}
+                name="file"
+                accept="image/*"
+              />
+            </div>
+            <button type="submit" className={`${BUTTON} justify-self-start`}>
+              {photo.restoredMasterKey
+                ? 'Reemplazar versión restaurada'
+                : 'Adjuntar versión restaurada'}
             </button>
           </form>
         )}
-
-        <h3 className="t-label mt-12">O subir un archivo</h3>
-        <form action={attachRestoration} className="mt-3 grid max-w-lg gap-5">
-          <input type="hidden" name="slug" value={photo.slug} />
-          {/* Not a `Field`: that puts its hint under the control, and under a
-              preview the size of a thumbnail the hint lands nowhere near what it
-              is describing. Here it sits between the label and the button. */}
-          <div>
-            <span className="t-label block pb-1.5">
-              {photo.restoredMasterKey ? 'Reemplazar por' : 'Adjuntar archivo'}
-            </span>
-            <span className="t-meta mb-3 block">
-              JPEG, PNG, WebP o TIFF, hasta 3,5 MB. Se guarda aparte, así que no se pierde si
-              despublicás la fotografía.
-            </span>
-            {/* Keyed on the outcome, so the redirect that announces a successful
-                upload also remounts the picker. Without it React reconciles the
-                same tree position, the file input keeps its file and the preview
-                its thumbnail, and pressing the button again re-uploads it. */}
-            <FilePicker
-              key={one(params.ok) || one(params.error) || 'nuevo'}
-              name="file"
-              accept="image/*"
-            />
-          </div>
-          <button type="submit" className={`${BUTTON} justify-self-start`}>
-            {photo.restoredMasterKey
-              ? 'Reemplazar versión restaurada'
-              : 'Adjuntar versión restaurada'}
-          </button>
-        </form>
       </section>
 
       <section className="mt-14">
