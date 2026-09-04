@@ -72,6 +72,37 @@ export function mastersFolderId(): string {
   return id
 }
 
+/**
+ * The folder the AI restorations live in, by name and inside the masters vault.
+ *
+ * **A name and not an environment variable**, which is the opposite of how the
+ * root above is found, and on purpose. The restorations folder is not a second
+ * place the panel has to be told about: it is a folder *inside* the one it was
+ * already told about, and `listFolders(mastersFolderId())` was already listing it
+ * beside the brothers' own. An id in the environment would be five files to keep
+ * in step -- `.env.example`, the secrets smoke, the README, ARCHITECTURE, and a
+ * Vercel variable somebody has to remember on the day the folder is recreated --
+ * to learn something one Drive call already knows.
+ *
+ * What it costs is a rename: call the folder something else in Drive and the panel
+ * stops finding it. That is a legible failure -- the screen says which name it
+ * looked for -- and it is cheaper than the id drifting out of sync in silence.
+ *
+ * Null rather than a throw, because a missing folder is a thing the screen has to
+ * explain rather than a misconfiguration that should stop the request: the manual
+ * upload beside it goes on working.
+ */
+const RESTORED_FOLDER = 'Restauradas'
+
+export async function restoredFolder(): Promise<{ id: string; name: string } | null> {
+  const folders = await listFolders(mastersFolderId())
+  const wanted = RESTORED_FOLDER.toLocaleLowerCase('es')
+  return folders.find((f) => f.name.trim().toLocaleLowerCase('es') === wanted) ?? null
+}
+
+/** The name looked for, so the screen can say it without hardcoding it twice. */
+export const RESTORED_FOLDER_NAME = RESTORED_FOLDER
+
 type ServiceAccount = { client_email: string; private_key: string }
 
 /**

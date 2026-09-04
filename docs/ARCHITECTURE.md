@@ -515,7 +515,7 @@ photo                            photo_translation
   -- optional AI restoration
   restored_drive_file_id / restored_master_key
   restored_web_key / restored_thumb_key
-  restored_method / restored_at
+  restored_at
 
 photo_category                   app_user
   photo_id ─────┐ pk               id

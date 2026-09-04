@@ -12,6 +12,7 @@ import {
   hasMaster,
   readMaster,
 } from '@/lib/derivatives'
+import { download, isFileId, isInsideFolder, restoredFolder } from '@/lib/drive'
 import { read } from '@/lib/images'
 import { masterKeyFor } from '@/lib/photo'
 import { getBytes, newPrefix, put } from '@/lib/r2'
@@ -44,7 +45,7 @@ import { Invalid, outcome } from '../write'
  */
 
 /** Longest we accept per kind of field. A caption can be a paragraph; a credit cannot. */
-const LIMITS = { caption: 4000, notes: 4000, line: 300, method: 200 }
+const LIMITS = { caption: 4000, notes: 4000, line: 300 }
 
 /** The archive's own floor. This is a photographic archive, not a chronicle of antiquity. */
 const EARLIEST = 1800
@@ -242,70 +243,120 @@ export async function attachRestoration(form: FormData) {
 
   const result = await outcome('photos', 'restaurada', async () => {
     const row = await load(slug)
-    const method = line(form, 'method', LIMITS.method)
 
     const file = form.get('file')
     // Told apart on purpose: "you did not choose one" and "this one is not usable"
     // are different mistakes, and one message for both sends somebody looking for
     // a problem with a file they never picked.
     if (!(file instanceof File) || file.size === 0) throw new Invalid('sin-archivo')
-    const data = Buffer.from(await file.arrayBuffer())
 
-    // What the bytes are, read from the bytes: never the extension, never the
-    // content type the browser claimed. `read` also enforces the size ceiling.
-    let master
-    try {
-      master = await read(data)
-    } catch (error) {
-      console.error('[admin/photos] the upload is not a usable image:', error)
-      throw new Invalid('archivo')
-    }
-
-    const ext = master.format === 'jpeg' ? 'jpg' : master.format
-    const masterKey = masterKeyFor(newPrefix('masters', `${slug}-restaurada`), ext)
-
-    // Every write to R2 sits inside the rollback: the master upload used to be
-    // outside it, so a failure while deriving stranded a master no row named.
-    let made: Awaited<ReturnType<typeof generate>> | null = null
-    try {
-      await put(masterKey, data, ext)
-      if (row.published) made = await generate(`${slug}-restaurada`, data)
-      await db
-        .update(photo)
-        .set({
-          restoredMasterKey: masterKey,
-          restoredWebKey: made?.webKey ?? null,
-          restoredWebWidth: made?.webWidth ?? null,
-          restoredWebHeight: made?.webHeight ?? null,
-          restoredThumbKey: made?.thumbKey ?? null,
-          restoredMethod: method,
-          restoredAt: new Date(),
-          // A restoration that arrives by hand replaces one that came from Drive,
-          // so the Drive id stops describing this row's source.
-          restoredDriveFileId: null,
-        })
-        .where(eq(photo.id, row.id))
-    } catch (error) {
-      await dropDerivatives(made?.webKey)
-      await dropRestoredMaster(masterKey)
-      throw error
-    }
-
-    /**
-     * The old files, once the row points at the new ones. Outside the failing
-     * path on purpose: the write has already succeeded, so a transient R2 error
-     * here must not report `error=interno` for a save that happened, and must
-     * not skip the revalidation either. What it leaves behind is an orphan, and
-     * an orphan is what `db:seed:verify` is for.
-     */
-    try {
-      await dropDerivatives(row.restoredWebKey)
-      await dropRestoredMaster(row.restoredMasterKey)
-    } catch (error) {
-      console.error('[admin/photos] the replaced restoration could not be deleted:', error)
-    }
+    // Null: a restoration that arrives by hand replaces one that came from Drive,
+    // so the Drive id stops describing this row's source.
+    await writeRestoration(row, Buffer.from(await file.arrayBuffer()), null)
   })
   redirect(`/admin/photos/${slug}?${result}`)
+}
+
+/**
+ * The same thing off the restorations folder in Drive, which is the path that
+ * actually gets used: the brothers restore in batches and the results land there,
+ * named by whatever exported them.
+ *
+ * **Why it exists next to the upload rather than replacing it.** The upload posts
+ * the bytes through a server action, so it is capped at the 3,5 MB a server action
+ * body carries -- nothing to do with images, since `read` accepts forty times
+ * that. Drive is fetched server-side, so the ceiling that applies is Drive's own
+ * `MAX_BYTES`, and a restored TIFF off an upscaler clears 3,5 MB without trying.
+ * The upload stays for the restoration that never went to Drive.
+ *
+ * **The id is confined to the restorations folder**, the same way the import
+ * confines a folder id to the vault: it arrives from a form, and without the check
+ * any file the service account can see would be attachable through this endpoint.
+ */
+export async function attachRestorationFromDrive(form: FormData) {
+  await requireAdmin()
+  const slug = form.get('slug')
+  if (typeof slug !== 'string' || !SLUG.test(slug)) redirect('/admin/photos?error=no-existe')
+
+  const result = await outcome('photos', 'restaurada', async () => {
+    const row = await load(slug)
+
+    const fileId = form.get('file-id')
+    if (!isFileId(fileId)) throw new Invalid('sin-archivo')
+
+    const folder = await restoredFolder()
+    if (!folder) throw new Invalid('carpeta-restauradas')
+    if (!(await isInsideFolder(fileId, folder.id))) throw new Invalid('fuera-de-carpeta')
+
+    await writeRestoration(row, await download(fileId), fileId)
+  })
+  redirect(`/admin/photos/${slug}?${result}`)
+}
+
+/**
+ * Everything an attached restoration does once the bytes are in hand -- which is
+ * all of it except where they came from. The two callers above differ in one line,
+ * and every rule after that is shared: what the bytes are is read from the bytes,
+ * a restoration keeps a master of its own, derivatives are made only if the
+ * photograph is published, and every R2 write sits inside the rollback.
+ */
+async function writeRestoration(
+  row: Awaited<ReturnType<typeof load>>,
+  data: Buffer,
+  driveFileId: string | null,
+) {
+  const slug = row.slug
+
+  // What the bytes are, read from the bytes: never the extension, never the
+  // content type the browser claimed. `read` also enforces the size ceiling.
+  let master
+  try {
+    master = await read(data)
+  } catch (error) {
+    console.error('[admin/photos] the restoration is not a usable image:', error)
+    throw new Invalid('archivo')
+  }
+
+  const ext = master.format === 'jpeg' ? 'jpg' : master.format
+  const masterKey = masterKeyFor(newPrefix('masters', `${slug}-restaurada`), ext)
+
+  // Every write to R2 sits inside the rollback: the master upload used to be
+  // outside it, so a failure while deriving stranded a master no row named.
+  let made: Awaited<ReturnType<typeof generate>> | null = null
+  try {
+    await put(masterKey, data, ext)
+    if (row.published) made = await generate(`${slug}-restaurada`, data)
+    await db
+      .update(photo)
+      .set({
+        restoredMasterKey: masterKey,
+        restoredWebKey: made?.webKey ?? null,
+        restoredWebWidth: made?.webWidth ?? null,
+        restoredWebHeight: made?.webHeight ?? null,
+        restoredThumbKey: made?.thumbKey ?? null,
+        restoredAt: new Date(),
+        restoredDriveFileId: driveFileId,
+      })
+      .where(eq(photo.id, row.id))
+  } catch (error) {
+    await dropDerivatives(made?.webKey)
+    await dropRestoredMaster(masterKey)
+    throw error
+  }
+
+  /**
+   * The old files, once the row points at the new ones. Outside the failing
+   * path on purpose: the write has already succeeded, so a transient R2 error
+   * here must not report `error=interno` for a save that happened, and must
+   * not skip the revalidation either. What it leaves behind is an orphan, and
+   * an orphan is what `db:seed:verify` is for.
+   */
+  try {
+    await dropDerivatives(row.restoredWebKey)
+    await dropRestoredMaster(row.restoredMasterKey)
+  } catch (error) {
+    console.error('[admin/photos] the replaced restoration could not be deleted:', error)
+  }
 }
 
 /** Removes the restoration entirely: files first, then the fields that name them. */
@@ -326,7 +377,6 @@ export async function removeRestoration(form: FormData) {
         restoredWebWidth: null,
         restoredWebHeight: null,
         restoredThumbKey: null,
-        restoredMethod: null,
         restoredAt: null,
         restoredDriveFileId: null,
       })

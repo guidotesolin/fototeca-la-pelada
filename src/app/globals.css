@@ -535,13 +535,68 @@ body {
   display: none;
 }
 
-.ab-switch a[href='#original'],
-.ab-restored:target ~ .ab-switch a[href='#restaurada'] {
+/*
+ * The two halves are deliberately not styled alike. The original is the document
+ * and needs no mark; the restored view is a claim, so it carries a stamp -- ruled
+ * while the reader is on the original, filled while they are on it. The stamp is
+ * there in both states, which is what makes the restored view findable rather than
+ * merely selected once you have found it.
+ *
+ * `.t-label` is 11 px and this is the only one of them a reader clicks, so it gets
+ * 13 px. All of it unlayered author CSS, because `.t-label`'s own colour is: the
+ * `text-muted` and `hover:text-text` utilities in the JSX lost to it whatever the
+ * specificity, the same cascade-layer note as `body > header` further down. The
+ * doubled class is what keeps the size from depending on rule order.
+ *
+ * Selection survives without colour -- a rule under one, a filled box under the
+ * other -- which is as far as this goes: `aria-current` is still out of reach,
+ * because CSS cannot set an attribute.
+ */
+.t-label.ab-switch {
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+
+.ab-switch a {
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.ab-switch a[href='#original'] {
   color: var(--color-accent);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
 }
 
 .ab-restored:target ~ .ab-switch a[href='#original'] {
   color: var(--color-muted);
+  text-decoration: none;
+}
+
+.ab-switch a[href='#restaurada'] {
+  padding: 7px 10px;
+  border: 1px solid oklch(from var(--color-accent) l c h / 0.5);
+  border-radius: 2px;
+  color: var(--color-accent);
+}
+
+.ab-restored:target ~ .ab-switch a[href='#restaurada'] {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-ground);
+}
+
+/* The half that is not on screen is the only one worth answering under a pointer. */
+.ab-restored:target ~ .ab-switch a[href='#original']:hover {
+  color: var(--color-text);
+}
+
+.ab-switch a[href='#restaurada']:hover {
+  border-color: var(--color-accent);
 }
 
 /*
@@ -895,6 +950,7 @@ body > header {
   .mount,
   .print,
   .link,
+  .ab-switch a,
   .field,
   .plate,
   .mount-cover img {

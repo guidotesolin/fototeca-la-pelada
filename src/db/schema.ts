@@ -112,7 +112,6 @@ export const photo = pgTable(
     restoredWebWidth: integer('restored_web_width'),
     restoredWebHeight: integer('restored_web_height'),
     restoredThumbKey: text('restored_thumb_key'),
-    restoredMethod: text('restored_method'),
     restoredAt: timestamp('restored_at', { withTimezone: true }),
   },
   (t) => [

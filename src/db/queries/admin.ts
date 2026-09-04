@@ -222,7 +222,6 @@ export async function getPhotoForEdit(slug: string) {
       restoredMasterKey: photo.restoredMasterKey,
       restoredWebKey: photo.restoredWebKey,
       restoredThumbKey: photo.restoredThumbKey,
-      restoredMethod: photo.restoredMethod,
       restoredAt: photo.restoredAt,
       caption: photoTranslation.caption,
       notes: photoTranslation.notes,
@@ -425,6 +424,27 @@ export async function importedFromDrive(): Promise<Map<string, string>> {
     .from(photo)
     .where(isNotNull(photo.driveFileId))
   return new Map(rows.map((r) => [r.driveFileId as string, r.slug]))
+}
+
+/**
+ * The same map for the restorations folder: which of its files is already some
+ * photograph's restored version, and whose.
+ *
+ * **Advisory, and unlike `importedFromDrive` that is the whole of it.** There is
+ * no unique index behind this one, because the thing it prevents is milder: the
+ * import creates rows, so a double import duplicates a photograph, while
+ * attaching the same restoration twice only leaves two fichas pointing at one
+ * file in Drive -- which is wrong, and worth showing on screen, but is not a
+ * race worth a migration. Reattaching over it also stays legal on purpose: a
+ * restoration replaced by a better pass of the same source file is the ordinary
+ * case, not a mistake.
+ */
+export async function restoredFromDrive(): Promise<Map<string, string>> {
+  const rows = await db
+    .select({ restoredDriveFileId: photo.restoredDriveFileId, slug: photo.slug })
+    .from(photo)
+    .where(isNotNull(photo.restoredDriveFileId))
+  return new Map(rows.map((r) => [r.restoredDriveFileId as string, r.slug]))
 }
 
 /**

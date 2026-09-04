@@ -1,10 +1,18 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPhotoForEdit, photoTranslations } from '@/db/queries/admin'
+import { getPhotoForEdit, photoTranslations, restoredFromDrive } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
+import { RESTORED_FOLDER_NAME, listImages, restoredFolder } from '@/lib/drive'
 import { keyFor, publicUrl } from '@/lib/photo'
 import { Back, BUTTON, Check, FIELD, Field, Notice, Row, one } from '../../ui'
-import { attachRestoration, removeRestoration, saveDetails, setPublished } from '../actions'
+import {
+  attachRestoration,
+  attachRestorationFromDrive,
+  removeRestoration,
+  saveDetails,
+  setPublished,
+} from '../actions'
 import { TakedownHelp } from '../../takedown-help'
 import { FilePicker } from '../file-picker'
 import { TARGET_LOCALES } from '../../translations/items'
@@ -31,6 +39,14 @@ export async function generateMetadata(
   return { title: `Editar foto · ${slug}` }
 }
 
+/**
+ * Attaching a restoration from Drive is a master download plus six encodes plus
+ * six uploads, the same shape of work the import screen does and the same reason
+ * it raises this: the default ten seconds is not enough for it, and the rest of
+ * the screen is unaffected by the ceiling being higher.
+ */
+export const maxDuration = 60
+
 export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>) {
   await requireAdmin()
   const { slug } = await props.params
@@ -48,6 +64,25 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
    * an unpublished photograph looks like, since the takedown deleted every
    * derivative. Seeing what you are about to put back is the point.
    */
+  /**
+   * The restorations folder, and only when it is asked for.
+   *
+   * **Two Drive calls behind a link, rather than on every render.** This screen is
+   * opened to write a caption far more often than to attach a restoration, and
+   * `listFolders` + `listImages` on each of those renders would spend the service
+   * account's quota on a panel nobody was looking at. The import screen makes the
+   * same bargain with its own `?folder=`: nothing is listed until a folder is
+   * chosen.
+   */
+  const wantsDrive = one(params.restaurar) === 'drive'
+  const folder = wantsDrive ? await restoredFolder() : null
+  const [driveFiles, usedBy] = folder
+    ? await Promise.all([listImages(folder.id), restoredFromDrive()])
+    : [[], new Map<string, string>()]
+  // By name, because Drive's own order is not one and the brothers scan in batches
+  // whose filenames run together.
+  const sorted = [...driveFiles].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+
   const preview = photo.webKey
     ? publicUrl(keyFor(photo.webKey, photo.webWidth ?? 480, 'webp'))
     : photo.masterKey
@@ -220,7 +255,6 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         {photo.restoredMasterKey ? (
           <>
             <dl className="border-rule mt-5 border-t">
-              <Row label="Método">{photo.restoredMethod ?? '—'}</Row>
               <Row label="Adjuntada">
                 {photo.restoredAt ? photo.restoredAt.toISOString().slice(0, 10) : '—'}
               </Row>
@@ -250,7 +284,106 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
           <p className="t-meta mt-5">Esta fotografía no tiene versión restaurada.</p>
         )}
 
-        <form action={attachRestoration} className="mt-8 grid max-w-lg gap-5">
+        {/* Drive first, because it is where the restorations actually land, and it
+            is the only one of the two without the 3,5 MB ceiling a server action
+            body imposes. */}
+        <h3 className="t-label mt-10">Desde Drive</h3>
+        {!wantsDrive ? (
+          <p className="t-intro text-muted mt-3">
+            <Link
+              href={`/admin/photos/${photo.slug}?restaurar=drive`}
+              className="link text-accent hover:text-text focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
+            >
+              Ver la carpeta «{RESTORED_FOLDER_NAME}»
+            </Link>{' '}
+            para elegir una de ahí.
+          </p>
+        ) : !folder ? (
+          <p className="t-intro text-muted mt-3">
+            No encontramos una carpeta «{RESTORED_FOLDER_NAME}» dentro de la carpeta de originales
+            de Drive. Revisá que exista y que se llame así.
+          </p>
+        ) : sorted.length === 0 ? (
+          <p className="t-intro text-muted mt-3">
+            La carpeta «{RESTORED_FOLDER_NAME}» no tiene imágenes.
+          </p>
+        ) : (
+          <form action={attachRestorationFromDrive} className="mt-3">
+            <input type="hidden" name="slug" value={photo.slug} />
+            <p className="t-meta">
+              {sorted.length} {sorted.length === 1 ? 'imagen' : 'imágenes'} · tocá una y después
+              «Adjuntar la elegida». Los nombres los pone quien exporta, así que la miniatura es lo
+              que dice cuál es.
+            </p>
+
+            {/* A radio and not a checkbox: a photograph has one restored version,
+                and the control should say so rather than accept two and complain.
+                `has-[:checked]:` marks the choice on the frame, so what is ticked
+                is legible without hunting for a small dot. */}
+            <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              {sorted.map((file) => {
+                const owner = usedBy.get(file.id)
+                return (
+                  <li key={file.id}>
+                    <label className="has-[:checked]:outline-accent border-rule hover:bg-surface flex h-full cursor-pointer flex-col gap-2 border p-2 has-[:checked]:outline-2">
+                      <span className="flex items-start gap-2">
+                        <input
+                          type="radio"
+                          name="file-id"
+                          value={file.id}
+                          className="accent-accent focus-visible:outline-focus mt-0.5 h-4 w-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2"
+                        />
+                        <span className="t-meta min-w-0 grow break-all">
+                          {file.size !== null &&
+                            `${Math.round(file.size / 1024).toLocaleString('es-AR')} KB`}
+                        </span>
+                      </span>
+                      {/* Drive's own thumbnail, signed and short-lived: the screen
+                          is rendered per request, so the link in the markup is
+                          always minutes old. `object-contain` for the same reason
+                          the import screen uses it -- a square crop of an unknown
+                          scan hides the half that would have told you which it is. */}
+                      {file.thumbnailLink ? (
+                        /* A signed lh3 URL that expires in an hour is not something to
+                           put through the image optimiser's cache. */
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={file.thumbnailLink}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          referrerPolicy="no-referrer"
+                          className="bg-surface h-32 w-full object-contain"
+                        />
+                      ) : (
+                        <span className="bg-surface text-muted flex h-32 w-full items-center justify-center text-center font-sans text-[10px]">
+                          sin vista
+                        </span>
+                      )}
+                      <span className="t-meta block break-all">{file.name}</span>
+                      {/* Advisory, and it says whose rather than just "taken": the
+                          useful question when a file is already attached is which
+                          ficha to go and look at. Reattaching stays allowed -- a
+                          better pass of the same source is the ordinary case. */}
+                      {owner && (
+                        <span className="t-meta text-accent block">
+                          {owner === photo.slug ? 'es la de esta ficha' : `ya es la de ${owner}`}
+                        </span>
+                      )}
+                    </label>
+                  </li>
+                )
+              })}
+            </ul>
+
+            <button type="submit" className={`${BUTTON} mt-6`}>
+              Adjuntar la elegida
+            </button>
+          </form>
+        )}
+
+        <h3 className="t-label mt-12">O subir un archivo</h3>
+        <form action={attachRestoration} className="mt-3 grid max-w-lg gap-5">
           <input type="hidden" name="slug" value={photo.slug} />
           {/* Not a `Field`: that puts its hint under the control, and under a
               preview the size of a thumbnail the hint lands nowhere near what it
@@ -273,14 +406,6 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
               accept="image/*"
             />
           </div>
-          <Field label="Método" hint="Con qué se restauró, para que quede asentado.">
-            <input
-              type="text"
-              name="method"
-              defaultValue={photo.restoredMethod ?? ''}
-              className={FIELD}
-            />
-          </Field>
           <button type="submit" className={`${BUTTON} justify-self-start`}>
             {photo.restoredMasterKey
               ? 'Reemplazar versión restaurada'

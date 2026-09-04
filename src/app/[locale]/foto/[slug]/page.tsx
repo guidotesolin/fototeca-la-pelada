@@ -285,13 +285,16 @@ export default async function PhotoPage(props: PageProps<'/[locale]/foto/[slug]'
             <p className="ab-switch t-label mt-4 flex gap-5" style={{ maxWidth: width }}>
               <a
                 href="#original"
-                className="link hover:text-text focus-visible:outline-focus py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="link focus-visible:outline-focus py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 {t('original')}
               </a>
+              {/* Colour, size, the stamp and its padding are all `.ab-switch` in
+                  globals.css: `.t-label` is unlayered and a utility cannot reach
+                  past it. */}
               <a
                 href="#restaurada"
-                className="link text-muted hover:text-text focus-visible:outline-focus py-2 focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="link focus-visible:outline-focus focus-visible:outline-2 focus-visible:outline-offset-2"
               >
                 {t('restored')}
               </a>

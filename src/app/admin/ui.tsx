@@ -78,6 +78,10 @@ export const FAILED: Record<string, string> = {
   largo: 'Alguno de los textos supera el largo permitido.',
   archivo: 'El archivo no es una imagen que podamos procesar, o pesa más de 3,5 MB.',
   'sin-archivo': 'Elegí un archivo antes de adjuntarlo.',
+  'carpeta-restauradas':
+    'No encontramos la carpeta «Restauradas» dentro de la carpeta de originales de Drive. Revisá que exista y que se llame así.',
+  'fuera-de-carpeta':
+    'Ese archivo ya no está en la carpeta «Restauradas» de Drive. Recargá la pantalla para ver qué hay ahora.',
   // The one case where the panel cannot do the job by itself, and it says why in
   // terms of the archive rather than of the storage underneath it. It stopped
   // being reachable for a photograph imported from Drive when T12 made reading
