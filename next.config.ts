@@ -1,6 +1,6 @@
 import createNextIntlPlugin from 'next-intl/plugin'
 import type { NextConfig } from 'next'
-import { MAP_HOSTS } from './src/lib/url'
+import { MAP_HOSTS, VIDEO_HOSTS } from './src/lib/url'
 
 /**
  * Where the archive's images come from, and the only non-`'self'` source the
@@ -79,8 +79,12 @@ function csp(images: string[] = []): string {
     "style-src 'self' 'unsafe-inline'",
     `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ''}`,
     "connect-src 'self'",
-    // The map on the home page, from the same allowlist `mapEmbedUrl` enforces.
-    `frame-src ${MAP_HOSTS.map((host) => `https://${host}`).join(' ')}`,
+    // The map on the home page and the Videoteca's players, each from the same
+    // allowlist its own guard in `src/lib/url.ts` enforces. Two lists and one
+    // directive, never a host written out here: a copy of an allowlist is how the
+    // header and the code that builds a URL end up disagreeing, and that failure
+    // is silent -- an empty frame and no error anybody would go looking for.
+    `frame-src ${[...MAP_HOSTS, ...VIDEO_HOSTS].map((host) => `https://${host}`).join(' ')}`,
   ].join('; ')
 }
 

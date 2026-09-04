@@ -29,7 +29,7 @@ import { LANGUAGE } from './items'
 export const metadata: Metadata = { title: 'Traducciones' }
 
 /**
- * The five kinds of piece, and the `?que=` each one opens the queue on. The
+ * The seven kinds of piece, and the `?que=` each one opens the queue on. The
  * counted thing and the link that goes and fixes it are the same row, so they
  * are written next to each other and cannot drift.
  */
@@ -39,6 +39,8 @@ const ROWS = [
   ['names', 'Nombres de sección', 'nombres'],
   ['intros', 'Introducciones de sección', 'introducciones'],
   ['texts', 'Textos del sitio', 'textos'],
+  ['titles', 'Títulos de entrevista', 'titulos'],
+  ['descriptions', 'Descripciones de entrevista', 'descripciones'],
 ] as const
 
 export default async function AdminTranslations() {

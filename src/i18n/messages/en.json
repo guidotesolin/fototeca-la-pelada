@@ -12,7 +12,8 @@
     "sensitive": "Sensitive content",
     "sensitiveHint": "Shows photographs containing images of animal butchering without a blur.",
     "sensitiveSwitch": "Show sensitive content without a blur",
-    "admin": "Go to the panel"
+    "admin": "Go to the panel",
+    "videoteca": "Video library"
   },
   "languages": {
     "es": "Spanish",
@@ -48,6 +49,16 @@
     "previous": "Previous",
     "next": "Next",
     "pageTitle": "{name}, page {page}"
+  },
+  "videoteca": {
+    "title": "Video library",
+    "interviews": "{count, plural, one {# interview} other {# interviews}}",
+    "index": "Index",
+    "play": "Play the interview",
+    "watchOnYoutube": "Watch on YouTube",
+    "description": "Interviews with residents of La Pelada.",
+    "previous": "Previous",
+    "next": "Next"
   },
   "photo": {
     "sensitive": "Sensitive content",

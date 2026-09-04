@@ -69,6 +69,13 @@ export const DONE: Record<string, string> = {
   textos: 'Se guardaron los textos del sitio.',
   traducciones: 'Se guardaron las traducciones. Ya están en el sitio.',
   importada: 'Se importó una fotografía desde Drive y ya está en el sitio.',
+
+  // --- videoteca ---
+  'video-creado': 'Se agregó la entrevista a la Videoteca y ya está en el sitio.',
+  'video-guardado': 'Se guardó la entrevista.',
+  'video-publicado': 'Se publicó la entrevista: ya está en la Videoteca.',
+  'video-despublicado':
+    'Se despublicó la entrevista: salió de la Videoteca y su página responde que fue retirada. El video sigue en YouTube.',
 }
 
 export const FAILED: Record<string, string> = {
@@ -108,6 +115,17 @@ export const FAILED: Record<string, string> = {
   // languages the editor writes. Spanish included: it is the source language and
   // it is edited on the screens that own it, never through a translation form.
   idioma: 'Ese idioma no se edita desde acá.',
+
+  // --- videoteca ---
+  'video-no-existe': 'Esa entrevista no está en la Videoteca.',
+  // Deliberately not "el ID no es válido": what an administrator has in the
+  // clipboard is the whole address, so the message says which part of it to keep.
+  'id-youtube':
+    'Ese no es un ID de YouTube. Es la parte que va después de «v=» en la dirección del video, y son 11 caracteres: por ejemplo, en youtube.com/watch?v=yJ4sZrsuzyw el ID es yJ4sZrsuzyw.',
+  'id-repetido': 'Esa entrevista ya está en la Videoteca.',
+  poster:
+    'No pudimos traer la miniatura del video desde YouTube. Revisá que el ID sea correcto y que el video sea público, y probá de nuevo.',
+  titulo: 'Escribí un título para la entrevista.',
 
   // --- site text ---
   'url-red': 'Ese enlace de red social no es válido: tiene que empezar con https://',

@@ -18,7 +18,15 @@ import { LIMITS, SITE_TEXT, TRANSLATABLE_SITE_TEXT } from '../site-text/fields'
  * `caption:espacios-001`, `name:campo`, `text:home_title`.
  */
 
-export const ITEM_KINDS = ['caption', 'notes', 'name', 'intro', 'text'] as const
+export const ITEM_KINDS = [
+  'caption',
+  'notes',
+  'name',
+  'intro',
+  'text',
+  'title',
+  'description',
+] as const
 
 export type ItemKind = (typeof ITEM_KINDS)[number]
 
@@ -38,13 +46,15 @@ const PHOTO_SLUG = /^[a-z0-9-]{1,64}$/
  */
 export const FIELDS: Record<
   ItemKind,
-  { label: string; rows: number; where: 'photo' | 'category' | 'site' }
+  { label: string; rows: number; where: 'photo' | 'category' | 'site' | 'video' }
 > = {
   caption: { label: 'Epígrafe', rows: 4, where: 'photo' },
   notes: { label: 'Nota de fuente', rows: 3, where: 'photo' },
   name: { label: 'Nombre de la sección', rows: 2, where: 'category' },
   intro: { label: 'Introducción de la sección', rows: 5, where: 'category' },
   text: { label: 'Texto del sitio', rows: 4, where: 'site' },
+  title: { label: 'Título de la entrevista', rows: 2, where: 'video' },
+  description: { label: 'Descripción de la entrevista', rows: 5, where: 'video' },
 }
 
 /**
@@ -58,6 +68,8 @@ export const QUEUE_FILTERS: Record<string, { kind: ItemKind; label: string }> = 
   nombres: { kind: 'name', label: 'Nombres de sección' },
   introducciones: { kind: 'intro', label: 'Introducciones de sección' },
   textos: { kind: 'text', label: 'Textos del sitio' },
+  titulos: { kind: 'title', label: 'Títulos de entrevista' },
+  descripciones: { kind: 'description', label: 'Descripciones de entrevista' },
 }
 
 export const DEFAULT_FILTER = 'epigrafes'
@@ -96,6 +108,11 @@ export function parseItem(raw: unknown): Item | null {
     case 'name':
     case 'intro':
       return isSectionSlug(id) ? { kind: kind as ItemKind, id } : null
+    // A video slug is minted by the panel as `videoteca-NNN`, so it satisfies the
+    // section shape; reusing that guard is one check rather than a fifth regex.
+    case 'title':
+    case 'description':
+      return isSectionSlug(id) ? { kind: kind as ItemKind, id } : null
     case 'text':
       return TRANSLATABLE_SITE_TEXT.includes(id) ? { kind: 'text', id } : null
   }
@@ -119,6 +136,9 @@ export function parseItem(raw: unknown): Item | null {
 export function limitFor(item: Item): number {
   switch (item.kind) {
     case 'name':
+    // A title is a line, and it is what a WhatsApp preview shows: the same 120 a
+    // section name gets, for the same reason.
+    case 'title':
       return 120
     case 'text': {
       const field = SITE_TEXT.find((f) => f.key === item.id)

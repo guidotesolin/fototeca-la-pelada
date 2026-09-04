@@ -97,6 +97,20 @@ async function pieces(): Promise<Row[]> {
       left join category_translation t on t.category_id = c.id and t.locale = l.locale
      where coalesce(es.intro, '') <> '' and l.locale <> 'es'
     union all
+    select 'title', v.slug, es.title, l.locale::text, coalesce(t.title, '')
+      from video v
+      join video_translation es on es.video_id = v.id and es.locale = 'es'
+      cross join unnest(enum_range(null::locale)) as l(locale)
+      left join video_translation t on t.video_id = v.id and t.locale = l.locale
+     where l.locale <> 'es'
+    union all
+    select 'description', v.slug, es.description, l.locale::text, coalesce(t.description, '')
+      from video v
+      join video_translation es on es.video_id = v.id and es.locale = 'es'
+      cross join unnest(enum_range(null::locale)) as l(locale)
+      left join video_translation t on t.video_id = v.id and t.locale = l.locale
+     where coalesce(es.description, '') <> '' and l.locale <> 'es'
+    union all
     select 'text', es.key, es.value, l.locale::text, coalesce(t.value, '')
       from site_text es
       cross join unnest(enum_range(null::locale)) as l(locale)

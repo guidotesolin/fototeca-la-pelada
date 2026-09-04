@@ -173,6 +173,76 @@ export const photoCategory = pgTable(
 )
 
 /**
+ * The Videoteca: the interviews with neighbours that live on the archive's own
+ * YouTube channel. A table and not a `site_text` key, because it is a list that
+ * grows, each item carries a title per language, and each item is published or
+ * hidden on its own -- none of which fits in a keyed string without becoming a
+ * blob nothing can query.
+ *
+ * **It stores the video's id and never a URL.** The embed address is built in
+ * code from the id, so the panel cannot point the iframe anywhere: an allowlist
+ * enforced by construction beats accepting a URL and sanitising it. Sixteen
+ * characters against YouTube's eleven leaves room and no more.
+ *
+ * **No master, and that is principle 1 rather than an omission.** The master is
+ * the document, and this document is the video, which lives on YouTube. What is
+ * stored here is the poster, downloaded once when the video is added and put
+ * through the same pipeline as any photograph so the page asks Google for
+ * nothing until somebody presses play. It is a derivative of something the
+ * archive does not hold, regenerable by downloading it again, so it needs
+ * neither `master_source` nor `readMaster`.
+ *
+ * The four derivative columns carry `photo`'s own names on purpose: a row here
+ * then satisfies `PhotoCard`, and `PhotoImage` draws the poster with the whole
+ * AVIF/WebP ladder and zero layout shift with no component of its own.
+ */
+export const video = pgTable('video', {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  slug: varchar({ length: 64 }).notNull().unique(),
+  youtubeId: varchar('youtube_id', { length: 16 }).notNull(),
+  position: integer().notNull().default(0),
+  published: boolean().notNull().default(true),
+  // The poster, in R2. `web_key` is a prefix; `thumb_key` is a whole key.
+  webKey: text('web_key'),
+  webWidth: integer('web_width'),
+  webHeight: integer('web_height'),
+  thumbKey: text('thumb_key'),
+})
+
+/**
+ * **Both fields are nullable, like `photo_translation`'s and unlike
+ * `category_translation`'s, and that is a correction rather than a preference.**
+ *
+ * The first version made `title` `NOT NULL`, copying the section's shape, and
+ * `writeTranslations` therefore refused a description whose title was left blank.
+ * That is exactly the state this archive's interviews are in: the title is
+ * "Memorias de La Pelada -- <a person's name>", which is a series and a name and
+ * so the same in four languages, while the description is prose that is not. The
+ * rule made translating the description impossible without inventing a
+ * translation of a proper noun, which the glossary exists to prevent. Found by
+ * running `translations:load`, which refused all three.
+ *
+ * So "not translated" here is a null, the public read's
+ * `coalesce(nullif(...), ...)` falls back to Spanish field by field, and the
+ * Spanish row's title is non-null because the panel refuses to write one without.
+ *
+ * The id is not language and is therefore not here; see principle 3. No
+ * `search_vector` and no trigger: `/buscar` is over the photographs' captions.
+ */
+export const videoTranslation = pgTable(
+  'video_translation',
+  {
+    videoId: integer('video_id')
+      .notNull()
+      .references(() => video.id, { onDelete: 'cascade' }),
+    locale: locale().notNull(),
+    title: text(),
+    description: text(),
+  },
+  (t) => [primaryKey({ columns: [t.videoId, t.locale] })],
+)
+
+/**
  * Text that belongs to the site rather than to a photograph or a section: the
  * archive's own description, the rights notice, who made it. It is content, so it
  * lives here and is edited from the panel — the alternative is prose frozen inside

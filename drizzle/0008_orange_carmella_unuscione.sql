@@ -1,0 +1,1 @@
+ALTER TABLE "video_translation" ALTER COLUMN "title" DROP NOT NULL;

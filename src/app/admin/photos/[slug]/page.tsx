@@ -242,7 +242,7 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         {/* Only while it is hidden, because only then is there something left to
             do. On a published photograph this would be a panel announcing a next
             step that does not exist, which is how a panel teaches you to ignore it. */}
-        {!photo.published && <TakedownHelp slug={photo.slug} />}
+        {!photo.published && <TakedownHelp path={`/foto/${photo.slug}`} />}
       </section>
 
       <section className="mt-14">

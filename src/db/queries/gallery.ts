@@ -9,6 +9,8 @@ import {
   photoCategory,
   photoTranslation,
   siteText,
+  video,
+  videoTranslation,
 } from '@/db/schema'
 import { defaultLocale, type Locale } from '@/i18n/config'
 
@@ -118,6 +120,21 @@ export type Section = {
   intro: string | null
   photos: number
   cover: PhotoCard | null
+}
+
+/**
+ * One interview in the Videoteca. `poster` is a `PhotoCard` on purpose rather
+ * than four loose fields: the poster is drawn by `PhotoImage` like any other
+ * image in the archive, so it arrives in the shape that component already takes,
+ * with the title standing in for the caption because that is what becomes the
+ * `alt`.
+ */
+export type Video = {
+  slug: string
+  youtubeId: string
+  title: string
+  description: string | null
+  poster: PhotoCard
 }
 
 /**
@@ -429,7 +446,7 @@ export const listPhotoSlugs = cached('photo-slugs', async (): Promise<string[]> 
  * the photograph was in.
  */
 export const listPublicPaths = cached('public-paths', async (): Promise<string[]> => {
-  const [photos, sections] = await Promise.all([
+  const [photos, sections, videos] = await Promise.all([
     db
       .select({ slug: photo.slug })
       .from(photo)
@@ -445,6 +462,11 @@ export const listPublicPaths = cached('public-paths', async (): Promise<string[]
       .where(eq(category.visible, true))
       .groupBy(category.slug, category.position)
       .orderBy(asc(category.position)),
+    db
+      .select({ slug: video.slug })
+      .from(video)
+      .where(eq(video.published, true))
+      .orderBy(asc(video.slug)),
   ])
 
   return [
@@ -455,6 +477,11 @@ export const listPublicPaths = cached('public-paths', async (): Promise<string[]
       ),
     ),
     ...photos.map((r) => `/foto/${r.slug}`),
+    // The Videoteca's own page only once there is something on it. A section
+    // page listing nothing is not an address to send a crawler to, and the
+    // header and the home page hide it under the same condition.
+    ...(videos.length ? ['/videoteca'] : []),
+    ...videos.map((r) => `/videoteca/${r.slug}`),
   ]
 })
 
@@ -535,3 +562,106 @@ export const listCategoryOrder = cached(
     return rows.map((r) => r.slug)
   },
 )
+
+/**
+ * The Videoteca, in curatorial order.
+ *
+ * Same fallback shape as everything else on this side, and the Spanish row is the
+ * **inner** join for the same reason `category_translation`'s is: a video with no
+ * Spanish title is not a video the panel could have made, since `createVideo`
+ * writes that row in the transaction that creates the video.
+ *
+ * There is no count query beside this one. Three rows are cheaper to fetch than a
+ * second cache entry is to keep honest, and the header and the home page want the
+ * first poster as well as the number.
+ */
+const askedVideo = alias(videoTranslation, 'vt_asked')
+const sourceVideo = alias(videoTranslation, 'vt_source')
+
+const TITLE = sql<string | null>`coalesce(nullif(${askedVideo.title}, ''), ${sourceVideo.title})`
+const DESCRIPTION = sql<
+  string | null
+>`coalesce(nullif(${askedVideo.description}, ''), ${sourceVideo.description})`
+
+const onAskedVideo = (locale: Locale) =>
+  and(eq(askedVideo.videoId, video.id), eq(askedVideo.locale, locale))
+const onSourceVideo = and(eq(sourceVideo.videoId, video.id), eq(sourceVideo.locale, SOURCE_LOCALE))
+
+const VIDEO_COLUMNS = {
+  slug: video.slug,
+  youtubeId: video.youtubeId,
+  title: TITLE,
+  description: DESCRIPTION,
+  webKey: video.webKey,
+  webWidth: video.webWidth,
+  webHeight: video.webHeight,
+}
+
+/**
+ * Without a poster there is nothing to draw, which is the same rule the galleries
+ * apply to a photograph with no derivatives. Neither this nor a missing title can
+ * happen through the panel -- the poster is written before the row is, and the
+ * Spanish title is refused if it is blank -- but the columns are nullable, so the
+ * narrowing has to be somewhere and it is better here than in every caller.
+ */
+function toVideo(row: {
+  slug: string
+  youtubeId: string
+  title: string | null
+  description: string | null
+  webKey: string | null
+  webWidth: number | null
+  webHeight: number | null
+}): Video[] {
+  // The title is nullable per language, so the coalesce can in principle come back
+  // empty -- it cannot in practice, because the panel refuses to write a Spanish
+  // row without one, and this is where that stops being an assumption.
+  if (!row.title || !row.webKey || !row.webWidth || !row.webHeight) return []
+  return [
+    {
+      slug: row.slug,
+      youtubeId: row.youtubeId,
+      title: row.title,
+      description: row.description,
+      poster: {
+        slug: row.slug,
+        // The title is the poster's `alt`: it is what the image is of.
+        caption: row.title,
+        credit: null,
+        // An interview from the archive's own channel is never behind the veil.
+        sensitive: false,
+        webKey: row.webKey,
+        webWidth: row.webWidth,
+        webHeight: row.webHeight,
+      },
+    },
+  ]
+}
+
+export const listVideos = perLocale('videos', async (locale): Promise<Video[]> => {
+  const rows = await db
+    .select(VIDEO_COLUMNS)
+    .from(video)
+    .innerJoin(sourceVideo, onSourceVideo)
+    .leftJoin(askedVideo, onAskedVideo(locale))
+    .where(eq(video.published, true))
+    .orderBy(asc(video.position), asc(video.slug))
+  return rows.flatMap(toVideo)
+})
+
+/** One interview, for its own page. Null is `notFound()`, hidden included. */
+export const getVideo = perLocale('video', async (locale, slug: string): Promise<Video | null> => {
+  const rows = await db
+    .select(VIDEO_COLUMNS)
+    .from(video)
+    .innerJoin(sourceVideo, onSourceVideo)
+    .leftJoin(askedVideo, onAskedVideo(locale))
+    .where(and(eq(video.slug, slug), eq(video.published, true)))
+  return rows.flatMap(toVideo)[0] ?? null
+})
+
+/** Every slug, published or not, for `generateStaticParams`. Same rule as the photographs'. */
+export const listVideoSlugs = cached('video-slugs', async (): Promise<string[]> => {
+  const rows = await db.select({ slug: video.slug }).from(video).orderBy(asc(video.slug))
+  return rows.map((r) => r.slug)
+})

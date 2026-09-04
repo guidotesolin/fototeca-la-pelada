@@ -12,7 +12,8 @@
     "sensitive": "Contenu sensible",
     "sensitiveHint": "Affiche sans floutage les photographies montrant l'abattage d'animaux.",
     "sensitiveSwitch": "Afficher le contenu sensible sans floutage",
-    "admin": "Aller au panneau"
+    "admin": "Aller au panneau",
+    "videoteca": "Vidéothèque"
   },
   "languages": {
     "es": "espagnol",
@@ -48,6 +49,16 @@
     "previous": "Précédente",
     "next": "Suivante",
     "pageTitle": "{name}, page {page}"
+  },
+  "videoteca": {
+    "title": "Vidéothèque",
+    "interviews": "{count, plural, one {# entretien} other {# entretiens}}",
+    "index": "Index",
+    "play": "Lire l'entretien",
+    "watchOnYoutube": "Voir sur YouTube",
+    "description": "Entretiens avec des habitants de La Pelada.",
+    "previous": "Précédent",
+    "next": "Suivant"
   },
   "photo": {
     "sensitive": "Contenu sensible",

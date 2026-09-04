@@ -50,6 +50,20 @@
       "when": 1788527905812,
       "tag": "0006_rainy_crystal",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788542926490,
+      "tag": "0007_damp_dragon_lord",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788546551158,
+      "tag": "0008_orange_carmella_unuscione",
+      "breakpoints": true
     }
   ]
 }

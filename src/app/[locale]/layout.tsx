@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata, Viewport } from 'next'
-import { archiveFacts, listSections, listSiteText } from '@/db/queries/gallery'
+import { archiveFacts, listSections, listSiteText, listVideos } from '@/db/queries/gallery'
 import { keyFor, publicUrl } from '@/lib/photo'
 import { SITE_URL, externalUrl } from '@/lib/url'
 import { Document, THEME_COLOR } from '@/components/document'
@@ -175,8 +175,9 @@ export default async function PublicLayout({ children, params }: LayoutProps<'/[
   if (!isLocale(asked)) notFound()
   const locale: Locale = asked
 
-  const [sections, facts, text, t, tf, tl] = await Promise.all([
+  const [sections, videos, facts, text, t, tf, tl] = await Promise.all([
     listSections(locale),
+    listVideos(locale),
     archiveFacts(),
     listSiteText(locale),
     getTranslations({ locale, namespace: 'header' }),
@@ -310,6 +311,26 @@ export default async function PublicLayout({ children, params }: LayoutProps<'/[
                         </Link>
                       </li>
                     ))}
+                    {/* The Videoteca rides this menu instead of taking a word of
+                        its own in the bar: at 375 px the row is already the mark,
+                        the hamburger, the search field and the settings, and a
+                        sixth thing does not fit. It is a section like the eleven
+                        -- that is the product decision -- so this is where a
+                        reader looks for it, and `MenuDismiss` covers it for free.
+                        The rule above it says it is a different kind of list: its
+                        count is interviews, not photographs. Absent while nothing
+                        is published, exactly as the home page's card is. */}
+                    {videos.length > 0 && (
+                      <li className="border-rule col-span-full mt-2 border-t pt-2">
+                        <Link
+                          href={localeHref(locale, '/videoteca')}
+                          className="t-credit link hover:bg-surface-high hover:text-text focus-visible:outline-focus flex min-h-11 items-baseline justify-between gap-4 px-3 py-2.5 focus-visible:outline-2 focus-visible:-outline-offset-2"
+                        >
+                          {t('videoteca')}
+                          <span className="t-meta shrink-0">{videos.length}</span>
+                        </Link>
+                      </li>
+                    )}
                   </ul>
                 </div>
               </details>
