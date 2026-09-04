@@ -1,12 +1,15 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { getPhotoForEdit } from '@/db/queries/admin'
+import { getPhotoForEdit, photoTranslations } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { keyFor, publicUrl } from '@/lib/photo'
 import { Back, BUTTON, Check, FIELD, Field, Notice, Row, one } from '../../ui'
 import { attachRestoration, removeRestoration, saveDetails, setPublished } from '../actions'
 import { TakedownHelp } from '../../takedown-help'
 import { FilePicker } from '../file-picker'
+import { TARGET_LOCALES } from '../../translations/items'
+import { proposalsFor } from '../../translations/proposals'
+import { TranslationsFor } from '../../translations/row'
 
 /**
  * One photograph: everything about it that is content, and the two operations
@@ -35,6 +38,10 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
   if (!photo) notFound()
 
   const params = await props.searchParams
+  // What the other three languages already say about this photograph, and what
+  // the machine proposed for whichever of them is still empty.
+  const stored = await photoTranslations(slug)
+  const proposals = Object.fromEntries(TARGET_LOCALES.map((l) => [l, proposalsFor(l)]))
 
   /**
    * The web copy when there is one, the master when there is not -- which is what
@@ -166,6 +173,16 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
             hint="Aparece en la franja de destacadas de la portada, arriba de las secciones."
           />
         </div>
+
+        {/* Inside this form on purpose: one Guardar saves the Spanish and the
+            three languages together, in one transaction. See `TranslationsFor`. */}
+        <TranslationsFor
+          id={photo.slug}
+          kinds={['caption', 'notes']}
+          source={{ caption: photo.caption ?? '', notes: photo.notes ?? '' }}
+          stored={stored}
+          proposals={proposals}
+        />
 
         <button type="submit" className={`${BUTTON} mt-7`}>
           Guardar cambios

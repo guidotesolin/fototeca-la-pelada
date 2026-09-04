@@ -155,14 +155,21 @@ async function main() {
    * caption path returning nothing. Measured: "escuela" reached 25 photographs in
    * Spanish and 0 in English.
    *
-   * So the assertion moved onto a caption-only word, and it is the one that
-   * fails if the text ever stops being re-tokenized in the reader's own
-   * configuration. French and Italian are not a free pass either: their stemmers
-   * truncate "escuela" the way Spanish does, so a version that matched a stored
-   * Spanish vector would pass in three languages out of four -- which is how this
-   * looked like an English bug instead of a structural one.
+   * So the assertion moved onto a caption-only word. **It was "escuela", and T15
+   * had to change it**, which is worth recording because the check did not break
+   * -- its premise did. With no translations loaded, every locale fell back to the
+   * Spanish text, so a Spanish word had to reach the same 25 photographs in all
+   * four languages. Now that the archive is translated, `/en` searches an English
+   * caption that says "school", and "escuela" reaches 2. That is the design
+   * working, not failing.
+   *
+   * The word is now **"Independiente"**, and it holds the same assertion for a
+   * better reason: it is a protected term, so `docs/TRANSLATION.md` guarantees it
+   * survives translation verbatim, and 35 photographs carry it in every language.
+   * The check therefore proves two things at once -- that each locale's own text
+   * is being searched, and that the glossary did its job.
    */
-  const CAPTION_ONLY = 'escuela'
+  const CAPTION_ONLY = 'Independiente'
   const inCaptions = await total(CAPTION_ONLY)
   check(
     'the word is a caption word',
@@ -182,6 +189,32 @@ async function main() {
       'every language reaches the epigraphs',
       found === inCaptions,
       `${locale} found ${found} of the ${inCaptions} photographs whose caption says "${CAPTION_ONLY}" -- the text is not being stemmed in the reader's own configuration`,
+    )
+  }
+
+  /**
+   * And the other half, which only became testable once the archive was
+   * translated: **each language searches its own text and not the Spanish.**
+   *
+   * A word that exists only in the Spanish caption has to reach *fewer*
+   * photographs in the other three, because their captions say something else.
+   * If the per-locale text selection ever regressed to always coalescing to
+   * Spanish, this is what would catch it -- the loop above would not, since a
+   * protected term reads the same either way.
+   */
+  const SPANISH_ONLY = 'escuela'
+  const inSpanish = await total(SPANISH_ONLY)
+  check(
+    'the Spanish word is in the Spanish epigraphs',
+    inSpanish > 1,
+    `"${SPANISH_ONLY}" reaches ${inSpanish} photographs in Spanish, which is too few to prove anything`,
+  )
+  for (const locale of ['en', 'fr', 'it'] as const) {
+    const found = (await runSearch(locale, query(SPANISH_ONLY), 1)).total
+    check(
+      'the other languages read their own epigraphs',
+      found < inSpanish,
+      `${locale} found ${found} for the Spanish word "${SPANISH_ONLY}", the same ${inSpanish} Spanish reaches -- it is searching the Spanish text rather than its own`,
     )
   }
 

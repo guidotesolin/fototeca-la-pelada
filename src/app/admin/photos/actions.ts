@@ -15,6 +15,8 @@ import {
 import { read } from '@/lib/images'
 import { masterKeyFor } from '@/lib/photo'
 import { getBytes, newPrefix, put } from '@/lib/r2'
+import { readTranslations } from '../translations/items'
+import { writeTranslations } from '../translations/save'
 import { Invalid, outcome } from '../write'
 
 /**
@@ -103,6 +105,10 @@ export async function saveDetails(form: FormData) {
     const credit = line(form, 'credit', LIMITS.line)
     const source = line(form, 'source', LIMITS.line)
     const place = line(form, 'place', LIMITS.line)
+    // The other three languages, from the same form and the same button. Read
+    // before the transaction opens, so a rejected translation cannot leave the
+    // Spanish half saved -- the rule this file already holds itself to.
+    const translations = readTranslations(form)
 
     await db.transaction(async (tx) => {
       await tx
@@ -127,6 +133,7 @@ export async function saveDetails(form: FormData) {
           target: [photoTranslation.photoId, photoTranslation.locale],
           set: { caption, notes },
         })
+      await writeTranslations(tx, translations)
     })
   })
   redirect(`/admin/photos/${slug}?${result}`)

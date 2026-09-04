@@ -11,6 +11,8 @@ import {
 } from '@/db/schema'
 import { isSectionSlug } from '@/lib/slug'
 import { TRANSLATABLE_SITE_TEXT } from '@/app/admin/site-text/fields'
+import type { ItemKind } from '@/app/admin/translations/items'
+import type { Locale } from '@/i18n/config'
 import { REVALIDATE, SOURCE_LOCALE } from './gallery'
 
 /**
@@ -586,4 +588,157 @@ export async function translationProgress(): Promise<{
   `)
 
   return { progress, bySection }
+}
+
+/**
+ * One piece of the archive waiting to be translated: the Spanish it was written
+ * in, and whatever is stored in the language being edited.
+ *
+ * `current` is `''` and never null, because "no row" and "a row with nothing in
+ * it" are the same state to a reader -- the Drive import creates the second kind,
+ * and the public read path already collapses them with `nullif` before its
+ * `coalesce`. A screen that told them apart would be describing the database
+ * rather than the archive.
+ */
+export type QueueItem = { id: string; source: string; current: string }
+
+/**
+ * A page of the translation queue, for one language and one kind of piece.
+ *
+ * Uncached like the rest of this file, and for a sharper reason than usual: this
+ * is the list somebody is working through, so a stale page would hand them work
+ * they just finished.
+ *
+ * The three branches are three tables and cannot be one query, but they answer
+ * the same shape so the screen does not care which it got. `count(*) over ()` is
+ * the pagination total in the same round trip, the way `listPhotos` already does
+ * it.
+ */
+export async function listTranslationQueue(
+  locale: Locale,
+  kind: ItemKind,
+  opts: { section?: string; done: boolean; limit: number; offset: number },
+): Promise<{ rows: QueueItem[]; total: number }> {
+  // Whether the page shows what is missing or what is already loaded. The second
+  // is not a luxury: a translation that reads badly has to be reachable to be
+  // fixed, and the only address it has is this list.
+  const state = opts.done ? sql`<> ''` : sql`= ''`
+  type Row = QueueItem & { total: number }
+  let rows: Row[]
+
+  if (kind === 'caption' || kind === 'notes') {
+    // A column name and not a value. `kind` is a validated union by the time it
+    // arrives -- `parseItem` and `QUEUE_FILTERS` are the only two ways to make
+    // one -- so `sql.raw` here says "identifier" rather than hiding a parameter.
+    const col = sql.raw(kind)
+    const inSection = opts.section
+      ? sql`and exists (
+            select 1 from photo_category pc
+              join category c on c.id = pc.category_id
+             where pc.photo_id = p.id and c.slug = ${opts.section}
+          )`
+      : sql.empty()
+    rows = await db.execute<Row>(sql`
+      select p.slug as id,
+             es.${col} as source,
+             coalesce(t.${col}, '') as current,
+             count(*) over ()::int as total
+        from photo p
+        join photo_translation es
+          on es.photo_id = p.id and es.locale = ${SOURCE_LOCALE}::locale
+        left join photo_translation t
+          on t.photo_id = p.id and t.locale = ${locale}::locale
+       where coalesce(es.${col}, '') <> ''
+         and coalesce(t.${col}, '') ${state}
+         ${inSection}
+       -- The slugs are '<section>-NNN', so this groups the work by section for free.
+       order by p.slug
+       limit ${opts.limit} offset ${opts.offset}
+    `)
+  } else if (kind === 'name' || kind === 'intro') {
+    const col = sql.raw(kind)
+    rows = await db.execute<Row>(sql`
+      select c.slug as id,
+             es.${col} as source,
+             coalesce(t.${col}, '') as current,
+             count(*) over ()::int as total
+        from category c
+        join category_translation es
+          on es.category_id = c.id and es.locale = ${SOURCE_LOCALE}::locale
+        left join category_translation t
+          on t.category_id = c.id and t.locale = ${locale}::locale
+       where coalesce(es.${col}, '') <> ''
+         and coalesce(t.${col}, '') ${state}
+       order by c.position, c.slug
+       limit ${opts.limit} offset ${opts.offset}
+    `)
+  } else {
+    rows = await db.execute<Row>(sql`
+      select es.key as id,
+             es.value as source,
+             coalesce(t.value, '') as current,
+             count(*) over ()::int as total
+        from site_text es
+        left join site_text t on t.key = es.key and t.locale = ${locale}::locale
+       where es.locale = ${SOURCE_LOCALE}::locale
+         -- The five keys that are a map, an address and three social URLs never
+         -- appear here: they are not language. Same filter as the progress table.
+         and es.key in (${TRANSLATABLE_KEYS})
+         and coalesce(t.value, '') ${state}
+       order by es.key
+       limit ${opts.limit} offset ${opts.offset}
+    `)
+  }
+
+  return { rows, total: rows[0]?.total ?? 0 }
+}
+
+/**
+ * Every language of one photograph, one section, or the site's own words, for
+ * the three Spanish editing screens.
+ *
+ * They come back keyed by locale, Spanish included, because the screen draws the
+ * source next to the boxes -- the same text a reviewer copies into whatever
+ * translator they use.
+ */
+export type PhotoText = { caption: string; notes: string }
+
+export async function photoTranslations(slug: string): Promise<Record<string, PhotoText>> {
+  const rows = await db
+    .select({
+      locale: photoTranslation.locale,
+      caption: photoTranslation.caption,
+      notes: photoTranslation.notes,
+    })
+    .from(photoTranslation)
+    .innerJoin(photo, eq(photo.id, photoTranslation.photoId))
+    .where(eq(photo.slug, slug))
+  return Object.fromEntries(
+    rows.map((r) => [r.locale, { caption: r.caption ?? '', notes: r.notes ?? '' }]),
+  )
+}
+
+export type CategoryText = { name: string; intro: string }
+
+export async function categoryTranslations(slug: string): Promise<Record<string, CategoryText>> {
+  const rows = await db
+    .select({
+      locale: categoryTranslation.locale,
+      name: categoryTranslation.name,
+      intro: categoryTranslation.intro,
+    })
+    .from(categoryTranslation)
+    .innerJoin(category, eq(category.id, categoryTranslation.categoryId))
+    .where(eq(category.slug, slug))
+  return Object.fromEntries(rows.map((r) => [r.locale, { name: r.name, intro: r.intro ?? '' }]))
+}
+
+/** Locale to key to value, for every language at once: twelve keys is one scan. */
+export async function siteTextTranslations(): Promise<Record<string, Record<string, string>>> {
+  const rows = await db
+    .select({ key: siteText.key, locale: siteText.locale, value: siteText.value })
+    .from(siteText)
+  const byLocale: Record<string, Record<string, string>> = {}
+  for (const row of rows) (byLocale[row.locale] ??= {})[row.key] = row.value
+  return byLocale
 }

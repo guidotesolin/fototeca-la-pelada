@@ -661,6 +661,89 @@ Details that matter:
   592 rows, and the way out, if the archive ever outgrows it, is in a `ponytail:` comment in
   `src/db/queries/search.ts`.
 
+### The translation editor, as built in T15
+
+The archive holds **559 translatable pieces per language** — 519 captions, 12 source notes, 11
+section names, 10 section intros and the 7 `site_text` keys that are language — over 45,524
+characters of Spanish. Three languages is 1,677 translations, so this was never going to be two
+people's evening, and the card that said "human work, no new code" was wrong on both counts: there
+was no write path for a non-Spanish locale anywhere in the panel (F45), and a translation put in
+with `psql` could take a day to appear (F42).
+
+**The decision the editor is arranged around: the machine's proposals live outside the database.**
+They are JSON files in the repository, `src/app/admin/translations/proposals/`, written by
+`npm run translations:export` and read by the panel. Three things fall out of that, and together
+they are worth more than the column the alternative would have needed:
+
+- **No schema change.** A non-empty `photo_translation.caption` is text somebody decided to keep.
+  There is no `reviewed_at` to maintain and no migration.
+- **`translationProgress` already counted exactly that**, `coalesce(caption,'') <> ''`, so T13's
+  screen goes on meaning the right thing without a line of its SQL changing.
+- **What the machine said stays in git**, so the difference between the proposal and what is stored
+  is readable years from now.
+
+**This section used to claim a fourth thing, and it is no longer true.** It said the public site
+_could not_ serve an unreviewed machine translation — not unlikely, impossible, because no path
+existed. `tools/translations-load.ts` is that path. It was added at the maintainer's explicit
+request, after the alternative was put plainly: 559 pieces per language reviewed one at a time in
+the panel, against captions that name living people. The decision was to load everything and
+correct what turns up. **Recording it here rather than deleting the old sentence is the point** — a
+document that quietly drops a guarantee is worse than one that never made it.
+
+What the panel still guarantees is narrower and worth stating exactly: **no screen in the
+application can publish a proposal.** The bulk path is a CLI, it needs the repository and
+`DATABASE_URL`, and it never overwrites a target that already holds text — the 28 pieces translated
+by hand before it ran were kept, and the run reports how many it left alone. It also cannot
+revalidate, which is F42 in a new place: `revalidateTag` needs a request context that a CLI does
+not have, so a bulk load is invisible to readers until any single save in the panel fires the tag.
+Measured after loading 1,649 translations: `/fr/categoria/campo` still read "Campo" until one
+unchanged page was resubmitted in the panel, and then all three languages turned over.
+
+They are **indexed by the source text and not by the photograph**, which is what makes the 118
+captions that are duplicated word for word — 519 captions are 401 distinct strings — one job
+instead of three, and what makes a proposal stop offering itself the moment somebody corrects the
+Spanish it was made from.
+
+**One writer, four callers, and the fourth is the reason for the other three.** `writeTranslations`
+in `admin/translations/save.ts` is the only thing that writes a translation, and it is called from
+the queue's own action and from `saveDetails`, `saveCategory` and `saveSiteText` — **inside the
+form and the transaction each of those already had**. That is not tidiness. The gesture the editor
+was built for is: import a photograph, write its Spanish caption, copy it into a translator, paste
+three translations back, press Guardar once. A second form below the first would have meant
+pressing the lower button and losing the Spanish sitting unsent in the upper one. It also keeps in
+one place the fact that the three tables disagree about what "not translated" looks like:
+`photo_translation.caption` is nullable, so it is a null; `category_translation.name` and
+`site_text.value` are `NOT NULL`, so there it is the absence of the row.
+
+**F42 is closed by construction rather than by remembering**: every one of those four goes through
+`outcome()`, the one function in the repository that calls `revalidateTag`, so a translation write
+that forgets to revalidate cannot be written. Measured against `next start` in both directions: an
+`insert` straight into the database left `/en/foto/espacios-001` serving Spanish through five
+requests over five seconds; the same caption saved from the panel was live on the **fourth**
+request, about three seconds later. Not instantaneous, and it never was going to be —
+`revalidateTag(tag, 'max')` serves the old page while the new one renders behind it, which is the
+profile T10 chose deliberately and which _Revalidation after a write takes two profiles_ explains.
+A day to seconds is the finding.
+
+**An empty box updates and never inserts**, and that one `if` was a defect found by counting rows
+rather than by reading code. A page of the queue posts all 24 of its boxes whether or not anybody
+typed in them, so the obvious upsert wrote an empty `photo_translation` row for every piece
+somebody scrolled past — 24 rows from a save where one field had been filled in. Nothing broke,
+because the progress screen counts non-empty fields and every public read has `nullif` in front of
+its `coalesce` for exactly this shape, which the Drive import already produces. But a row that
+means "not translated" is a row that should not be there. F51.
+
+**What is not translated is archival criteria, not code**, and it has its own document:
+[TRANSLATION.md](./TRANSLATION.md) carries the reasoning, the per-language glosses for the local
+terms — `carneada (a rural animal-butchering gathering)`, the shape this document already used —
+and the procedure for adding a fifth language. The machine-readable list is `PROTECTED` in
+`src/lib/glossary.ts` and **the document does not repeat it**, for the same reason `frame-src` is
+built from `MAP_HOSTS`: two copies of one fact is how one of them goes stale. `missingTerms()`
+warns beside the box when a protected term is in the Spanish and gone from the translation, and it
+is advisory rather than a gate. The entry it exists for is **"María Luisa", which is a locality in
+this archive** — and which is also, in `espacios-070`, a woman's given name, so the rule is to read
+the sentence rather than to match a string.
+
 ### Ponytail pass
 
 The **ponytail** plugin (YAGNI, no abstractions nobody asked for) applies to design too, which is
@@ -1171,26 +1254,27 @@ The rule that organizes the whole design: **whatever is content lives in the dat
 from the panel; only behavior and layout live in code.** The Campo notice is the perfect example of
 something that _looks_ like prose and is really structured data.
 
-| Change                                            | How                                                                                                                                                                                                                        |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Fix a caption, a year, a credit                   | Panel → the photo → save. Revalidates its detail page and the galleries it appears in.                                                                                                                                     |
-| Flag a photo as sensitive                         | Panel → the sensitive checkbox.                                                                                                                                                                                            |
-| Add, rename, hide or reorder a category           | Panel → categories. The public route appears or disappears on its own.                                                                                                                                                     |
-| Move a photo between categories, or put it in two | Panel → the photo. The relation is N:N.                                                                                                                                                                                    |
-| Reorder photos within a category                  | Panel → drag (`photo_category.position`).                                                                                                                                                                                  |
-| Organize the home page                            | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.                                                                                                                     |
-| Change a section's intro text                     | Panel → category → intro, per language.                                                                                                                                                                                    |
-| Change any of the site's own words                | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the networks.                                                                                                                         |
-| Move the map's pin                                | Not from the panel: `site_text.map_embed_url` is fixed and edited in the database. The home page renders it.                                                                                                               |
-| Add new photos                                    | Panel → import from Drive.                                                                                                                                                                                                 |
-| Attach an AI restoration                          | Panel → the photo → restored version.                                                                                                                                                                                      |
-| See what is still untranslated                    | Panel → traducciones: per language, how much is done and which sections and site texts are missing. Only the seven `site_text` keys that are language are counted; the map, the address and the three social URLs are not. |
+| Change                                                                       | How                                                                                                                                                                                                                         |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fix a caption, a year, a credit                                              | Panel → the photo → save. Revalidates its detail page and the galleries it appears in.                                                                                                                                      |
+| Flag a photo as sensitive                                                    | Panel → the sensitive checkbox.                                                                                                                                                                                             |
+| Add, rename, hide or reorder a category                                      | Panel → categories. The public route appears or disappears on its own.                                                                                                                                                      |
+| Move a photo between categories, or put it in two                            | Panel → the photo. The relation is N:N.                                                                                                                                                                                     |
+| Reorder photos within a category                                             | Panel → drag (`photo_category.position`).                                                                                                                                                                                   |
+| Organize the home page                                                       | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.                                                                                                                      |
+| Change a section's intro text                                                | Panel → category → intro, per language.                                                                                                                                                                                     |
+| Change any of the site's own words                                           | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the networks.                                                                                                                          |
+| Move the map's pin                                                           | Not from the panel: `site_text.map_embed_url` is fixed and edited in the database. The home page renders it.                                                                                                                |
+| Add new photos                                                               | Panel → import from Drive.                                                                                                                                                                                                  |
+| Attach an AI restoration                                                     | Panel → the photo → restored version.                                                                                                                                                                                       |
+| See what is still untranslated                                               | Panel → traducciones: per language, how much is done and which sections and site texts are missing. Only the seven `site_text` keys that are language are counted; the map, the address and the three social URLs are not.  |
+| Write a caption, a section or the site's words in English, French or Italian | Panel → traducciones → the language, which is a working queue; or the same boxes on the photograph, section and site-text screens, saved by the button that is already there. See _The translation editor_.                 |
+| Load a whole language at once                                                | Not from the panel: `npm run translations:load` reads the proposal files and writes whatever has no translation yet, never overwriting. It cannot revalidate, so one save in the panel afterwards is what makes it visible. |
 
 These require touching code, and that is as it should be: visual design, viewer behavior, the
-structure of the detail page, adding a new language to the list, and — for now — **entering a
-translation**. T13 built the read path and the screen that says what is missing; the editor that
-writes a caption in English is T15's, and until it exists the translations are loaded into the
-database directly.
+structure of the detail page, and adding a new language to the list. **Entering a translation used
+to be on that list and is not any more** — T13 built the read path and the screen that says what is
+missing, and T15 built the editor that writes one.
 
 ---
 
@@ -1239,6 +1323,7 @@ fototeca-la-pelada/
 ├── docs/
 │   ├── ARCHITECTURE.md            # this document
 │   ├── TASKS.md                   # the task board
+│   ├── TRANSLATION.md             # what is not translated, and why
 │   └── TAKEOUT.md                 # the by-hand half of the archive rescue
 ├── src/
 │   ├── app/
@@ -1255,13 +1340,13 @@ fototeca-la-pelada/
 │   │   │   ├── import/
 │   │   │   ├── categories/
 │   │   │   ├── site-text/
-│   │   │   ├── translations/      #   what is still untranslated, per language
+│   │   │   ├── translations/      #   the editor: dashboard, queue per language, one writer
 │   │   │   └── takedown-help.tsx  #   the Search Console half of a takedown, shown on a hidden photo
 │   │   ├── api/
 │   │   ├── sitemap.ts             # published photographs only, ×4 languages with hreflang
 │   │   └── robots.ts
 │   ├── db/{schema.ts,index.ts,queries/}
-│   ├── lib/{auth.ts,drive.ts,images.ts,r2.ts,rate-limit.ts,url.ts}
+│   ├── lib/{auth.ts,drive.ts,glossary.ts,images.ts,r2.ts,rate-limit.ts,url.ts}
 │   ├── components/                # document.tsx is the two root layouts' shared half
 │   ├── proxy.ts                   # locale routing + the takedown 410 + the language switch
 │   └── i18n/
@@ -1321,16 +1406,16 @@ served at 480. Real scans, when they exist, go to Drive, where 5 TB covers tens 
 
 ## Risks
 
-| Risk                                                             | Mitigation                                                                                                                                                                                                                                 |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Vercel Hobby is non-commercial use only**                      | The project is non-profit, so it complies. If it is ever monetized, it must move to Pro.                                                                                                                                                   |
-| **Neon's free tier suspends the database past 100 CU-hours**     | The public site is pre-rendered: the database is touched on publish, not per visit. Search is the only point to watch.                                                                                                                     |
-| **Photos are 300–2340 px and that already is what was uploaded** | The improvement is not in Google but in the source scans. `master_source` + `drive_file_id` allow replacing them without touching a single metadata field.                                                                                 |
-| **Google's CDN rate-limits**                                     | Not a download quota: 592 downloads in a row never tripped it, while a token from a page left idle answered 403 at t+61s. The extractor downloads each section right after reading its page, and a 403 re-reads the page for fresh tokens. |
-| **Publishing stops being instantaneous**                         | Revalidation is targeted and takes seconds, not a full rebuild.                                                                                                                                                                            |
-| **Old Sites links will break**                                   | Sites cannot redirect. Section slugs are preserved and a notice is left on the old site.                                                                                                                                                   |
-| **Translations are human work**                                  | Partial translation is supported by design and built in T13: the fallback to Spanish is in the SQL, so a half-translated archive reads as one page, and `/admin/translations` says what is missing per language.                           |
-| **Photo rights**                                                 | The current site states the photos were digitized with their owners' permission. That notice and the per-photo credit are preserved as a requirement, not decoration.                                                                      |
+| Risk                                                             | Mitigation                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vercel Hobby is non-commercial use only**                      | The project is non-profit, so it complies. If it is ever monetized, it must move to Pro.                                                                                                                                                                                                                                                                                                                                                                                        |
+| **Neon's free tier suspends the database past 100 CU-hours**     | The public site is pre-rendered: the database is touched on publish, not per visit. Search is the only point to watch.                                                                                                                                                                                                                                                                                                                                                          |
+| **Photos are 300–2340 px and that already is what was uploaded** | The improvement is not in Google but in the source scans. `master_source` + `drive_file_id` allow replacing them without touching a single metadata field.                                                                                                                                                                                                                                                                                                                      |
+| **Google's CDN rate-limits**                                     | Not a download quota: 592 downloads in a row never tripped it, while a token from a page left idle answered 403 at t+61s. The extractor downloads each section right after reading its page, and a 403 re-reads the page for fresh tokens.                                                                                                                                                                                                                                      |
+| **Publishing stops being instantaneous**                         | Revalidation is targeted and takes seconds, not a full rebuild.                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Old Sites links will break**                                   | Sites cannot redirect. Section slugs are preserved and a notice is left on the old site.                                                                                                                                                                                                                                                                                                                                                                                        |
+| **Translations were loaded by machine**                          | 559 pieces per language, 1,677 in all, which is not two people's evening -- so the four languages were machine-translated against the glossary in `docs/TRANSLATION.md` and loaded in bulk, by decision, rather than reviewed piece by piece. Both a missing and a wrong translation are recoverable: the fallback to Spanish is in the SQL, and every piece has an edit box one link away on the translations screen. **Nobody who reads French or Italian has checked them.** |
+| **Photo rights**                                                 | The current site states the photos were digitized with their owners' permission. That notice and the per-photo credit are preserved as a requirement, not decoration.                                                                                                                                                                                                                                                                                                           |
 
 ---
 

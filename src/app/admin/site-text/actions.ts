@@ -7,6 +7,8 @@ import { SOURCE_LOCALE } from '@/db/queries/gallery'
 import { siteText } from '@/db/schema'
 import { requireAdmin } from '@/lib/auth'
 import { externalUrl } from '@/lib/url'
+import { readTranslations } from '../translations/items'
+import { writeTranslations } from '../translations/save'
 import { Invalid, outcome } from '../write'
 import { EMAIL, LIMITS, SITE_TEXT } from './fields'
 
@@ -62,6 +64,8 @@ export async function saveSiteText(form: FormData) {
       value === null ? [] : [{ key, locale: SOURCE_LOCALE, value }],
     )
     const absent = values.flatMap(([key, value]) => (value === null ? [key] : []))
+    // The same eleven keys in the other three languages, from the same form.
+    const translations = readTranslations(form)
 
     await db.transaction(async (tx) => {
       if (present.length) {
@@ -82,6 +86,7 @@ export async function saveSiteText(form: FormData) {
           .delete(siteText)
           .where(and(eq(siteText.locale, SOURCE_LOCALE), inArray(siteText.key, absent)))
       }
+      await writeTranslations(tx, translations)
     })
   })
   redirect(`/admin/site-text?${result}`)
