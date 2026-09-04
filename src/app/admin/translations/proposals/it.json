@@ -1,0 +1,1737 @@
+{
+  "locale": "it",
+  "items": [
+    {
+      "source": "¡AGRADECEMOS A LA COMUNIDAD POR SU COLABORACIÓN!",
+      "proposed": "RINGRAZIAMO LA COMUNITÀ PER LA SUA COLLABORAZIONE!"
+    },
+    {
+      "source": "\"A mi nona: Recuerdo cariñoso del carnaval de 1931 - Bambocha\".",
+      "proposed": "«Alla mia nona: ricordo affettuoso del carnevale del 1931 — Bambocha.»"
+    },
+    {
+      "source": "\"Abuelitos Fassi y Giorgio\". Abuelos de Aurora Fassi.",
+      "proposed": "«I nonni Fassi e Giorgio». Nonni di Aurora Fassi."
+    },
+    {
+      "source": "\"Cachi\" Dándolo. Año 1968.",
+      "proposed": "«Cachi» Dándolo. 1968."
+    },
+    {
+      "source": "\"Campeonato argentino año 1968 en Rosario. Categoría Doble mixto con Estela López. Salimos 4tos. En desempate por el 1er puesto\".",
+      "proposed": "«Campionato argentino del 1968 a Rosario. Categoria doppio misto con Estela López. Siamo arrivati quarti. Nello spareggio per il primo posto.»"
+    },
+    {
+      "source": "\"Delegación de la Asociación Peladanse de Tenis Criollo, concurrente al Campeonato Argentino de Tenis Criollo, disputado en San Justo (Santa Fe) los días 29 y 30 de octubre y 1 de noviembre de 1966\".",
+      "proposed": "«Delegazione dell'Asociación Peladanse de Tenis Criollo, presente al campionato argentino di tenis criollo (uno sport di racchetta locale, senza rapporto con il tennis), disputato a San Justo, Santa Fe, il 29 e 30 ottobre e il 1º novembre 1966.»"
+    },
+    {
+      "source": "\"En el día de hoy por ser su santo le envío este recuerdo con cariño\" . Firma: Negra Zunino. 10/08/1930 - Santa Fe.",
+      "proposed": "«Oggi, essendo il tuo onomastico, ti mando questo ricordo con affetto.» Firma: Negra Zunino. 10/08/1930 — Santa Fe."
+    },
+    {
+      "source": "\"Es la niña Bambocha, hija del hijo mas chico de Lorenza Correa y Santiago Zunino. Primeros habitantes rurales de La Pelada, el hijo es Eduardo Zunino le decían TOM\".",
+      "proposed": "«È la bambina Bambocha, figlia del figlio più piccolo di Lorenza Correa e Santiago Zunino, primi abitanti rurali di La Pelada. Il figlio è Eduardo Zunino, che chiamavano TOM.»"
+    },
+    {
+      "source": "\"Ford T modelo año 1924 con capota - Luis Ravasio\"*",
+      "proposed": "«Ford T modello 1924 con capote — Luis Ravasio»*"
+    },
+    {
+      "source": "\"Fotografía tomada en el partido disputado contra la Asociación Metropolitana, donde nos clasificamos \"Campeones Argentinos\", al día 29 de Octubre de 1966. En San Justo (Santa Fe)\".",
+      "proposed": "«Fotografia scattata nella partita disputata contro l'Asociación Metropolitana, dove ci siamo qualificati \\\"campioni argentini\\\", il 29 ottobre 1966. A San Justo, Santa Fe.»"
+    },
+    {
+      "source": "\"Marcelino González y familia a su cuñado y compadre Sr. Rufino Ullúa\". Buenos Aires - 08/04/1919",
+      "proposed": "«Marcelino González e famiglia, al cognato e compadre sig. Rufino Ullúa». Buenos Aires — 08/04/1919"
+    },
+    {
+      "source": "\"Momento en que los restos de Don Santiago Zunino parten de la ciudad de Rosario por ferrocarril\"* Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "«Il momento in cui le spoglie di Don Santiago Zunino partono dalla città di Rosario in treno»* Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "\"Para mi querida abuelita\" . Firma: Julia Zunino.",
+      "proposed": "«Alla mia cara nonna.» Firma: Julia Zunino."
+    },
+    {
+      "source": "\"Patio de Fabio 1º Comisario - Perro Terry\".",
+      "proposed": "«Il cortile di Fabio, 1º commissario — il cane Terry.»"
+    },
+    {
+      "source": "\"Pintada\" del Jardín. Calle San Bernardo, frente a la plaza e iglesia.",
+      "proposed": "Murale dipinto dalla scuola materna. Calle San Bernardo, di fronte alla piazza e alla chiesa."
+    },
+    {
+      "source": "\"Según el medico no puede hacer fuerza\". Sebastian Fassi y Ruli Baez - Frente a \"Cachi\" (Calle Iturraspe).",
+      "proposed": "«Il medico dice che non deve sforzarsi.» Sebastian Fassi e Ruli Baez — davanti da «Cachi» (Calle Iturraspe)."
+    },
+    {
+      "source": "\"Sembrando con un método moderno\". Mateo Troncoso - Calle Malvinas Argentinas (en la actualidad tinglados de Barbiero)",
+      "proposed": "«Seminare con un metodo moderno». Mateo Troncoso — Calle Malvinas Argentinas (oggi i capannoni Barbiero)."
+    },
+    {
+      "source": "\"Tapera\" a la vera de la Ruta Nº4. Posiblemente perteneciente a las casas del ferrocarril (sin corroborar).",
+      "proposed": "Una «tapera» (una casa rurale abbandonata) lungo la Ruta Nº4. Forse una delle case della ferrovia (non confermato)."
+    },
+    {
+      "source": "(Información obtenida del libro del Centenario de La Pelada)",
+      "proposed": "(Informazione tratta dal libro del Centenario di La Pelada)"
+    },
+    {
+      "source": "1977. Detrás se puede observar la Capilla San Bernardo.",
+      "proposed": "1977. Sullo sfondo si vede la Capilla San Bernardo."
+    },
+    {
+      "source": "26 noviembre de 1972. Eduardo Lang (\"Lalo\") en el bombo de la izquierda",
+      "proposed": "26 novembre 1972. Eduardo Lang («Lalo») alla grancassa, a sinistra."
+    },
+    {
+      "source": "29 de noviembre de 1969 - Club Independiente Eduardo Lang (\"Lalo\"), Ruben Lopez, Juancito Abalos, Victor Hugo Cuevas, Cristina Cambursano, Norma Peirotti, Vivivana Bonetto, Maria Alejandra Abba",
+      "proposed": "29 novembre 1969 — Club Independiente. Eduardo Lang («Lalo»), Ruben Lopez, Juancito Abalos, Victor Hugo Cuevas, Cristina Cambursano, Norma Peirotti, Vivivana Bonetto, Maria Alejandra Abba."
+    },
+    {
+      "source": "A la derecha Aurelio MAarengo - 2/11/1949.",
+      "proposed": "A destra Aurelio MAarengo — 2 novembre 1949."
+    },
+    {
+      "source": "A. Bonessa, A. Peretti, N. Rojas, Z. Rizzo, G. Hille, N. Pierini, G. Bonetto L. Passet, M. Allassia y Z. Ingaramo. L. Ravasio, N. Ravasi, M. Bonetti y L. Strada, M. Passet, E. Franco y R. De Wine. Maestros: H. Martinet, E. Ravasio, D. Barbiero, D. Bustamante, B. Gonzalez y R. Abba. Año 1955",
+      "proposed": "A. Bonessa, A. Peretti, N. Rojas, Z. Rizzo, G. Hille, N. Pierini, G. Bonetto, L. Passet, M. Allassia e Z. Ingaramo. L. Ravasio, N. Ravasi, M. Bonetti e L. Strada, M. Passet, E. Franco e R. De Wine. Maestri: H. Martinet, E. Ravasio, D. Barbiero, D. Bustamante, B. Gonzalez e R. Abba. 1955."
+    },
+    {
+      "source": "Abuela materna de Nilba Peretti con sus hijas y yernos. Sentados en a la derecha: madre y padre de Nilba - Principios del Siglo XX.",
+      "proposed": "La nonna materna di Nilba Peretti con le figlie e i generi. Seduti a destra: la madre e il padre di Nilba — inizio del Novecento."
+    },
+    {
+      "source": "Acceso al localidad por calle San Martín. Garita sobre Ruta N°4.",
+      "proposed": "L'ingresso al paese per la Calle San Martín. Garitta sulla Ruta N°4."
+    },
+    {
+      "source": "Accidente en la Escuela Primaria N°502. Choque de colectivo de Providencia contra el tapial de la escuela.",
+      "proposed": "Incidente alla scuola elementare Nº502. Un autobus di Providencia si schianta contro il muro della scuola."
+    },
+    {
+      "source": "Acta de casamiento y defunción de Domenico Peretti* y Catalina Risso* (abuelos de Olga Peretti). Casados en la localidad de Ataliva el 5 de mayo de 1905. Domenico fallece en 1932 y Catalina en 1933.",
+      "proposed": "Atti di matrimonio e di morte di Domenico Peretti* e Catalina Risso* (nonni di Olga Peretti). Sposati ad Ataliva il 5 maggio 1905. Domenico muore nel 1932 e Catalina nel 1933."
+    },
+    {
+      "source": "Acta de nacimiento de Lauderino Fracisco Valiente \"Falucho\", nacido en La Pelada. Máximo goleador de Unión de Santa Fe con 125 goles en 121 partidos (en la era amateur). Fuente: Club Atlético Unión",
+      "proposed": "Atto di nascita di Lauderino Fracisco Valiente, «Falucho», nato a La Pelada. Miglior marcatore dell'Unión de Santa Fe con 125 gol in 121 partite (nell'era dilettantistica). Fonte: Club Atlético Unión."
+    },
+    {
+      "source": "Actividad del Jardín en el Club Libertad.",
+      "proposed": "Attività della scuola materna al Club Libertad."
+    },
+    {
+      "source": "Alicia, José, Luis y Dora - 20/07/1965.",
+      "proposed": "Alicia, José, Luis e Dora — 20 luglio 1965."
+    },
+    {
+      "source": "Aljibe de agua. Localizado frente al predio de la Escuela Secundaria.",
+      "proposed": "Cisterna dell'acqua. Di fronte al terreno della scuola secondaria."
+    },
+    {
+      "source": "Alumnos de la Escuela Primaria N°502 - 7° Grado - Año 1974.",
+      "proposed": "Alunni della scuola elementare Nº502 — 7ª classe — 1974."
+    },
+    {
+      "source": "Alumnos del Jardín de Infantes en la Capilla San Bernardo. Junto a las maestras: María Jose da Silva y \"Sarita\". Parroco: Fabian Gatti.",
+      "proposed": "I bambini della scuola materna alla Capilla San Bernardo, con le maestre María Jose da Silva e «Sarita». Parroco: Fabian Gatti."
+    },
+    {
+      "source": "Alumnos del Jardín junto a su maestra \"Sarita\".",
+      "proposed": "I bambini della scuola materna con la maestra «Sarita»."
+    },
+    {
+      "source": "Ambos inmigrantes de Italia de la zona de Piamonte, Domenico de Cardé y Catalina de Cuneo. Domenico llegó al país con 14 años en 1881.",
+      "proposed": "Entrambi immigrati dall'Italia, dalla zona del Piemonte — Domenico di Cardé e Catalina di Cuneo. Domenico arrivò nel paese nel 1881, a 14 anni."
+    },
+    {
+      "source": "Angela Carena de Marengo (mamá de Teresita), sus dos hijos y atrás su marido Santiago Marengo.",
+      "proposed": "Angela Carena de Marengo (la mamma di Teresita), i suoi due figli e, dietro, il marito Santiago Marengo."
+    },
+    {
+      "source": "Angela Carena de Marengo. Mamá de Teresita, sembrando junto a sus hijos.",
+      "proposed": "Angela Carena de Marengo. La mamma di Teresita, mentre semina insieme ai figli."
+    },
+    {
+      "source": "Antigua imagen de San Bernardo en el ingreso al pueblo.",
+      "proposed": "Un'antica immagine di San Bernardo all'ingresso del paese."
+    },
+    {
+      "source": "Antiguo servicio de correo, hoy ferretería \"El Abuelo\". Calles Iturraspe y Garay.",
+      "proposed": "Il vecchio ufficio postale, oggi la ferramenta «El Abuelo». Calles Iturraspe e Garay."
+    },
+    {
+      "source": "Antonia Bonino (Madre de Aquilino Chiaraviglio).",
+      "proposed": "Antonia Bonino (madre di Aquilino Chiaraviglio)."
+    },
+    {
+      "source": "Año 1938.",
+      "proposed": "1938."
+    },
+    {
+      "source": "Aquí podremos encontrar algunos retratos de uno de los principales pilares de nuestra localidad: las familias. En esta sección presenciamos fotos familiares y algunos recuerdos de las mismas.",
+      "proposed": "Qui troveremo alcuni ritratti di uno dei principali pilastri della nostra località: le famiglie. In questa sezione presentiamo foto di famiglia e alcuni ricordi legati a esse."
+    },
+    {
+      "source": "Aquí se conservan momentos de fe: procesiones, misas, fiestas patronales y la arquitectura religiosa que acompañó a la comunidad. Las fotografías permiten seguir la huella espiritual del pueblo y entender cómo la religión organizó y dio sentido a muchos de sus rituales colectivos.",
+      "proposed": "Qui si conservano momenti di fede: processioni, messe, feste patronali e l'architettura religiosa che ha accompagnato la comunità. Le fotografie permettono di seguire l'impronta spirituale del paese e di capire come la religione abbia organizzato e dato senso a molti dei suoi rituali collettivi."
+    },
+    {
+      "source": "Aquilino Chiaraviglio, Vilma Bonetto y Coca Chiaraviglio.",
+      "proposed": "Aquilino Chiaraviglio, Vilma Bonetto e Coca Chiaraviglio."
+    },
+    {
+      "source": "Araceli Abba - Década '70.",
+      "proposed": "Araceli Abba — anni Settanta."
+    },
+    {
+      "source": "Archivo Digital Fotográfico de La Pelada",
+      "proposed": "Archivio fotografico digitale di La Pelada"
+    },
+    {
+      "source": "Ariel Dándolo y Sebastián Rossi - 1985 (aprox.).",
+      "proposed": "Ariel Dándolo e Sebastián Rossi — 1985 circa."
+    },
+    {
+      "source": "Arriba: Blanca, Aquilino, Celmira, Chichi. Abajo: Coca, Nona Antonia y Juan Carlos \"Negro\". Todos Chiaraviglio",
+      "proposed": "In alto: Blanca, Aquilino, Celmira, Chichi. In basso: Coca, la nona Antonia e Juan Carlos «Negro». Tutti Chiaraviglio."
+    },
+    {
+      "source": "ARRIBA: Celmira Chiaraviglio (vestido claro) y Coca Chiaraviglio (vestido oscuro). SENTADAS: Antonia Bonino de Chiarviglio (debajo de Coca) y una hermana de Antonia (debajo de Celmira).",
+      "proposed": "IN ALTO: Celmira Chiaraviglio (vestito chiaro) e Coca Chiaraviglio (vestito scuro). SEDUTE: Antonia Bonino de Chiarviglio (sotto Coca) e una sorella di Antonia (sotto Celmira)."
+    },
+    {
+      "source": "Asado en el rancho de Marengo.",
+      "proposed": "Un asado (grigliata argentina) al ranch dei Marengo."
+    },
+    {
+      "source": "Asociación Peladanse de Tenis Criollo en el Club Independiente La Pelada.",
+      "proposed": "L'Asociación Peladanse de Tenis Criollo al Club Independiente La Pelada."
+    },
+    {
+      "source": "Asociación Peladanse de Tenis Criollo.",
+      "proposed": "Asociación Peladanse de Tenis Criollo."
+    },
+    {
+      "source": "Asociación Peladanse de Tenis Criollo. En Rosario, Prov. de Santa Fe.",
+      "proposed": "Asociación Peladanse de Tenis Criollo. A Rosario, provincia di Santa Fe."
+    },
+    {
+      "source": "Asociación Peladanse de Tenis Criollo. En Villa María, Córdoba.",
+      "proposed": "Asociación Peladanse de Tenis Criollo. A Villa María, Córdoba."
+    },
+    {
+      "source": "Aurelio Marengo - 25/05/1947.",
+      "proposed": "Aurelio Marengo — 25 maggio 1947."
+    },
+    {
+      "source": "Aurelio Marengo a la derecha de la fotografía. Sentados padres de Aurelio y Teresita Marengo.",
+      "proposed": "Aurelio Marengo a destra nella fotografia. Seduti, i genitori di Aurelio e Teresita Marengo."
+    },
+    {
+      "source": "Aurelio Marengo.",
+      "proposed": "Aurelio Marengo."
+    },
+    {
+      "source": "Aurora Fassi.",
+      "proposed": "Aurora Fassi."
+    },
+    {
+      "source": "B. Zunino Flia. - 15/03/1926",
+      "proposed": "La famiglia B. Zunino — 15 marzo 1926."
+    },
+    {
+      "source": "Baile de 15 años. Actual Club Libertad. Elvira Sanmartino.",
+      "proposed": "Ballo dei quindici anni. L'attuale Club Libertad. Elvira Sanmartino."
+    },
+    {
+      "source": "Baile en el Club Independiente. Se pueden observar las antiguas mesas de hormigón.",
+      "proposed": "Un ballo al Club Independiente. Si vedono i vecchi tavoli di cemento."
+    },
+    {
+      "source": "Baile.",
+      "proposed": "Un ballo."
+    },
+    {
+      "source": "Baile. En la foto: Naldo Monti, Ingaramo, \"Cachi\" Dándolo, Nelly Pierini, Biyo Ravasio, Zunilda.",
+      "proposed": "Un ballo. Nella foto: Naldo Monti, Ingaramo, «Cachi» Dándolo, Nelly Pierini, Biyo Ravasio, Zunilda."
+    },
+    {
+      "source": "Banderín conmemorativo de campeonato. 1972.",
+      "proposed": "Gagliardetto commemorativo del campionato. 1972."
+    },
+    {
+      "source": "Bar Club Libertad - Familia Velazquez - 1974.",
+      "proposed": "Il bar del Club Libertad — la famiglia Velazquez — 1974."
+    },
+    {
+      "source": "Bartolo Zunino, Lorenzo Lanzetti y empleados del ferrocarril. Llegada del tren.*",
+      "proposed": "Bartolo Zunino, Lorenzo Lanzetti e dipendenti della ferrovia. L'arrivo del treno.*"
+    },
+    {
+      "source": "Bautista Bonetto - Foto en la plaza bajo el sol.",
+      "proposed": "Bautista Bonetto — foto in piazza sotto il sole."
+    },
+    {
+      "source": "Biazzo en el cine de Elisa. Llegaba en ferrocarril, traía revistas y artículos novedosos para vender en la localidad, muy esperado por los jóvenes del pueblo.",
+      "proposed": "Biazzo al cinema di Elisa. Arrivava in treno, portava riviste e articoli di novità da vendere in paese, molto atteso dai giovani."
+    },
+    {
+      "source": "Bogus Szerette* Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "Bogus Szerette* Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Botella de gaseosa de la fabrica de gaseosa de Luis Ravasio.",
+      "proposed": "Una bottiglia di bibita della fabbrica di bibite di Luis Ravasio."
+    },
+    {
+      "source": "Boy Scouts.",
+      "proposed": "Boy scout."
+    },
+    {
+      "source": "Boy Scouts. Hector Cuevas, Bocha Cardona de Bauer y la chiquita Manina Bauer.",
+      "proposed": "Boy scout. Hector Cuevas, Bocha Cardona de Bauer e la piccola Manina Bauer."
+    },
+    {
+      "source": "Bretes del ex ferrocarril Belgrano. Actual pasaje 20 de agosto.",
+      "proposed": "Corridoi di contenimento dell'ex ferrovia Belgrano. Oggi pasaje 20 de agosto."
+    },
+    {
+      "source": "Buenos Aires - Torneo Argentino. Juan C. García y Luis Strada.",
+      "proposed": "Buenos Aires — torneo argentino. Juan C. García e Luis Strada."
+    },
+    {
+      "source": "Calle 25 de mayo. Al fondo: casa de Juan Peretti.",
+      "proposed": "Calle 25 de mayo. In fondo: la casa di Juan Peretti."
+    },
+    {
+      "source": "Calles del pueblo anegadas (calle San Martín entre San Bernardo y Colón).",
+      "proposed": "Strade del paese allagate (Calle San Martín tra San Bernardo e Colón)."
+    },
+    {
+      "source": "Calles del pueblo anegadas (calle San Martín). Vista a la casa de \"Tito\" Lang.",
+      "proposed": "Strade del paese allagate (Calle San Martín). Vista verso la casa di «Tito» Lang."
+    },
+    {
+      "source": "Calles del pueblo anegadas (esquina San Martín y San Bernardo). Vista a ex-escuela Lainez.",
+      "proposed": "Strade del paese allagate (angolo San Martín e San Bernardo). Vista verso l'ex scuola Lainez."
+    },
+    {
+      "source": "Caminos anegados (Nov. - 1977).",
+      "proposed": "Strade allagate (novembre 1977)."
+    },
+    {
+      "source": "Campo",
+      "proposed": "Campagna"
+    },
+    {
+      "source": "Campo de \"Carli\" Peretti - Don Troncoso y Carli.",
+      "proposed": "Il campo di «Carli» Peretti — Don Troncoso e Carli."
+    },
+    {
+      "source": "Campo de Juan Peretti. En la foto: A caballo: Primo de Buenos Aires de Antonio \"tono\" Costa (izquierda) y Livio \"chichi\" Peretti (derecha). En el auto: Juan Peretti (padre de Nilba)",
+      "proposed": "Il campo di Juan Peretti. Nella foto — a cavallo: un cugino di Buenos Aires di Antonio «tono» Costa (a sinistra) e Livio «chichi» Peretti (a destra). In auto: Juan Peretti (il padre di Nilba)."
+    },
+    {
+      "source": "Capelino (sastre del pueblo), \"Oscarcito\" y \"Cachi\" Dándolo. Año 1968.",
+      "proposed": "Capelino (il sarto del paese), «Oscarcito» e «Cachi» Dándolo. 1968."
+    },
+    {
+      "source": "Capilla San Bernardo - Exterior.",
+      "proposed": "Capilla San Bernardo — esterno."
+    },
+    {
+      "source": "Capilla San Bernardo - Interior.",
+      "proposed": "Capilla San Bernardo — interno."
+    },
+    {
+      "source": "Capilla Santa Ana.",
+      "proposed": "Capilla Santa Ana."
+    },
+    {
+      "source": "Carga del eucaliptus para su transporte (a la izquierda Manuel Diaz).",
+      "proposed": "Carico dell'eucalipto per il trasporto (Manuel Diaz a sinistra)."
+    },
+    {
+      "source": "Carga del eucaliptus para su transporte (debajo del camión Manuel Diaz).",
+      "proposed": "Carico dell'eucalipto per il trasporto (Manuel Diaz sotto il camion)."
+    },
+    {
+      "source": "Carga del eucalipus para su transporte.",
+      "proposed": "Carico dell'eucalipto per il trasporto."
+    },
+    {
+      "source": "Carmelo Bonino, Antonia Bonino, Juan Bonino y Sra. (Furlotti), Luis Bonino (padre de Telmo Bonino).",
+      "proposed": "Carmelo Bonino, Antonia Bonino, Juan Bonino e signora (Furlotti), Luis Bonino (padre di Telmo Bonino)."
+    },
+    {
+      "source": "Carneada - Clelia Peretti.",
+      "proposed": "Una carneada (una macellazione collettiva di campagna) — Clelia Peretti."
+    },
+    {
+      "source": "Carneada - Juan Peretti y Chichi Chiaraviglio.",
+      "proposed": "Una carneada (una macellazione collettiva di campagna) — Juan Peretti e Chichi Chiaraviglio."
+    },
+    {
+      "source": "Carneada.",
+      "proposed": "Una carneada (una macellazione collettiva di campagna)."
+    },
+    {
+      "source": "Carrera de Bicicletas en Club Independiente.",
+      "proposed": "Corsa di biciclette al Club Independiente."
+    },
+    {
+      "source": "Casa en el campo \"El Martillo\". En imagen: ARRIBA: Magdalena Chiaraviglio, Margarita Chiaraviglio, Valeriana Chiaraviglio, Lorenzo Chiaraviglio (padre de Celmira Chiaraviglio) y Teresa Chiaraviglio. ABAJO: Domingo Chiaraviglio, Angela Chiaraviglio, N/I, Santiago Chiaraviglio (el padre), Ana Bertero (madre) y Antonio Chiaraviglio.-",
+      "proposed": "La casa nel campo «El Martillo». Nell'immagine — IN ALTO: Magdalena Chiaraviglio, Margarita Chiaraviglio, Valeriana Chiaraviglio, Lorenzo Chiaraviglio (padre di Celmira Chiaraviglio) e Teresa Chiaraviglio. IN BASSO: Domingo Chiaraviglio, Angela Chiaraviglio, non identificata, Santiago Chiaraviglio (il padre), Ana Bertero (la madre) e Antonio Chiaraviglio.-"
+    },
+    {
+      "source": "Casa en el campo de Santiago Chiaraviglio - Camino principal, después de la curva.",
+      "proposed": "La casa nel campo di Santiago Chiaraviglio — sulla strada principale, dopo la curva."
+    },
+    {
+      "source": "Casamiento \"Chocho\" Barbiero y Azucena Fassi. Salón de Luis Crotti (actual Club Libertad).",
+      "proposed": "Il matrimonio di «Chocho» Barbiero e Azucena Fassi. Il salone di Luis Crotti (l'attuale Club Libertad)."
+    },
+    {
+      "source": "Casamiento (\"Tito\") Gaspar Lang y Teresita Marengo. Sentados a la izquierda Angela Carena y Santiago Marengo (padres de Teresita).",
+      "proposed": "Il matrimonio di Gaspar («Tito») Lang e Teresita Marengo. Seduti a sinistra, Angela Carena e Santiago Marengo (i genitori di Teresita)."
+    },
+    {
+      "source": "Casamiento civil de \"Cachi\" Dándolo y Aurora Fassi. Al lado de la pareja: \"Anita\" Fassi y Clorindo Lescano. Juez de paz: Arturo Abba.",
+      "proposed": "Il matrimonio civile di «Cachi» Dándolo e Aurora Fassi. Accanto alla coppia: «Anita» Fassi e Clorindo Lescano. Giudice di pace: Arturo Abba."
+    },
+    {
+      "source": "Casamiento de Aquilino Chiaraviglio y Belquis. En imagen: Celia Peretti, Chichi Chiaraviglio, Mito Peretti, Blanca Chiaraviglio, \"Negro\" Chiaraviglio, Coca Chiaraviglio, Andres Capellino, Celmira Chiaraviglio y Antonia Bonino de Chiaraviglio. Los niños son nietos de la nona Antonia.",
+      "proposed": "Il matrimonio di Aquilino Chiaraviglio e Belquis. Nell'immagine: Celia Peretti, Chichi Chiaraviglio, Mito Peretti, Blanca Chiaraviglio, «Negro» Chiaraviglio, Coca Chiaraviglio, Andres Capellino, Celmira Chiaraviglio e Antonia Bonino de Chiaraviglio. I bambini sono tutti nipoti della nona Antonia."
+    },
+    {
+      "source": "Casamiento de Bernardina Zunino y José Ullúa.",
+      "proposed": "Il matrimonio di Bernardina Zunino e José Ullúa."
+    },
+    {
+      "source": "Casamiento de Celmira Chiaraviglio y Andres Capellino. Se casaron en La Pelada y se fueron a vivir a Progreso donde vivieron hasta su fallecimiento. Sus descendientes estan en Progreso.",
+      "proposed": "Il matrimonio di Celmira Chiaraviglio e Andres Capellino. Si sposarono a La Pelada e andarono a vivere a Progreso, dove vissero fino alla morte. I loro discendenti sono a Progreso."
+    },
+    {
+      "source": "Casamiento de Clelia Peretti y \"Chichi\" Chiaraviglio. Salón de Luis Crotti (actual Club Libertad).",
+      "proposed": "Il matrimonio di Clelia Peretti e «Chichi» Chiaraviglio. Il salone di Luis Crotti (l'attuale Club Libertad)."
+    },
+    {
+      "source": "Casamiento de la hija de Guillermo Peretti.",
+      "proposed": "Il matrimonio della figlia di Guillermo Peretti."
+    },
+    {
+      "source": "Casamiento de Luis Sanmartino y Ester Fassi. Se puede observar la iluminación con faroles a kerosene. Década '60.",
+      "proposed": "Il matrimonio di Luis Sanmartino ed Ester Fassi. Si vede l'illuminazione con lampade a cherosene. Anni Sessanta."
+    },
+    {
+      "source": "Casamiento de Luisito Strada Sartori (papá German Sartori). En el antiguo salón del C.A.S. Independiente.",
+      "proposed": "Il matrimonio di Luisito Strada Sartori (papà di German Sartori). Nel vecchio salone del C.A.S. Independiente."
+    },
+    {
+      "source": "Casamiento de Marta Angelino y Ubaldo Naguel.",
+      "proposed": "Il matrimonio di Marta Angelino e Ubaldo Naguel."
+    },
+    {
+      "source": "Casamiento de Marta Bescham y Miguel \"Titin\" Lazzaroni. Testigos: Hugo Bescham y Nilba Peretti. Juez de paz: Arturo Abba.",
+      "proposed": "Il matrimonio di Marta Bescham e Miguel «Titin» Lazzaroni. Testimoni: Hugo Bescham e Nilba Peretti. Giudice di pace: Arturo Abba."
+    },
+    {
+      "source": "Casamiento de Mirta Alassia y Ricardo Peretti.",
+      "proposed": "Il matrimonio di Mirta Alassia e Ricardo Peretti."
+    },
+    {
+      "source": "Casamiento de Ruben Hille y Alicia Reinglestein (\"Lita\").",
+      "proposed": "Il matrimonio di Ruben Hille e Alicia Reinglestein («Lita»)."
+    },
+    {
+      "source": "Casamiento de Ruben Hille y Alicia Reinglestein (\"Lita\"). Padres de Soledad Hille.",
+      "proposed": "Il matrimonio di Ruben Hille e Alicia Reinglestein («Lita»). I genitori di Soledad Hille."
+    },
+    {
+      "source": "Casamiento Ecilda Chairaviglio (\"beba\") y Raúl Fassi.",
+      "proposed": "Il matrimonio di Ecilda Chairaviglio («beba») e Raúl Fassi."
+    },
+    {
+      "source": "Casamiento Luis Strada y Norma Sacchi y junto al personal que trabajó en su noche - 1970/71.",
+      "proposed": "Il matrimonio di Luis Strada e Norma Sacchi, insieme al personale che lavorò quella sera — 1970/71."
+    },
+    {
+      "source": "Casamiento Marta Bescham y Miguel \"Titin\" Lazzaroni.",
+      "proposed": "Il matrimonio di Marta Bescham e Miguel «Titin» Lazzaroni."
+    },
+    {
+      "source": "Casamiento por civil de Ruben Hille y Alicia Reinglestein (\"Lita\").",
+      "proposed": "Il matrimonio civile di Ruben Hille e Alicia Reinglestein («Lita»)."
+    },
+    {
+      "source": "Casamientos",
+      "proposed": "Matrimoni"
+    },
+    {
+      "source": "Casco de la estancia.",
+      "proposed": "Il casale dell'estancia."
+    },
+    {
+      "source": "Casco de la estancia. Entrevista a Manuel Díaz MEMORIAS DE LA PELADA - Manuel Díaz Entrevista Manuel Díaz. Trabajador de la Estancia \"Eucaliptus\".",
+      "proposed": "Il casale dell'estancia. Intervista a Manuel Díaz. MEMORIE DI LA PELADA — Manuel Díaz. Un'intervista a Manuel Díaz, lavoratore dell'estancia «Eucaliptus»."
+    },
+    {
+      "source": "Casín (tipo de juego en mesa de pool). Bar Libertad - Década 60.",
+      "proposed": "Casín (un gioco che si fa sul tavolo da biliardo). Bar Libertad — anni Sessanta."
+    },
+    {
+      "source": "Celmira Ofelia Chiaraviglio (abuela de Gustavo Capellino) en el campo paterno de familia Chiaraviglio.",
+      "proposed": "Celmira Ofelia Chiaraviglio (nonna di Gustavo Capellino) nel campo paterno della famiglia Chiaraviglio."
+    },
+    {
+      "source": "Centenario de la localidad - 1992.",
+      "proposed": "Il centenario della località — 1992."
+    },
+    {
+      "source": "Centenario de la localidad - 1992. Sobre calles San Martín y 9 de Julio.",
+      "proposed": "Il centenario della località — 1992. Sulle Calles San Martín e 9 de Julio."
+    },
+    {
+      "source": "Centenario de la localidad - 1992. Sobre calles San Martín y San Bernardo.",
+      "proposed": "Il centenario della località — 1992. Sulle Calles San Martín e San Bernardo."
+    },
+    {
+      "source": "Centro Jurídico. Calle 9 de julio, frente a la plaza San Martín.",
+      "proposed": "Centro giuridico. Calle 9 de julio, di fronte alla Plaza San Martín."
+    },
+    {
+      "source": "Chopeada en el patio de \"Cachi\" Dándolo. Chopera a hielo.",
+      "proposed": "Birre nel cortile di «Cachi» Dándolo. Spillatrice raffreddata a ghiaccio."
+    },
+    {
+      "source": "Clelia e Irma Sanmartino - Desfile.",
+      "proposed": "Clelia e Irma Sanmartino — sfilata."
+    },
+    {
+      "source": "Clelia Peretti y Chichi Chiaraviglio.",
+      "proposed": "Clelia Peretti e Chichi Chiaraviglio."
+    },
+    {
+      "source": "Club Atlético y Social Independiente (C.A.S.I.)",
+      "proposed": "Club Atlético y Social Independiente (C.A.S.I.)"
+    },
+    {
+      "source": "Club Independiente.",
+      "proposed": "Club Independiente."
+    },
+    {
+      "source": "Club Libertad - 1975.",
+      "proposed": "Club Libertad — 1975."
+    },
+    {
+      "source": "Coca Chiaraviglio.",
+      "proposed": "Coca Chiaraviglio."
+    },
+    {
+      "source": "Colación 50 años Esc. primaria - Año 2005 - 18 sept.",
+      "proposed": "Cerimonia per i cinquant'anni della scuola elementare — 18 settembre 2005."
+    },
+    {
+      "source": "Comentario: En la fuente aparecen como alumnos de la Escuela Nacional N° 60, de la cual no se encuentran registros en la web. Existen registros de la Escuela Nacional Lainez N°339, la misma fue cerrada en 1930 (aproximadamente). Localizada en la esquina San Martín y San Bernardo.",
+      "proposed": "Nota: nella fonte compaiono come alunni della Scuola Nazionale Nº60, della quale non si trovano registri in rete. Esistono registri della Escuela Nacional Lainez Nº339, chiusa intorno al 1930. Si trovava all'angolo tra San Martín e San Bernardo."
+    },
+    {
+      "source": "Comentario: Según la información disponible, Szeretter nació el 22 de septiembre de 1883 en La Pelada, Santa Fe, falleciendo el 8 de agosto de 1923 en nuestra localidad a la edad de 39 años. Fue comerciante y el primer Juez de Paz en La Pelada por decreto Provincial del 7 de febrero de 1923.",
+      "proposed": "Nota: secondo le informazioni disponibili, Szeretter nacque il 22 settembre 1883 a La Pelada, Santa Fe, e morì l'8 agosto 1923 nella nostra località, all'età di 39 anni. Fu commerciante e il primo giudice di pace di La Pelada, per decreto provinciale del 7 febbraio 1923."
+    },
+    {
+      "source": "Comercio de ramos generales, esquina Iturraspe y Belgrano.",
+      "proposed": "Un emporio di ramos generales (un emporio di campagna), all'angolo tra Iturraspe e Belgrano."
+    },
+    {
+      "source": "Comida en el Club Independiente (actual cancha de Tenis). Fiesta de River Plate - Diciembre 1977.",
+      "proposed": "Un pranzo al Club Independiente (l'attuale campo da tennis). Festa del River Plate — dicembre 1977."
+    },
+    {
+      "source": "Comparsa. Frente al Club Libertad sobre calle Iturraspe.",
+      "proposed": "Gruppo carnevalesco. Davanti al Club Libertad, sulla Calle Iturraspe."
+    },
+    {
+      "source": "Compromiso de Baez Marcelo y Neldi Mairani.",
+      "proposed": "Il fidanzamento di Marcelo Baez e Neldi Mairani."
+    },
+    {
+      "source": "Comunión de niños de La Pelada, Celmira Chiaraviglio (abuela de Gustavo Gorosito Capellino) al medio. Ella nació en el año 1939. La foto es de 1949/50 (aproximadamente) frente a la iglesia de La Pelada.",
+      "proposed": "Comunione di bambini di La Pelada, Celmira Chiaraviglio (nonna di Gustavo Gorosito Capellino) al centro. È nata nel 1939. La foto è del 1949/50 circa, davanti alla chiesa di La Pelada."
+    },
+    {
+      "source": "Comuniones en Capilla San Bernardo.",
+      "proposed": "Comunioni nella Capilla San Bernardo."
+    },
+    {
+      "source": "Cortejo fúnebre.",
+      "proposed": "Un corteo funebre."
+    },
+    {
+      "source": "Cruz camino al cementerio. Ruta 69S.",
+      "proposed": "Croce sulla strada per il cimitero. Ruta 69S."
+    },
+    {
+      "source": "Cuarta expoferia. Año 2006.",
+      "proposed": "Quarta fiera espositiva. 2006."
+    },
+    {
+      "source": "Cumpleaños - En el patio de Delia Marcón.",
+      "proposed": "Un compleanno — nel cortile di Delia Marcón."
+    },
+    {
+      "source": "Cumpleaños de 15.",
+      "proposed": "Un compleanno di quindici anni."
+    },
+    {
+      "source": "Cumpleaños de Antonia Bonino de Chiaraviglio (al medio delante de la torta). Detrás sus hijos Aquilino, Celmira, Blanca, Coca, Juan Carlos (chichi).",
+      "proposed": "Il compleanno di Antonia Bonino de Chiaraviglio (al centro, davanti alla torta). Dietro di lei i figli Aquilino, Celmira, Blanca, Coca e Juan Carlos (chichi)."
+    },
+    {
+      "source": "Cumpleaños de Antonia Bonino. Junto a sus hijos/as, yernos, nueras y nietos/as: Mito Peretti, Blanca Chiaraviglio, Juan Carlos \"Negro\" Chiaraviglio, Nona Antonia, Coca Chiaraviglio, Celmira Chiaraviglio, Chichi Chiaraviglio, Andres Capellino, Clelia Peretti, Belkis y Aquilino Chiaraviglio... los niños son todos nietos.",
+      "proposed": "Il compleanno di Antonia Bonino. Con figli e figlie, generi, nuore e nipoti: Mito Peretti, Blanca Chiaraviglio, Juan Carlos «Negro» Chiaraviglio, la nona Antonia, Coca Chiaraviglio, Celmira Chiaraviglio, Chichi Chiaraviglio, Andres Capellino, Clelia Peretti, Belkis e Aquilino Chiaraviglio… i bambini sono tutti nipoti."
+    },
+    {
+      "source": "Cura Bartolo, no había capilla en La Pelada, estaba en J. L. Araúz. Llegada féretro de Santiago Zunino, que murió en Rosario (primer viaje del Ferrocarril a La Pelada).",
+      "proposed": "Il parroco Bartolo. A La Pelada non c'era ancora la cappella; si trovava a J. L. Araúz. L'arrivo del feretro di Santiago Zunino, morto a Rosario (il primo viaggio del treno fino a La Pelada)."
+    },
+    {
+      "source": "De asado. Lugareños en el montecito en el campo de los hermanos Bertero.",
+      "proposed": "Un asado (grigliata argentina). Gente del posto nel boschetto del campo dei fratelli Bertero."
+    },
+    {
+      "source": "De izquierda a derecha: Arriba: Jorge Delgado, Sangali (Camionero), \"Carli\" Peretti, \"Cachi\" Dándolo. Abajo: Francisco Delgado (\"Mota\"), Julio Dándolo, José Ludueña. Calles San Martín e Iturraspe.",
+      "proposed": "Da sinistra a destra — in alto: Jorge Delgado, Sangali (il camionista), «Carli» Peretti, «Cachi» Dándolo. In basso: Francisco Delgado («Mota»), Julio Dándolo, José Ludueña. Calles San Martín e Iturraspe."
+    },
+    {
+      "source": "De izquierda a derecha: Javier y Carolina Eberardt; Araceli Abba y Gustavo Eberardt rumbo a la Escuela Nº348 \"Mariano Moreno\" - Campo Bonetti - 1965.",
+      "proposed": "Da sinistra a destra: Javier e Carolina Eberardt; Araceli Abba e Gustavo Eberardt diretti alla scuola Nº348 «Mariano Moreno» — Campo Bonetti — 1965."
+    },
+    {
+      "source": "De izquierda a derecha: José Monti, tapado Luis Sachi, Cachi, Kiki Zunino, semitapado Capelino (el sastre del pueblo), el chico es Oscarcito Scarlachanni empleado de cachi y Mateo Troncoso. Comentario escrito en la foto: \"Cachi dice: jeje lo que les va a salir la comida\".",
+      "proposed": "Da sinistra a destra: José Monti, Luis Sachi (coperto), Cachi, Kiki Zunino, Capelino semicoperto (il sarto del paese), il ragazzo è Oscarcito Scarlachanni, dipendente di Cachi, e Mateo Troncoso. Scritto sulla foto: «Cachi dice: eheh, quanto vi verrà a costare il pranzo.»"
+    },
+    {
+      "source": "De izquierda a derecha: Mellizas Bonino (Raquel y Zulema), Teresita Marengo, Clelia Peretti (hermana de Nilba), Vilma Soltermman de Benza.",
+      "proposed": "Da sinistra a destra: le gemelle Bonino (Raquel e Zulema), Teresita Marengo, Clelia Peretti (sorella di Nilba), Vilma Soltermman de Benza."
+    },
+    {
+      "source": "De noche, antes de un asado.",
+      "proposed": "Di notte, prima di un asado (grigliata argentina)."
+    },
+    {
+      "source": "De paseo en la volanta.",
+      "proposed": "In giro sulla volanta (una carrozza leggera a cavalli)."
+    },
+    {
+      "source": "Deporte",
+      "proposed": "Sport"
+    },
+    {
+      "source": "Desfile de moda en el Club Independiente. Nilba Peretti.",
+      "proposed": "Sfilata di moda al Club Independiente. Nilba Peretti."
+    },
+    {
+      "source": "Desfile en el CASI.",
+      "proposed": "Sfilata al CASI."
+    },
+    {
+      "source": "Diciembre 1977.",
+      "proposed": "Dicembre 1977."
+    },
+    {
+      "source": "Distintivo de la Asociación Peladanse de Tenis Criollo.",
+      "proposed": "Distintivo dell'Asociación Peladanse de Tenis Criollo."
+    },
+    {
+      "source": "Domas en el campo de Bertero - 1971.",
+      "proposed": "Doma di cavalli nel campo Bertero — 1971."
+    },
+    {
+      "source": "Domas en el campo de Bertero - 1971. A CONTINUACIÓN, FOTOGRAFÍAS DE \"CARNEADAS\". LAS IMÁGENES PUEDEN HERIR LA SENSIBILIDAD DE ALGUNAS PERSONAS.",
+      "proposed": "Doma di cavalli nel campo Bertero — 1971. QUI DI SEGUITO, FOTOGRAFIE DI «CARNEADAS». LE IMMAGINI POSSONO URTARE LA SENSIBILITÀ DI ALCUNE PERSONE."
+    },
+    {
+      "source": "Domenico Peretti y Catalina Risso (abuelos de Olga Peretti). Ambos inmigrantes de Italia de la zona de Piamonte, Domenico de Cardé y Catalina de Cuneo. Domenico llegó al país con 14 años en 1881. Lugar y niña de la fotografía desconocidos.",
+      "proposed": "Domenico Peretti e Catalina Risso (nonni di Olga Peretti). Entrambi immigrati dall'Italia, dalla zona del Piemonte — Domenico di Cardé e Catalina di Cuneo. Domenico arrivò nel paese nel 1881, a 14 anni. Il luogo e la bambina della fotografia sono sconosciuti."
+    },
+    {
+      "source": "Eduardo (\"Lalo\") Lang.",
+      "proposed": "Eduardo («Lalo») Lang."
+    },
+    {
+      "source": "Eduardo Marengo en un camino rural.",
+      "proposed": "Eduardo Marengo su una strada di campagna."
+    },
+    {
+      "source": "Eduardo Marengo. Carreras de bicicicletas en Las Colonias.",
+      "proposed": "Eduardo Marengo. Corse di biciclette a Las Colonias."
+    },
+    {
+      "source": "Educación",
+      "proposed": "Istruzione"
+    },
+    {
+      "source": "Egresadas de la Esc. Nº502. Andrea Bonetto, Mónica Barzaghi, Patricia Ravassio, Andrea Abba, Gilda Barbiero.",
+      "proposed": "Diplomate della scuola Nº502. Andrea Bonetto, Mónica Barzaghi, Patricia Ravassio, Andrea Abba, Gilda Barbiero."
+    },
+    {
+      "source": "El 22 de junio de de 1963 en una reunión bailable se elige \"La Reina del Futuro\" resultando electa la niñita Graciela VILLASEÑOR de tan sólo 5 años.*",
+      "proposed": "Il 22 giugno 1963, durante una serata danzante, viene eletta «la Regina del Futuro»: risulta eletta la piccola Graciela VILLASEÑOR, di appena cinque anni.*"
+    },
+    {
+      "source": "El año 1978 dejó una huella profunda en la memoria hídrica de La Pelada. Producto de precipitaciones extraordinarias y la saturación de una cuenca de escurrimiento complejo, la localidad y su entorno rural se vieron sumergidos en un anegamiento severo que alteró drásticamente la dinámica cotidiana de la región. Invitamos a observar algunos registros fotográficos del suceso.",
+      "proposed": "L'anno 1978 ha lasciato un segno profondo nella memoria idrica di La Pelada. A causa di precipitazioni straordinarie e della saturazione di un bacino di scolo complesso, la località e la sua campagna furono sommerse da un allagamento severo che alterò drasticamente la vita quotidiana della regione. Vi invitiamo a guardare alcune testimonianze fotografiche dell'evento."
+    },
+    {
+      "source": "Empleados de la estancia \"El Cometa\", parada junto al caballo \"Uchi\". Jinetes de izquierda a derecha: Cuza Mondino, Luis Lastra, Felix Mondino, Farias y Juan Moreira. Aproximadamente 1958.",
+      "proposed": "Dipendenti dell'estancia «El Cometa», accanto al cavallo «Uchi». Cavalieri, da sinistra a destra: Cuza Mondino, Luis Lastra, Felix Mondino, Farias e Juan Moreira. Intorno al 1958."
+    },
+    {
+      "source": "En el quebrachal (eucaliptos). Parado en el centro Lucas García, en el alambrado su hijo, \"Chito\", contra el árbol \"Negro\" García. Sentados (de derecha a izquierda): \"Mota\" Delgado, \"Filo\" Díaz (hermano de Manuel) y \"Buzón\" Delgado. Septiembre de 1974.",
+      "proposed": "Nel quebrachal (un bosco di quebracho) — eucalipti. In piedi al centro, Lucas García; sul recinto, il figlio «Chito»; contro l'albero, «Negro» García. Seduti, da destra a sinistra: «Mota» Delgado, «Filo» Díaz (fratello di Manuel) e «Buzón» Delgado. Settembre 1974."
+    },
+    {
+      "source": "En el rancho \"La Casualidad\".",
+      "proposed": "Al ranch «La Casualidad»."
+    },
+    {
+      "source": "En el rancho de Marengo.",
+      "proposed": "Al ranch dei Marengo."
+    },
+    {
+      "source": "En la foto: Coca Chiaraviglio y Antonia Bonino de Chiaraviglio.",
+      "proposed": "Nella foto: Coca Chiaraviglio e Antonia Bonino de Chiaraviglio."
+    },
+    {
+      "source": "En la maquina Leonildo Barengo (\"Sivori\"); Daniel Alassia parado en el medio, (\"Tito\") Gaspar Lang manejando el tractor.",
+      "proposed": "Sulla macchina, Leonildo Barengo («Sivori»); Daniel Alassia in piedi al centro; Gaspar («Tito») Lang alla guida del trattore."
+    },
+    {
+      "source": "En la punta a la izquierda Ecilda Chiaraviglio (\"Beba\" Fassi) y su marido Raúl Fassi.",
+      "proposed": "All'estrema sinistra, Ecilda Chiaraviglio («Beba» Fassi) e il marito Raúl Fassi."
+    },
+    {
+      "source": "Enero 1947 - En el río - Con la guitarra Aurelio Marengo.",
+      "proposed": "Gennaio 1947 — al fiume — Aurelio Marengo con la chitarra."
+    },
+    {
+      "source": "Enero 1947 - En el río.",
+      "proposed": "Gennaio 1947 — al fiume."
+    },
+    {
+      "source": "Enero 1947. CASI.",
+      "proposed": "Gennaio 1947. CASI."
+    },
+    {
+      "source": "Entierro Santiago Zunino - 1914.",
+      "proposed": "Il funerale di Santiago Zunino — 1914."
+    },
+    {
+      "source": "Entrada a la estancia \"La Gerda\".",
+      "proposed": "L'ingresso dell'estancia «La Gerda»."
+    },
+    {
+      "source": "Equipo \"CHARRUAS\". El pequeño es Raúl Marengo.",
+      "proposed": "La squadra «CHARRUAS». Il piccolo è Raúl Marengo."
+    },
+    {
+      "source": "Equipo 2da Club Independiente - Año 1966.",
+      "proposed": "Squadra riserve del Club Independiente — 1966."
+    },
+    {
+      "source": "Equipo de \"Veteranos\". Barbiero Osvaldo, Lubi Bauver, Velazquez Mario, Lopez Osvaldo, José Ludueña, Dr. Tufro, Carlitos Peretti, Oscar Abbá, Tito Lang y Carlos Lazzaroni. Entre otros.",
+      "proposed": "La squadra dei «Veterani». Barbiero Osvaldo, Lubi Bauver, Velazquez Mario, Lopez Osvaldo, José Ludueña, il dottor Tufro, Carlitos Peretti, Oscar Abbá, Tito Lang e Carlos Lazzaroni. Tra gli altri."
+    },
+    {
+      "source": "Equipo de Futbol - 1944.",
+      "proposed": "Squadra di calcio — 1944."
+    },
+    {
+      "source": "Equipo de futbol \"Eucaliptus S.A.\". Entre ellos: Troncoso, Pascualon (arquero), Quilico Peralta, Baños.",
+      "proposed": "La squadra di calcio «Eucaliptus S.A.». Tra loro: Troncoso, Pascualon (portiere), Quilico Peralta, Baños."
+    },
+    {
+      "source": "Equipo de Independiente La Pelada.",
+      "proposed": "La squadra dell'Independiente La Pelada."
+    },
+    {
+      "source": "Equipo de la Estancia.",
+      "proposed": "La squadra dell'estancia."
+    },
+    {
+      "source": "Escuela de campo de Bonetti - Década 40/50.",
+      "proposed": "La scuola di campagna di Bonetti — anni Quaranta/Cinquanta."
+    },
+    {
+      "source": "Escuela fiscal N° 502 \"José de San Martín\", durante la inundación. Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "Scuola statale Nº502 «José de San Martín», durante l'alluvione. Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Escuela N° 502 - 1975.",
+      "proposed": "Scuola Nº502 — 1975."
+    },
+    {
+      "source": "Escuela N° 502.",
+      "proposed": "Scuola Nº502."
+    },
+    {
+      "source": "Escuela Nacional N° 60 grupo de alumnos y docentes.* Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "Scuola Nazionale Nº60, un gruppo di alunni e insegnanti.* Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Espacios",
+      "proposed": "Luoghi"
+    },
+    {
+      "source": "Esquina de las calles Iturraspe y Belgrano. Edificio actualmente demolido",
+      "proposed": "Angolo tra le Calles Iturraspe e Belgrano. L'edificio è stato demolito"
+    },
+    {
+      "source": "Esquina de las calles Iturraspe y Belgrano. Edificio actualmente demolido.",
+      "proposed": "Angolo tra le Calles Iturraspe e Belgrano. L'edificio è stato demolito."
+    },
+    {
+      "source": "Esquina frente a la plaza local. Intersección de las calles San Bernardo y Belgrano.",
+      "proposed": "L'angolo di fronte alla piazza del paese. Incrocio tra le Calles San Bernardo e Belgrano."
+    },
+    {
+      "source": "Esquina San Martín y 25 de Mayo.",
+      "proposed": "Angolo tra San Martín e 25 de Mayo."
+    },
+    {
+      "source": "Estación de servicio. Calles San Martín e Iturraspe.",
+      "proposed": "Stazione di servizio. Calles San Martín e Iturraspe."
+    },
+    {
+      "source": "Estación de servicio. De izquierda a derecha: Mateo Troncoso, Julio Dándolo y Luis Garello; atrás estanciera de Juan Bauducco. - Año 1972",
+      "proposed": "Stazione di servizio. Da sinistra a destra: Mateo Troncoso, Julio Dándolo e Luis Garello; dietro, la estanciera (familiare) di Juan Bauducco. — 1972"
+    },
+    {
+      "source": "Estancia \"La Camucha\".",
+      "proposed": "Estancia «La Camucha»."
+    },
+    {
+      "source": "Estancia \"La Camucha\". Velazquez Mario junto a toro ganador certamen.",
+      "proposed": "Estancia «La Camucha». Velazquez Mario accanto al toro vincitore del concorso."
+    },
+    {
+      "source": "Estancia \"La Gerda\".",
+      "proposed": "Estancia «La Gerda»."
+    },
+    {
+      "source": "Estancia \"La Pelada\".",
+      "proposed": "Estancia «La Pelada»."
+    },
+    {
+      "source": "Estancia Mayoraz. \"Ubicadas en la zona N.E. del Distrito, fueron las primeras en poblarse hacia 1880, a través de la labor de Santiago ZUNINO y Juan B. MAYORAZ. A partir de la fecha mencionada, ambos jefes de familias se radicaron en la zona convirtiéndola en la más antigua del Distrito en su poblamiento, hace 112 años.\"*",
+      "proposed": "Estancia Mayoraz. «Situate nella zona nord-est del distretto, furono le prime a essere popolate, verso il 1880, grazie all'opera di Santiago ZUNINO e Juan B. MAYORAZ. Da quella data entrambi i capifamiglia si stabilirono nella zona, rendendola la più antica del distretto quanto a popolamento, 112 anni fa.»*"
+    },
+    {
+      "source": "Eucaliptus",
+      "proposed": "Eucaliptus"
+    },
+    {
+      "source": "Evento en el Club Libertad.",
+      "proposed": "Un evento al Club Libertad."
+    },
+    {
+      "source": "Exterior fabrica de soda hielo y gaseosa. Albañil Sr. Bernabe Peralta.",
+      "proposed": "Esterno della fabbrica di soda, ghiaccio e bibite. Il muratore, sig. Bernabe Peralta."
+    },
+    {
+      "source": "Extraccion del eucaliptus.",
+      "proposed": "Estrazione dell'eucalipto."
+    },
+    {
+      "source": "Fabrica de soda, hielo y gaseosa la popular \"Naranjina\", de Luis Ravasio. 1940, comprada a los Sres. Bauducco.",
+      "proposed": "La fabbrica di soda, ghiaccio e bibite di Luis Ravasio, da cui veniva la famosa «Naranjina». 1940, comprata dai signori Bauducco."
+    },
+    {
+      "source": "Faenas agrícolas.",
+      "proposed": "Lavori agricoli."
+    },
+    {
+      "source": "Familia Bonino. Principios del Siglo XX.",
+      "proposed": "La famiglia Bonino. Inizio del Novecento."
+    },
+    {
+      "source": "Familia Chiaraviglio. En el campo de Clive Chiaraviglio - Década 40-50.",
+      "proposed": "La famiglia Chiaraviglio. Nel campo di Clive Chiaraviglio — anni Quaranta/Cinquanta."
+    },
+    {
+      "source": "Familia de Eduardo Sanmartino.",
+      "proposed": "La famiglia di Eduardo Sanmartino."
+    },
+    {
+      "source": "Familia del padre de Nilba Peretti y de su tío Guillermo - Principios del Siglo XX.",
+      "proposed": "La famiglia del padre di Nilba Peretti e dello zio Guillermo — inizio del Novecento."
+    },
+    {
+      "source": "Familia Lazzaroni en Emilia. A la izquierda de la foto, junto al perro, Primo Lazzaroni (bisabuelo de Guillermo Lazzaroni Bescham). Año 1910 (aproximadamente).",
+      "proposed": "La famiglia Lazzaroni a Emilia. A sinistra nella foto, accanto al cane, Primo Lazzaroni (bisnonno di Guillermo Lazzaroni Bescham). Intorno al 1910."
+    },
+    {
+      "source": "Familia Lazzaroni en Emilia. En la fotografía se encuentran Primo Lazzaroni y su hermano. Abundio cuando cumplía 80 años. Año 1956 (aproximadamente).",
+      "proposed": "La famiglia Lazzaroni a Emilia. Nella fotografia ci sono Primo Lazzaroni e suo fratello Abundio, per gli 80 anni di Abundio. Intorno al 1956."
+    },
+    {
+      "source": "Familia Lezcano.",
+      "proposed": "La famiglia Lezcano."
+    },
+    {
+      "source": "Familia Lezcano. Niña en guardapolvos, lista para asistir a la escuela Mariano Moreno que distaba a 8 km de Eucaliptus. Los alumnos se acercaban al casco de la estancia y desde ahí los llevaban, en jeep en los últimos años y anteriormente (1978) camión, tractor y hasta en un colectivo que el patrón cedía a los empleados.",
+      "proposed": "La famiglia Lezcano. Una bambina in guardapolvo (il grembiule bianco di scuola argentino), pronta per andare alla scuola Mariano Moreno, a 8 km da Eucaliptus. Gli alunni raggiungevano il casale dell'estancia e da lì venivano portati — in jeep negli ultimi anni e prima (1978) con il camion, il trattore e persino con un pullman che il padrone prestava ai dipendenti."
+    },
+    {
+      "source": "Familias",
+      "proposed": "Famiglie"
+    },
+    {
+      "source": "Festejo del 1º año de Leonardo Costa.",
+      "proposed": "Il primo compleanno di Leonardo Costa."
+    },
+    {
+      "source": "Festejo del casamiento de \"Cachi\" Dándolo y Aurora Fassi.",
+      "proposed": "La festa di matrimonio di «Cachi» Dándolo e Aurora Fassi."
+    },
+    {
+      "source": "Festivales en el Club Independiente - Agosto 1973.",
+      "proposed": "Festival al Club Independiente — agosto 1973."
+    },
+    {
+      "source": "Festivales en el Club Independiente.",
+      "proposed": "Festival al Club Independiente."
+    },
+    {
+      "source": "Fiesta de Boca Jrs. De izquierda a derecha: \"Flaco\" Pozo, Segundo Chiaraviglio, \"Cachi\" Dándolo (tapado), Mateo Troncoso, Ariel Dándolo (niño), \"Pancho\" Lazzaroni, Emilio Rizzo.",
+      "proposed": "Una festa del Boca Jrs. Da sinistra a destra: «Flaco» Pozo, Segundo Chiaraviglio, «Cachi» Dándolo (coperto), Mateo Troncoso, Ariel Dándolo (il bambino), «Pancho» Lazzaroni, Emilio Rizzo."
+    },
+    {
+      "source": "Fiesta de hombres.",
+      "proposed": "Una festa di soli uomini."
+    },
+    {
+      "source": "Fiesta de La Pelada.",
+      "proposed": "La festa del paese di La Pelada."
+    },
+    {
+      "source": "Fiesta de los abuelos en la Escuela 502.",
+      "proposed": "La festa dei nonni alla scuola Nº502."
+    },
+    {
+      "source": "Fiesta de los Jardines - 1997. Calle San Martín, frente a la plaza.",
+      "proposed": "Festa delle scuole materne — 1997. Calle San Martín, di fronte alla piazza."
+    },
+    {
+      "source": "Fiesta de los Jardines. En Plaza San Martín, zona de mástil.",
+      "proposed": "Festa delle scuole materne. In Plaza San Martín, vicino al pennone."
+    },
+    {
+      "source": "Fiesta de los Jardines. Sobre calles Luis Pasteur y llegando a Belgrano.",
+      "proposed": "Festa delle scuole materne. Sulla Calle Luis Pasteur, arrivando a Belgrano."
+    },
+    {
+      "source": "Fiesta del Pueblo Flia Velazquez, Mario - 20 de agosto de 1943.",
+      "proposed": "La festa del paese. La famiglia Velazquez, Mario — 20 de agosto 1943."
+    },
+    {
+      "source": "Fiesta patronal 1965.",
+      "proposed": "Festa patronale, 1965."
+    },
+    {
+      "source": "Fiesta patronal en honor a San Bernardo e inauguración de la nueva \"portada\" de ingreso a la localidad.",
+      "proposed": "Festa patronale in onore di San Bernardo e inaugurazione del nuovo portale d'ingresso al paese."
+    },
+    {
+      "source": "Foto desde la entrada de la Escuela Nº502, de fondo la plaza \"San Martín\". Presentes en la foto: Lelia Lazzaroni, Sunilda Rizzo y \"Carli\" Peretti (niño) - 1961.",
+      "proposed": "Una foto dall'ingresso della scuola Nº502, con la Plaza «San Martín» sullo sfondo. Nella foto: Lelia Lazzaroni, Sunilda Rizzo e «Carli» Peretti (il bambino) — 1961."
+    },
+    {
+      "source": "Foto en el campo de Peretti.",
+      "proposed": "Una foto nel campo dei Peretti."
+    },
+    {
+      "source": "Foto escolar - Año 1964.",
+      "proposed": "Foto scolastica — 1964."
+    },
+    {
+      "source": "Fotografía original.",
+      "proposed": "La fotografia originale."
+    },
+    {
+      "source": "Fotografía restaurada con Inteligencia Artificial (Gemini).",
+      "proposed": "Fotografia restaurata con intelligenza artificiale (Gemini)."
+    },
+    {
+      "source": "Fotografía restaurada y coloreada con Inteligencia Artificial (Gemini). MEMORIAS DE LA PELADA - Sunilda Rizzo Entrevista a Sunilda Rizzo, hija de Nicolás Emilio Rizzo inventor de la maquina. En los primeros minutos de la entrevista relata la historia del invento de su padre.",
+      "proposed": "Fotografia restaurata e colorata con intelligenza artificiale (Gemini). MEMORIE DI LA PELADA — Sunilda Rizzo. Un'intervista a Sunilda Rizzo, figlia di Nicolás Emilio Rizzo, inventore della macchina. Nei primi minuti dell'intervista racconta la storia dell'invenzione del padre."
+    },
+    {
+      "source": "Fotografias familiares/grupales tomadas por Luis Ravasio (fotografo), sin reclamar y sin reconocimiento de las personas presentes.",
+      "proposed": "Fotografie di famiglia e di gruppo scattate da Luis Ravasio (fotografo), mai ritirate e con le persone non identificate."
+    },
+    {
+      "source": "Frente de Farmacia Tesolín en sus inicios. Sobre calle San Martín.",
+      "proposed": "La facciata della farmacia Tesolín agli inizi. Sulla Calle San Martín."
+    },
+    {
+      "source": "Frente de iglesia con su antigua fachada.",
+      "proposed": "La facciata della chiesa nel suo aspetto antico."
+    },
+    {
+      "source": "Frente Iglesia 1910.",
+      "proposed": "La facciata della chiesa, 1910."
+    },
+    {
+      "source": "Funeral de Santiago Zunino, primer poblador del lugar.",
+      "proposed": "Il funerale di Santiago Zunino, primo abitante del luogo."
+    },
+    {
+      "source": "Garita sobre Ruta N°4.",
+      "proposed": "Garitta sulla Ruta N°4."
+    },
+    {
+      "source": "Guia Oficial de la Provincia de Santa Fe.",
+      "proposed": "Guida ufficiale della provincia di Santa Fe."
+    },
+    {
+      "source": "Guitarrero.",
+      "proposed": "Un chitarrista."
+    },
+    {
+      "source": "Hacheros.",
+      "proposed": "Boscaioli."
+    },
+    {
+      "source": "Hanomag 1960 - Atrás tanque para cargar agua y bretes del ferrocarril. Actualmente calle 20 de Agosto.",
+      "proposed": "Hanomag 1960 — dietro, la torre dell'acqua e i corridoi di contenimento della ferrovia. Oggi calle 20 de Agosto."
+    },
+    {
+      "source": "Héctor Ducrano, Armando Cavaille (de María Luisa) y Osvaldo Bonetto (\"Pistita\"). En el salón de Luis Crotti (actual Club Libertad) - 1953.",
+      "proposed": "Héctor Ducrano, Armando Cavaille (di María Luisa) e Osvaldo Bonetto («Pistita»). Nel salone di Luis Crotti (l'attuale Club Libertad) — 1953."
+    },
+    {
+      "source": "Hermano Chiaraviglio. Al medio padre de Celmira, Coca, Aquilino, Chichi, Blanca, Negro... casado con Antonia Bonino.",
+      "proposed": "Un fratello Chiaraviglio. Al centro, il padre di Celmira, Coca, Aquilino, Chichi, Blanca e Negro… sposato con Antonia Bonino."
+    },
+    {
+      "source": "Hermanos Bonino. Entre ellos: Antonia Bonino de Chiaraviglio (la tercera de derecha a izquierda de vestido oscuro con la cadenita).",
+      "proposed": "I fratelli Bonino. Tra loro: Antonia Bonino de Chiaraviglio (la terza da destra a sinistra, vestito scuro con la catenina)."
+    },
+    {
+      "source": "Himno al centenario, dentro del folleto del programa - 1992. Autores: Aurelio Marengo y David Muller.",
+      "proposed": "L'inno del centenario, nel libretto del programma — 1992. Autori: Aurelio Marengo e David Muller."
+    },
+    {
+      "source": "Horno de barro para elaborar carbón.",
+      "proposed": "Un forno di terra per fare il carbone."
+    },
+    {
+      "source": "Hornos de barro para quemar el eucaliptus y obtener carbón.",
+      "proposed": "Forni di terra per bruciare l'eucalipto e ottenere il carbone."
+    },
+    {
+      "source": "Hospital Rural. Sobre calle Los Colonizadores.",
+      "proposed": "Ospedale rurale. Sulla Calle Los Colonizadores."
+    },
+    {
+      "source": "Iglesia 1907.",
+      "proposed": "La chiesa, 1907."
+    },
+    {
+      "source": "Iglesia con su antigua fachada. Vista desde la plaza local.",
+      "proposed": "La chiesa con la sua antica facciata. Vista dalla piazza del paese."
+    },
+    {
+      "source": "Iglesia en su origen. Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "La chiesa alle origini. Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Iglesia.",
+      "proposed": "La chiesa."
+    },
+    {
+      "source": "Iglesia. Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "La chiesa. Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Imagen en casa paterna Chiaraviglio - La Pelada.",
+      "proposed": "Un'immagine nella casa paterna dei Chiaraviglio — La Pelada."
+    },
+    {
+      "source": "Imagen en el campo de casa paterna de familia Chiaraviglio, sentado \"Negro\" Chiaraviglio, arriba la nona Antonia, a su lado una hermana de ella, en el caballo Aquilino Chiaraviglio. En el otro extremo Coca Chiaraviglio (de vestido oscuro) y a su lado Celmira Chiaraviglio.",
+      "proposed": "Un'immagine nel campo della casa paterna dei Chiaraviglio. Seduto, «Negro» Chiaraviglio; sopra, la nona Antonia, accanto a lei una sua sorella; a cavallo, Aquilino Chiaraviglio. All'altro capo, Coca Chiaraviglio (in vestito scuro) e accanto a lei Celmira Chiaraviglio."
+    },
+    {
+      "source": "Inaguración saloncito del Club Independiente - 11 de agosto 1968 - Padrino Hector Cueva y Mary de Cuevas - Sabato Bonetti - Teresa de Bonetti",
+      "proposed": "Inaugurazione della saletta del Club Independiente — 11 agosto 1968 — padrini Hector Cueva e Mary de Cuevas — Sabato Bonetti — Teresa de Bonetti"
+    },
+    {
+      "source": "Inaguración saloncito del Club Independiente - 11 de agosto 1968.",
+      "proposed": "Inaugurazione della saletta del Club Independiente — 11 agosto 1968."
+    },
+    {
+      "source": "Inauguración de la nueva \"portada\" de ingreso a la localidad.",
+      "proposed": "L'inaugurazione del nuovo portale d'ingresso al paese."
+    },
+    {
+      "source": "Inauguración monolito de Santa Ana. Padre Benjamín - Década de los 90.",
+      "proposed": "Inaugurazione del monolito di Santa Ana. Padre Benjamín — anni Novanta."
+    },
+    {
+      "source": "Inferiores del Club Independiente en Soledad. Año 2005 (aproximadamente).",
+      "proposed": "Le giovanili del Club Independiente a Soledad. Intorno al 2005."
+    },
+    {
+      "source": "Inferiores del Club Independiente.",
+      "proposed": "Le giovanili del Club Independiente."
+    },
+    {
+      "source": "Intervención artistica de los alumnos del Jardín en el frente del salón parroquial.",
+      "proposed": "Intervento artistico dei bambini della scuola materna sulla facciata del salone parrocchiale."
+    },
+    {
+      "source": "Inundación '78",
+      "proposed": "L'alluvione del '78"
+    },
+    {
+      "source": "Jardín de Infantes.",
+      "proposed": "Scuola materna."
+    },
+    {
+      "source": "Jardín de Infantes. Maestra: María Jose da Silva",
+      "proposed": "Scuola materna. Maestra: María Jose da Silva"
+    },
+    {
+      "source": "José Sanmartino y María Bruera (tatarabuelos de Romina Sanmartino) y sus hijos. José y María llegaron a la Argentina el 11 de septiembre de 1811 desde la ciudad de Piamonte, Italia. Fotografía tomada en 1890.",
+      "proposed": "José Sanmartino e María Bruera (trisavoli di Romina Sanmartino) e i loro figli. José e María arrivarono in Argentina l'11 settembre 1811 dal Piemonte, in Italia. Fotografia scattata nel 1890."
+    },
+    {
+      "source": "José Sanmartino y Maria Bruera (tatarabuelos de Romina Sanmartino). Llegaron a la Argentina el 11 de septiembre de 1811 desde la ciudad de Piamonte, Italia. Fotografía tomada en 1901.",
+      "proposed": "José Sanmartino e Maria Bruera (trisavoli di Romina Sanmartino). Arrivarono in Argentina l'11 settembre 1811 dal Piemonte, in Italia. Fotografia scattata nel 1901."
+    },
+    {
+      "source": "Juan Carlos Abba (\"Cuqui\") y Araceli Abba, debajo Juan Bautista Abba - Década '70.",
+      "proposed": "Juan Carlos Abba («Cuqui») e Araceli Abba, sotto Juan Bautista Abba — anni Settanta."
+    },
+    {
+      "source": "Juan Moreira en la Estancia \"El Cometa\".",
+      "proposed": "Juan Moreira all'estancia «El Cometa»."
+    },
+    {
+      "source": "Juan Moreira.",
+      "proposed": "Juan Moreira."
+    },
+    {
+      "source": "Juan Peretti y Segundo Bonetto. Izando la bandera en el mástil de la escuela primaria N° 502.",
+      "proposed": "Juan Peretti e Segundo Bonetto issano la bandiera sul pennone della scuola elementare Nº502."
+    },
+    {
+      "source": "Juego de la Taba. Federico San Martino (tirando la taba). Mirando: Troncoso y Onyzik (fotógrafo y cuñado de \"Cachi\")",
+      "proposed": "Una partita a taba (un gioco di campagna in cui si lancia un astragalo di bue). Federico San Martino tira. A guardare: Troncoso e Onyzik (fotografo e cognato di «Cachi»)."
+    },
+    {
+      "source": "Juegos en el patio de la escuela primaria N° 502.",
+      "proposed": "Giochi nel cortile della scuola elementare Nº502."
+    },
+    {
+      "source": "Jugando con el chivito.",
+      "proposed": "Giocando con il capretto."
+    },
+    {
+      "source": "La Fototeca es un archivo histórico y cultural dedicado a preservar, digitalizar y difundir la memoria visual de La Pelada. Reúne fotografías, documentos y testimonios que reflejan la vida, las tradiciones y la historia de la comunidad.",
+      "proposed": "La Fototeca è un archivio storico e culturale dedicato a preservare, digitalizzare e diffondere la memoria visiva di La Pelada. Raccoglie fotografie, documenti e testimonianze che riflettono la vita, le tradizioni e la storia della comunità."
+    },
+    {
+      "source": "La Pelada se encuentra en la provincia de Santa Fe, Argentina. Fundada el 31 de mayo de 1892. Está ubicada en el noreste del departamento Las Colonias.\n\nSu fiesta patronal es celebrada el 20 de agosto (también conocida como \"fiesta del pueblo\"), en conmemoración de su santo patrono: San Bernardo.\n\nAdemás de las actividades agrícolas-ganaderas que caracterizan a las localidades de la zona. La Pelada, cuenta con una rica historia que se remonta a los primeros tiempos de ocupación de los territorios coloniales, formando parte del \"Camino Real\" y levantándose distintos Fortines defensivos.",
+      "proposed": "La Pelada si trova nella provincia di Santa Fe, in Argentina. Fondata il 31 maggio 1892, si trova nel nord-est del dipartimento di Las Colonias.\n\nLa sua festa patronale si celebra il 20 agosto (nota anche come «festa del paese»), in onore del santo patrono, San Bernardo.\n\nOltre alle attività agricole e di allevamento che caratterizzano le località della zona, La Pelada ha una storia ricca che risale ai primi tempi dell'occupazione dei territori coloniali, quando faceva parte del «Camino Real» e vi furono costruiti diversi forti difensivi."
+    },
+    {
+      "source": "La vieja cancha del C.A.S.I., el policia Nestor Segovia observando el partido.",
+      "proposed": "Il vecchio campo del C.A.S.I., il poliziotto Nestor Segovia che guarda la partita."
+    },
+    {
+      "source": "Laldi Lescano. Frente a la casa de Carlos Cuaranta (\"Palito\").",
+      "proposed": "Laldi Lescano. Davanti alla casa di Carlos Cuaranta («Palito»)."
+    },
+    {
+      "source": "Las cuatro generaciones. En la foto: Sentada en el sillón: Abuela de Nilba; Sentada en el apoyabrazo del sillón: Madre de Nilba (Margarita Risso); Parada: Hermana de Nilba (Clelia); Beba: Hija de Clelia.",
+      "proposed": "Le quattro generazioni. Nella foto — seduta in poltrona: la nonna di Nilba; seduta sul bracciolo: la madre di Nilba (Margarita Risso); in piedi: la sorella di Nilba (Clelia); la bambina: la figlia di Clelia."
+    },
+    {
+      "source": "Lauderino Fracisco Valiente \"Falucho\", nacido en La Pelada. Máximo goleador de Unión de Santa Fe con 125 goles en 121 partidos (en la era amateur). Fuente: Club Atlético Unión",
+      "proposed": "Lauderino Fracisco Valiente, «Falucho», nato a La Pelada. Miglior marcatore dell'Unión de Santa Fe con 125 gol in 121 partite (nell'era dilettantistica). Fonte: Club Atlético Unión"
+    },
+    {
+      "source": "Lautaro Tesolín y Marcos Tesolín",
+      "proposed": "Lautaro Tesolín e Marcos Tesolín"
+    },
+    {
+      "source": "Leonildo Barengo (\"Sivori\"); Daniel Alassia, (\"Tito\") Gaspar Lang.",
+      "proposed": "Leonildo Barengo («Sivori»); Daniel Alassia; Gaspar («Tito») Lang."
+    },
+    {
+      "source": "Llegada de los restos de Santiago Zunino, primer poblador del lugar.",
+      "proposed": "L'arrivo delle spoglie di Santiago Zunino, primo abitante del luogo."
+    },
+    {
+      "source": "Llegada en tren trayendo los restos de Santiago Zunino, primer poblador del lugar. Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "L'arrivo del treno con le spoglie di Santiago Zunino, primo abitante del luogo. Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Llegada los restos de Santiago Zunino, primer poblador del lugar.",
+      "proposed": "L'arrivo delle spoglie di Santiago Zunino, primo abitante del luogo."
+    },
+    {
+      "source": "Lorenza López Jordán. Posible hija de Santiago Zunino y Doña Lorenza Correa Taborda López Jordán (descendiente del caudillo entrerriano).* Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "Lorenza López Jordán. Forse una figlia di Santiago Zunino e Doña Lorenza Correa Taborda López Jordán (discendente del caudillo di Entre Ríos).* Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Lorenzo Chiaraiglio. Esposo de Antonia Bonino. Padre de Aquilino, Marcelo (Negro), Juan Carlos (Chichi), Maria (coca), Celmira y Blanca.",
+      "proposed": "Lorenzo Chiaraiglio. Marito di Antonia Bonino. Padre di Aquilino, Marcelo (Negro), Juan Carlos (Chichi), Maria (coca), Celmira e Blanca."
+    },
+    {
+      "source": "Lucas García (en el centro). Capataz de la estancia. A la izquierda de la foto, de boina, \"Juan pescador\", vivía a la orilla del salado, era de origen búlgaro. A la derecha de la foto: Don Martín Díaz. Año 1966 o 1967.",
+      "proposed": "Lucas García (al centro). Capomastro dell'estancia. A sinistra nella foto, con il berretto, «Juan pescador», che viveva sulla riva del Salado ed era di origine bulgara. A destra nella foto: Don Martín Díaz. 1966 o 1967."
+    },
+    {
+      "source": "Lugar reservado para ilustrar la historia educativa de La Pelada: escuelas, docentes, alumnos, actos escolares, edificios educativos, clases, actividades de formación. Refleja cómo se fue desarrollando la educación en la localidad, sus cambios en el tiempo, y su importancia para la comunidad. Ideal para quienes quieran conocer la dimensión educativa del pueblo.",
+      "proposed": "Uno spazio riservato alla storia educativa di La Pelada: scuole, insegnanti, alunni, cerimonie scolastiche, edifici scolastici, lezioni, attività di formazione. Mostra come si è sviluppata l'istruzione nella località, come è cambiata nel tempo e che cosa ha significato per la comunità. Ideale per chi vuole conoscere la dimensione educativa del paese."
+    },
+    {
+      "source": "Lugares que fueron escenario, hogar y memoria. En esta página se exploran los rincones que le dan identidad a La Pelada: calles que cambiaron de forma pero no de espíritu, edificios que marcaron épocas y paisajes que acompañaron generaciones. Cada fotografía reconstruye cómo se veía —y cómo se vivía— el pueblo en distintas etapas de su historia.",
+      "proposed": "Luoghi che furono scenario, casa e memoria. In questa pagina si esplorano gli angoli che danno identità a La Pelada: strade che hanno cambiato forma ma non spirito, edifici che hanno segnato epoche e paesaggi che hanno accompagnato generazioni. Ogni fotografia ricostruisce com'era — e come si viveva — il paese nelle diverse tappe della sua storia."
+    },
+    {
+      "source": "Maestro Celestino Sosa - Escuela Nacional Particular. 1917-18 aproximadamente. Disponible en: Banco de imágenes \"Florián Paucke\".",
+      "proposed": "Il maestro Celestino Sosa — Escuela Nacional Particular. Intorno al 1917-18. Disponibile presso la banca immagini «Florián Paucke»."
+    },
+    {
+      "source": "Maquina agrícola antigua.",
+      "proposed": "Una vecchia macchina agricola."
+    },
+    {
+      "source": "Maquina de hacer caminos de Nicolás Emilio Rizzo",
+      "proposed": "La macchina per fare le strade di Nicolás Emilio Rizzo"
+    },
+    {
+      "source": "Maquina de repasar caminos. Sobre la maquina: Nilba Peretti.",
+      "proposed": "Macchina per rifare le strade. Sulla macchina: Nilba Peretti."
+    },
+    {
+      "source": "Mateo Troncoso (en el caballo), Manuel Gómez (Abajo) y Campo Abierto (el caballo).",
+      "proposed": "Mateo Troncoso (a cavallo), Manuel Gómez (in basso) e Campo Abierto (il cavallo)."
+    },
+    {
+      "source": "Mayo 1947. CASI.",
+      "proposed": "Maggio 1947. CASI."
+    },
+    {
+      "source": "MEMORIAS DE LA PELADA - Maria Luisa Ravasio Entrevista a Marilu Ravasio de Bauducco, en esta ocasión nos relata sobre los siguientes temas: El Molino \"La Esmeralda\"; Fabrica de gaseosa, soda y hielo; La usina eléctrica; Los carnavales; El paso del ferrocarril; El papel de \"Boteron\" Zunino.",
+      "proposed": "MEMORIE DI LA PELADA — Maria Luisa Ravasio. Un'intervista a Marilu Ravasio de Bauducco, che questa volta ci racconta del mulino «La Esmeralda»; della fabbrica di bibite, soda e ghiaccio; della centrale elettrica; dei carnevali; del passaggio della ferrovia; e del ruolo di «Boteron» Zunino."
+    },
+    {
+      "source": "Molino Esmeralda de Juan Cardini. Actualmente calle 20 de Agosto.",
+      "proposed": "Il mulino Esmeralda di Juan Cardini. Oggi calle 20 de Agosto."
+    },
+    {
+      "source": "Molino harinero demolido en 1940 junto a las vías férreas, hoy casas de Maria Luisa y Patricia Ravasio.",
+      "proposed": "Mulino per farina demolito nel 1940 accanto ai binari, oggi le case di Maria Luisa e Patricia Ravasio."
+    },
+    {
+      "source": "Monte.",
+      "proposed": "Il bosco."
+    },
+    {
+      "source": "Monumento a la Madre inaugurado el 17/10/1965 en La Pelada - Esc. Nº502",
+      "proposed": "Monumento alla Madre, inaugurato il 17 ottobre 1965 a La Pelada — scuola Nº502"
+    },
+    {
+      "source": "Mudanza del tío de Nilba (Guillermo). Sobre calle San Martín, cuando las calles aún eran de tierra - 1965.",
+      "proposed": "Il trasloco dello zio di Nilba (Guillermo). Sulla Calle San Martín, quando le strade erano ancora sterrate — 1965."
+    },
+    {
+      "source": "Muestra de Juan Arancio. Salón parroquial.",
+      "proposed": "Una mostra di Juan Arancio. Salone parrocchiale."
+    },
+    {
+      "source": "Muestra de Juan Arancio. Visita del Monseñor José Maria Arancedo. Salón parroquial.",
+      "proposed": "Una mostra di Juan Arancio. Visita di monsignor José Maria Arancedo. Salone parrocchiale."
+    },
+    {
+      "source": "Navidades.",
+      "proposed": "Natali."
+    },
+    {
+      "source": "Nelly Zunino - 13/07/1921",
+      "proposed": "Nelly Zunino — 13 luglio 1921"
+    },
+    {
+      "source": "Nonos Bonino (padres de mi nona Antonia) .",
+      "proposed": "I nonos Bonino — i genitori della mia nona Antonia."
+    },
+    {
+      "source": "Obituario del Pbro. Bartolome Ghione.",
+      "proposed": "Necrologio di padre Bartolome Ghione."
+    },
+    {
+      "source": "Obra infantil de \"Manuelita\". En el patio de la Escuela Nº 502.",
+      "proposed": "Lo spettacolo per bambini «Manuelita». Nel cortile della scuola Nº502."
+    },
+    {
+      "source": "Octubre 1946. CASI.",
+      "proposed": "Ottobre 1946. CASI."
+    },
+    {
+      "source": "Oficios que construyeron la identidad de La Pelada. Esta sección reúne imágenes de quienes hicieron andar al pueblo con sus manos: trabajadores rurales, comerciantes, artesanos, empleados y profesionales. Las fotos revelan herramientas, ambientes, rutinas y formas de producción que fueron cambiando con el tiempo, pero que definieron la economía y el modo de vivir local.",
+      "proposed": "I mestieri che hanno costruito l'identità di La Pelada. Questa sezione raccoglie immagini di chi ha fatto funzionare il paese con le proprie mani: braccianti, commercianti, artigiani, impiegati e professionisti. Le foto mostrano attrezzi, ambienti, abitudini e forme di produzione che sono cambiate nel tempo, ma che hanno definito l'economia e il modo di vivere locali."
+    },
+    {
+      "source": "ORIGINAL: Decreto creación de la Comisión de Fomento de la Colonia La Pelada (1913).",
+      "proposed": "ORIGINALE: decreto di creazione della commissione di sviluppo della Colonia La Pelada (1913)."
+    },
+    {
+      "source": "Orquesta.",
+      "proposed": "Un'orchestra."
+    },
+    {
+      "source": "Padre Marcelo Blanche en celebración en la Capilla San Bernardo.",
+      "proposed": "Padre Marcelo Blanche durante una celebrazione nella Capilla San Bernardo."
+    },
+    {
+      "source": "Panadero. En la foto Graciela y Mirta Velázquez, Esther Mairani.",
+      "proposed": "Il fornaio. Nella foto, Graciela e Mirta Velázquez, Esther Mairani."
+    },
+    {
+      "source": "Parados: Osvaldo Lopez, Panivelo, Tito Lang, Hugo Bescham, Oscar Abba, \"Mechando\" , Felipe Bauer. Agachados: José Ludueña, Naldo Monti, Piti Passet, Osvaldo Barbiero, Mario Castro, Dr. Tufro.",
+      "proposed": "In piedi: Osvaldo Lopez, Panivelo, Tito Lang, Hugo Bescham, Oscar Abba, «Mechando», Felipe Bauer. Accosciati: José Ludueña, Naldo Monti, Piti Passet, Osvaldo Barbiero, Mario Castro, il dottor Tufro."
+    },
+    {
+      "source": "Partido solteros vs casados. Mateo Troncoso (izquierda) y José Ludueña (derecha - Enfermero).",
+      "proposed": "Scapoli contro ammogliati. Mateo Troncoso (a sinistra) e José Ludueña (a destra — l'infermiere)."
+    },
+    {
+      "source": "Pedro Fassi y Belkis Strada - Década '50.",
+      "proposed": "Pedro Fassi e Belkis Strada — anni Cinquanta."
+    },
+    {
+      "source": "Peluquería la favorita de Luis Ravasio. Construcción 1926, foto de 1933, calle San Lorenzo",
+      "proposed": "Il salone da barbiere La Favorita di Luis Ravasio. Costruito nel 1926, fotografato nel 1933, Calle San Lorenzo"
+    },
+    {
+      "source": "Peluquería la favorita de Luis Ravasio. Construcción 1926, foto de 1933, calle San Lorenzo.",
+      "proposed": "Il salone da barbiere La Favorita di Luis Ravasio. Costruito nel 1926, fotografato nel 1933, Calle San Lorenzo."
+    },
+    {
+      "source": "Peluquería. Peluqueros: Luis Ravasio y Agustin Ledesma. Niños: Elide Ravasio de Rosso y Aristides Ravassio.",
+      "proposed": "Il salone da barbiere. Barbieri: Luis Ravasio e Agustin Ledesma. Bambini: Elide Ravasio de Rosso e Aristides Ravassio."
+    },
+    {
+      "source": "Peña en los '60 patio de \"Cachi\" Dándolo. De izquierda a derecha: Zunino, Bauducco, viajante (nombre desconocido), \"Coco\" Abelenda, viajante (nombre desconocido), Capelino (Sastre del pueblo), Ariel Dándolo, Ludueña, \"Cachi\" Dándolo.",
+      "proposed": "Una peña (un ritrovo informale con musica e cibo) negli anni Sessanta, nel cortile di «Cachi» Dándolo. Da sinistra a destra: Zunino, Bauducco, un commesso viaggiatore (nome sconosciuto), «Coco» Abelenda, un commesso viaggiatore (nome sconosciuto), Capelino (il sarto del paese), Ariel Dándolo, Ludueña, «Cachi» Dándolo."
+    },
+    {
+      "source": "Peñas Club Independiente. Hector Bo, René Velazquez, Raúl Voisard, Conrado Bossi, Pascualón.",
+      "proposed": "Peñas (ritrovi informali con musica e cibo) al Club Independiente. Hector Bo, René Velazquez, Raúl Voisard, Conrado Bossi, Pascualón."
+    },
+    {
+      "source": "Pérgola plaza \"San Martín\".",
+      "proposed": "La pergola della Plaza «San Martín»."
+    },
+    {
+      "source": "Personas jugando al deporte nacional de Argentina: El Pato.",
+      "proposed": "Persone che giocano allo sport nazionale argentino: El Pato."
+    },
+    {
+      "source": "Pesebre viviente en \"Eucaliptus\" - 18/12/1992.",
+      "proposed": "Presepe vivente a «Eucaliptus» — 18 dicembre 1992."
+    },
+    {
+      "source": "Plaza \"San Martín\".",
+      "proposed": "Plaza «San Martín»."
+    },
+    {
+      "source": "Plaza 1975. Vista a la fachada vieja de la Iglesia.",
+      "proposed": "La piazza, 1975. Vista sulla vecchia facciata della chiesa."
+    },
+    {
+      "source": "Plaza 1975. Vista al sur (antes del FONAVI frente a la plaza).",
+      "proposed": "La piazza, 1975. Vista verso sud (prima del complesso FONAVI (un programma di edilizia popolare) di fronte alla piazza)."
+    },
+    {
+      "source": "Plaza San Martín - 1996.",
+      "proposed": "Plaza San Martín — 1996."
+    },
+    {
+      "source": "Plaza San Martín.",
+      "proposed": "Plaza San Martín."
+    },
+    {
+      "source": "Plaza San Martín. En el fondo se puede observar el frente de la iglesia antiguo.",
+      "proposed": "Plaza San Martín. Sullo sfondo si vede la vecchia facciata della chiesa."
+    },
+    {
+      "source": "Portada de ingreso a la localidad.",
+      "proposed": "Il portale d'ingresso al paese."
+    },
+    {
+      "source": "Previo al \"picadito\".",
+      "proposed": "Prima della picadito (una partitella di calcio)."
+    },
+    {
+      "source": "Primer año del Jardín de Infantes en La Pelada - Año 1970.",
+      "proposed": "Il primo anno della scuola materna a La Pelada — 1970."
+    },
+    {
+      "source": "Primera comunión - Irma Sanmartino.",
+      "proposed": "Prima comunione — Irma Sanmartino."
+    },
+    {
+      "source": "Primera comunión de Julio Dándolo. Celebración en el salón parroquial.",
+      "proposed": "La prima comunione di Julio Dándolo. Celebrazione nel salone parrocchiale."
+    },
+    {
+      "source": "Primera comunión.",
+      "proposed": "Prima comunione."
+    },
+    {
+      "source": "Procesión - Década del 30 o 40.",
+      "proposed": "Una processione — anni Trenta o Quaranta."
+    },
+    {
+      "source": "Procesión patronal, el \"angelito\" es Norma Alassia.",
+      "proposed": "La processione patronale; l'«angelito» è Norma Alassia."
+    },
+    {
+      "source": "Procesión.",
+      "proposed": "Una processione."
+    },
+    {
+      "source": "Programa del Centenario de la localidad - 1992.",
+      "proposed": "Programma del centenario della località — 1992."
+    },
+    {
+      "source": "Puente sobre el arroyo Cululú - Ruta 69-S.",
+      "proposed": "Ponte sul torrente Cululú — Ruta 69-S."
+    },
+    {
+      "source": "Recorte de diario sobre la inauguración del Monumento a la Madre en el año 1965 - Esc. Nº502 Nota textual: Monumento a la Madre. - Con la asistencia de autoridades y vecinos de la localidad y colonia de La Pelada, se llevó a cabo el acto de inauguración del Monumento a la Madre erigido en el solar que ocupa la escuela No. 502. Este monumento fue levantado con el aporte de todo el pueblo y la colonia, a iniciativa del Club de Madres de la mencionada escuela. En el acto habló la Sra. Elide T. Ravasio de Rosso, asesora del citado organismo escolar.",
+      "proposed": "Ritaglio di giornale sull'inaugurazione del Monumento alla Madre nel 1965 — scuola Nº502. Trascrizione fedele: Monumento alla Madre. — Con la partecipazione delle autorità e degli abitanti della località e della colonia di La Pelada, si è svolta la cerimonia di inaugurazione del Monumento alla Madre eretto sul terreno che occupa la scuola No. 502. Questo monumento è stato eretto con il contributo di tutto il paese e della colonia, su iniziativa del Club delle Madri della suddetta scuola. Nella cerimonia ha parlato la sig.ra Elide T. Ravasio de Rosso, consulente del citato organismo scolastico."
+    },
+    {
+      "source": "Recorte de diario: Campeonato de argentino de tenis criollo. La Asociación Peladanse de Tenis Criollo campeona en la categoría doble varones novicios: Ángel Hilgero y Luis Strada. 1966. Cita textual: \"... también de Santa Fe, resultó campeón; en doble varones novicios, la combinación de la Asociación Peladense, formada por Angel Hilguero y Luis Strada, conquistó en buena forma el título, otorgando plena satisfacción al tenis criollo de La Pelada\".",
+      "proposed": "Ritaglio di giornale: campionato argentino di tenis criollo (uno sport di racchetta locale, senza rapporto con il tennis). L'Asociación Peladanse de Tenis Criollo, campione nel doppio maschile novizi: Ángel Hilgero e Luis Strada. 1966. Trascrizione fedele: «… anche di Santa Fe, risultò campione; nel doppio maschile novizi, la coppia dell'Asociación Peladense, formata da Angel Hilguero e Luis Strada, ha conquistato in buona forma il titolo, dando piena soddisfazione al tenis criollo di La Pelada.»"
+    },
+    {
+      "source": "Recorte de diario: Tenis criollo en el Centro Friulano de Santa Fe. Representado al Club Independiente de La Pelada obtuvieron el 3º puesto: Hilguero y Strada.",
+      "proposed": "Ritaglio di giornale: tenis criollo al Centro Friulano di Santa Fe. In rappresentanza del Club Independiente de La Pelada, Hilguero e Strada hanno ottenuto il terzo posto."
+    },
+    {
+      "source": "Recorte del Diario \"EL ORDEN\", viernes 7 de junio de 1929. Transcripción textual: EL TEAM DE INDEPENDIENTE QUE GANO EN SOLEDAD Los jugadores del Club \"Independiente\" de La Pelada posan para EL ORDEN después del laborioso y significativo triunfo que obtuvieron recientemente sobre la escuadra privilegiada de \"Soledad\". Fuente: Hemeroteca Digital de Santa Fe",
+      "proposed": "Ritaglio dal giornale «EL ORDEN», venerdì 7 giugno 1929. Trascrizione fedele: LA SQUADRA DELL'INDEPENDIENTE CHE HA VINTO A SOLEDAD. I giocatori del Club «Independiente» di La Pelada posano per EL ORDEN dopo la faticosa e significativa vittoria ottenuta di recente sulla privilegiata formazione di «Soledad». Fonte: Hemeroteca Digital de Santa Fe"
+    },
+    {
+      "source": "Recuerdo familiar: En las canteras (Córdoba). En la foto: Juan Peretti y Margarita Risso - Década de los 50.",
+      "proposed": "Un ricordo di famiglia: alle cave (Córdoba). Nella foto: Juan Peretti e Margarita Risso — anni Cinquanta."
+    },
+    {
+      "source": "Recuerdo familiar: En Mar Chiquita (Córdoba). Antes de la gran inundación. En la foto (de izquierda a derecha): Nilba Peretti, Juan Peretti (su padre) y Margarita Risso (su madre). Debajo: Raúl Peretti (su sobrino).",
+      "proposed": "Un ricordo di famiglia: a Mar Chiquita (Córdoba). Prima della grande alluvione. Nella foto (da sinistra a destra): Nilba Peretti, Juan Peretti (il padre) e Margarita Risso (la madre). Sotto: Raúl Peretti (il nipote)."
+    },
+    {
+      "source": "Recuerdos familiares: Livio \"chichi\" Peretti (hermano de Nilba) realizando el Servicio Militar en Santo Tomé.",
+      "proposed": "Ricordi di famiglia: Livio «chichi» Peretti (fratello di Nilba) durante il servizio militare a Santo Tomé."
+    },
+    {
+      "source": "Recuerdos familiares: Ricardo Peretti (hermano de Nilba) realizando el Servicio Militar en Regimiento 12.",
+      "proposed": "Ricordi di famiglia: Ricardo Peretti (fratello di Nilba) durante il servizio militare nel 12º Reggimento."
+    },
+    {
+      "source": "Reina del Futuro - Club Libertad - Año 2004",
+      "proposed": "Regina del Futuro — Club Libertad — 2004"
+    },
+    {
+      "source": "Religión",
+      "proposed": "Religione"
+    },
+    {
+      "source": "Remate de la estancia. Luis Lescano (\"Corcho\") y primos - Década 70.",
+      "proposed": "Asta all'estancia. Luis Lescano («Corcho») e cugini — anni Settanta."
+    },
+    {
+      "source": "Remates y trabajos en la Estancia \"La Pelada\".",
+      "proposed": "Aste e lavori nell'estancia «La Pelada»."
+    },
+    {
+      "source": "Residencia de la Familia Lezcano.",
+      "proposed": "La residenza della famiglia Lezcano."
+    },
+    {
+      "source": "Revista escolar de finales de los '80. Escuela secundaria.",
+      "proposed": "Un giornalino scolastico di fine anni Ottanta. Scuola secondaria."
+    },
+    {
+      "source": "Riego de plantines. En el fondo el tanque de agua, media 18 mts de altura.",
+      "proposed": "Irrigazione delle piantine. Sullo sfondo, la torre dell'acqua, alta 18 metri."
+    },
+    {
+      "source": "Río Salado desbordado. Frente al rancho de \"El Búlgaro\".",
+      "proposed": "Il rio Salado in piena. Davanti al ranch di «El Búlgaro»."
+    },
+    {
+      "source": "Río salado.",
+      "proposed": "Il rio Salado."
+    },
+    {
+      "source": "Salón del Club Atlético y Social Independiente (C.A.S.I.)",
+      "proposed": "Il salone del Club Atlético y Social Independiente (C.A.S.I.)"
+    },
+    {
+      "source": "Santiago Chiaraviglio y Antonia Bonino (padres de Aquilino, Chichi, Blanca, Coca, Juan \"Negro\", Celmira).",
+      "proposed": "Santiago Chiaraviglio e Antonia Bonino (genitori di Aquilino, Chichi, Blanca, Coca, Juan «Negro» e Celmira)."
+    },
+    {
+      "source": "Santiago Marengo padre de Teresita.",
+      "proposed": "Santiago Marengo, il padre di Teresita."
+    },
+    {
+      "source": "Santiago Zunino. \"Considerado uno de los pobladores más antiguos del territorio que actualmente ocupa el Distrito de La Pelada. Su estancia estaba ubicada en la Zona Este y su presencia data del año 1879. Estaba casado con Doña Lorenza CORREA TABORDA LOPEZ JORDAN, descendiente del conocido caudillo entrerriano. Falleció el 16 de diciembre de 1914 en la ciudad de Rosario. Sus restos embalsamados fueron trasladados en tren a esta localidad donde descansan\"* Fuente: Banco de imágenes \"Florián Paucke\"",
+      "proposed": "Santiago Zunino. «Considerato uno degli abitanti più antichi del territorio che oggi occupa il distretto di La Pelada. La sua estancia si trovava nella zona est e la sua presenza risale al 1879. Era sposato con Doña Lorenza CORREA TABORDA LOPEZ JORDAN, discendente del noto caudillo di Entre Ríos. Morì il 16 dicembre 1914 nella città di Rosario. Le sue spoglie imbalsamate furono trasportate in treno fino a questa località, dove riposano.»* Fonte: banca immagini «Florián Paucke»"
+    },
+    {
+      "source": "Sección dedicada a la vida y al trabajo, a los/as trabajadores y familias de la estancia \"Eucaliptus\".",
+      "proposed": "Una sezione dedicata alla vita e al lavoro, ai lavoratori e alle famiglie dell'estancia «Eucaliptus»."
+    },
+    {
+      "source": "Sección dedicada a retratar la vida comunitaria: eventos sociales, celebraciones, encuentros, visitas, actividades. A través de imágenes, muestra la sociedad de La Pelada: sus vínculos, tradiciones, festividades y la convivencia cotidiana. Es un testimonio visual de la riqueza humana y comunitaria del pueblo.",
+      "proposed": "Una sezione dedicata a ritrarre la vita comunitaria: eventi sociali, celebrazioni, incontri, visite, attività. Attraverso le immagini mostra la società di La Pelada: i suoi legami, le tradizioni, le feste e la convivenza quotidiana. È una testimonianza visiva della ricchezza umana e comunitaria del paese."
+    },
+    {
+      "source": "Sifón de soda de la fabrica de soda de Luis Ravasio.",
+      "proposed": "Un sifone della fabbrica di soda di Luis Ravasio."
+    },
+    {
+      "source": "Sociales",
+      "proposed": "Vita sociale"
+    },
+    {
+      "source": "Susana Lezcano en la cuna hecha por su padre.",
+      "proposed": "Susana Lezcano nella culla fatta da suo padre."
+    },
+    {
+      "source": "Taller del ferrocarril en San Cristóbal (Ramal F13). Ariel Dándolo - Década 80.",
+      "proposed": "L'officina ferroviaria a San Cristóbal (ramo F13). Ariel Dándolo — anni Ottanta."
+    },
+    {
+      "source": "Tanque de agua del ferrocarril en la actualidad. Calle 20 de agosto.",
+      "proposed": "La torre dell'acqua della ferrovia oggi. Calle 20 de agosto."
+    },
+    {
+      "source": "Tanque de agua del ferrocarril. Actualmente calle 20 de agosto.",
+      "proposed": "La torre dell'acqua della ferrovia. Oggi calle 20 de agosto."
+    },
+    {
+      "source": "Tareas rurales en el campo de Juan Ernesto Sachi (\"Pirucho\").",
+      "proposed": "Lavori agricoli nel campo di Juan Ernesto Sachi («Pirucho»)."
+    },
+    {
+      "source": "Tenis criollo en La Pelada.",
+      "proposed": "Tenis criollo (uno sport di racchetta locale, senza rapporto con il tennis) a La Pelada."
+    },
+    {
+      "source": "Tercera expoferia. En el ex-predio del ferrocarril. Año 2005",
+      "proposed": "Terza fiera espositiva. Nell'ex area della ferrovia. 2005"
+    },
+    {
+      "source": "Teresita Marengo - 13/02/1952.",
+      "proposed": "Teresita Marengo — 13 febbraio 1952."
+    },
+    {
+      "source": "Teresita Marengo - A sus 15 años.",
+      "proposed": "Teresita Marengo — a quindici anni."
+    },
+    {
+      "source": "Teresita Marengo y Florentino Cabalero.",
+      "proposed": "Teresita Marengo e Florentino Cabalero."
+    },
+    {
+      "source": "Teresita Marengo y Gaspar Lang (\"Tito\").",
+      "proposed": "Teresita Marengo e Gaspar Lang («Tito»)."
+    },
+    {
+      "source": "Teresita Marengo y Olga Psicotilio",
+      "proposed": "Teresita Marengo e Olga Psicotilio"
+    },
+    {
+      "source": "Teresita Marengo, (\"Tito\") Gaspar Lang y Eduardo (\"Lalo\") Lang.",
+      "proposed": "Teresita Marengo, Gaspar («Tito») Lang ed Eduardo («Lalo») Lang."
+    },
+    {
+      "source": "Teresita Marengo, Eduardo Lang (\"Lalo\"), \"Tito\" Lang, Miguel Chelario, \"Lucho\" Montenegro, \"Ñato\" Dandolo, Héctor Bo, Raúl Meza, Rosita de Meza, Lita Ringlestein. Entre otros.",
+      "proposed": "Teresita Marengo, Eduardo Lang («Lalo»), «Tito» Lang, Miguel Chelario, «Lucho» Montenegro, «Ñato» Dandolo, Héctor Bo, Raúl Meza, Rosita de Meza, Lita Ringlestein. Tra gli altri."
+    },
+    {
+      "source": "Teresita Marengo.",
+      "proposed": "Teresita Marengo."
+    },
+    {
+      "source": "Tío de Soledad Hille. Enfrente al cine. Calles Iturraspe y Belgrano. Carteles de peliculas en la vidriera: Maria M. (1964) y Le Cœur Battant (pelicula francesa estrenada localmente como \"Latidos de un corazón\") (1960).",
+      "proposed": "Lo zio di Soledad Hille. Di fronte al cinema. Calles Iturraspe e Belgrano. Manifesti di film in vetrina: Maria M. (1964) e Le Cœur Battant (film francese uscito localmente come «Latidos de un corazón») (1960)."
+    },
+    {
+      "source": "Todas las fotos publicadas han sido digitalizadas con la autorización de sus dueños, bajo la advertencia de que serán de uso publico.",
+      "proposed": "Tutte le fotografie pubblicate sono state digitalizzate con l'autorizzazione dei proprietari, con l'avvertenza che saranno di uso pubblico."
+    },
+    {
+      "source": "Trabajadores en la estancia.",
+      "proposed": "Lavoratori dell'estancia."
+    },
+    {
+      "source": "Trabajando en la estancia para las colmenas de Barbiero.",
+      "proposed": "Al lavoro nell'estancia per le arnie di Barbiero."
+    },
+    {
+      "source": "Trabajo",
+      "proposed": "Lavoro"
+    },
+    {
+      "source": "Trabajo de asfaltado sobre la calle San Bernardo.",
+      "proposed": "Lavori di asfaltatura sulla Calle San Bernardo."
+    },
+    {
+      "source": "Trabajo de asfaltado sobre la calle San Martín y San Bernardo.",
+      "proposed": "Lavori di asfaltatura sulle Calles San Martín e San Bernardo."
+    },
+    {
+      "source": "Trabajo de asfaltado sobre la calle San Martín.",
+      "proposed": "Lavori di asfaltatura sulla Calle San Martín."
+    },
+    {
+      "source": "Trabajo de limpieza en la entrada a la Estancia \"La Gerda\".",
+      "proposed": "Lavori di pulizia all'ingresso dell'estancia «La Gerda»."
+    },
+    {
+      "source": "Trabajo de mantenimiento de la estancia.",
+      "proposed": "Lavori di manutenzione nell'estancia."
+    },
+    {
+      "source": "Trabajos de siembra.",
+      "proposed": "Lavori di semina."
+    },
+    {
+      "source": "Tradicional carneada.",
+      "proposed": "Una carneada tradizionale (una macellazione collettiva di campagna)."
+    },
+    {
+      "source": "Tradicional juego de la Taba (se utiliza el hueso del garrón de un animal vacuno que se lanza al aire para que caiga en un lado determinado).",
+      "proposed": "Il gioco tradizionale della taba (si lancia in aria l'osso del garretto di un bovino perché cada da un lato determinato)."
+    },
+    {
+      "source": "Tradicional parva agrícola. \"El emparvado: Lo esencial de este trabajo es la obtención de parvas perfectas, puesto que de ello depende la conservación hasta que llegue el momento de la trilla. Si las parvas están mal ubicadas o mal hechas, las lluvias pueden provocar pérdidas de consideración al malgastar un alto porcentaje de espigas. El \"parvero\", en consecuencia, es el el hombre clave de la cuadrilla y es asistido por el \"ayudante de parveros\". Una vez finalizada esta tarea se llega al momento más importante y significativo del proceso: La trilla\"*",
+      "proposed": "Una parva agricola tradizionale (un covone accatastato). «L'accatastamento: l'essenziale di questo lavoro è ottenere parvas perfette, perché da ciò dipende la conservazione fino al momento della trebbiatura. Se i covoni sono mal collocati o mal fatti, le piogge possono provocare perdite considerevoli sprecando un'alta percentuale di spighe. Il \\\"parvero\\\" è di conseguenza l'uomo chiave della squadra ed è assistito dall'\\\"aiuto parvero\\\". Terminato questo compito si arriva al momento più importante e significativo del processo: la trebbiatura.»*"
+    },
+    {
+      "source": "TRANSCRIPCIÓN: Decreto creación de la Comisión de Fomento de la Colonia La Pelada (1913).",
+      "proposed": "TRASCRIZIONE: decreto di creazione della commissione di sviluppo della Colonia La Pelada (1913)."
+    },
+    {
+      "source": "Transporte, vemos a los Sres. Ceferino Ojeda Bartolo Zunino. Camión de Juan Malatini, fue diputado provincial de Las Colonias.",
+      "proposed": "Trasporto — si vedono i signori Ceferino Ojeda e Bartolo Zunino. Il camion era di Juan Malatini, deputato provinciale di Las Colonias."
+    },
+    {
+      "source": "Traslado del cuerpo del Pbro. Bartolome Ghione a la localidad vecina de Jacinto L. Arauz.",
+      "proposed": "Il trasferimento della salma di padre Bartolome Ghione al vicino paese di Jacinto L. Arauz."
+    },
+    {
+      "source": "Trilla en el campo.",
+      "proposed": "La trebbiatura nei campi."
+    },
+    {
+      "source": "Última reunión de la familia Chiaraviglio en Progreso. Aquilino Chiaraviglio, su esposa Belquis, Blanca Peretti, Andres Capellino, Celmira Chiaraviglio, Mito Peretti y Blanca Chiaraviglio. Los niños mellizos Agustín y Franco Gorosito son bisnietos de Celmira Chiaraviglio y Andres Capellino - Año 2007.",
+      "proposed": "L'ultima riunione della famiglia Chiaraviglio a Progreso. Aquilino Chiaraviglio, la moglie Belquis, Blanca Peretti, Andres Capellino, Celmira Chiaraviglio, Mito Peretti e Blanca Chiaraviglio. I gemelli Agustín e Franco Gorosito sono pronipoti di Celmira Chiaraviglio e Andres Capellino — 2007."
+    },
+    {
+      "source": "Un carnaval en La Pelada. Sr. Luis Crotti y Sra. Mina Passet. \"Luis Crotti; Isabel, María y Luisa Peirotti; María Villafañe y Gerónima Charras - Carroza \"Las Margaritas\" Año 1932\"*",
+      "proposed": "Un carnevale a La Pelada. Il sig. Luis Crotti e la sig.ra Mina Passet. «Luis Crotti; Isabel, María e Luisa Peirotti; María Villafañe e Gerónima Charras — il carro \\\"Las Margaritas\\\", 1932»*"
+    },
+    {
+      "source": "Un poco sobre nuestra localidad",
+      "proposed": "Qualcosa sulla nostra località"
+    },
+    {
+      "source": "Un recorrido visual por la esencia agrícola y ganadera: cosechas, corrales, estancias, maquinaria clásica y paisajes infinitos. Las imágenes muestran la relación íntima entre la comunidad y la tierra, destacando el trabajo silencioso y constante que moldeó la vida del pueblo.\r\n\r\nEn esta sección se encuentran fotografías de \"carneadas\".\r\n\r\nAlgunas imágenes pueden herir la sensibilidad de ciertas personas.",
+      "proposed": "Un percorso visivo nell'essenza agricola e dell'allevamento: raccolti, recinti, estancias, macchinari d'epoca e paesaggi infiniti. Le immagini mostrano il rapporto intimo tra la comunità e la terra, mettendo in evidenza il lavoro silenzioso e costante che ha plasmato la vita del paese.\n\nIn questa sezione si trovano fotografie di «carneadas» (macellazioni collettive di campagna).\n\nAlcune immagini possono urtare la sensibilità di certe persone."
+    },
+    {
+      "source": "Una colección dedicada a los momentos deportivos que marcaron al pueblo: equipos, torneos, entrenamientos y encuentros que unieron a generaciones. Un recorrido por las pasiones que dieron vida a La Pelada.",
+      "proposed": "Una raccolta dedicata ai momenti sportivi che hanno segnato il paese: squadre, tornei, allenamenti e incontri che hanno unito generazioni. Un percorso tra le passioni che hanno dato vita a La Pelada."
+    },
+    {
+      "source": "Usina La Pelada, de Aristedes Ravasio. Década de 1960. Osvaldo López (\"sabato\"); Florindo Gatti; Arístides Ravasio (\"bayo\"); Italo Yoo.",
+      "proposed": "La centrale elettrica di La Pelada, di Aristedes Ravasio. Anni Sessanta. Osvaldo López («sabato»); Florindo Gatti; Arístides Ravasio («bayo»); Italo Yoo."
+    },
+    {
+      "source": "Usina La Pelada.",
+      "proposed": "La centrale elettrica di La Pelada."
+    },
+    {
+      "source": "Usina La Pelada. 1966 aproximadamente.",
+      "proposed": "La centrale elettrica di La Pelada. Intorno al 1966."
+    },
+    {
+      "source": "Usina La Pelada. Italo Yoo y Florindo Gatti. Año 1964.",
+      "proposed": "La centrale elettrica di La Pelada. Italo Yoo e Florindo Gatti. 1964."
+    },
+    {
+      "source": "Usina.",
+      "proposed": "La centrale elettrica."
+    },
+    {
+      "source": "Velada del Jardín en el Club Independiente - Año 2001.",
+      "proposed": "Serata della scuola materna al Club Independiente — 2001."
+    },
+    {
+      "source": "Velada en la 502. Actual patio cubierto.",
+      "proposed": "Una serata alla scuola 502. L'attuale cortile coperto."
+    },
+    {
+      "source": "Villa María (Córdoba) - 1970.",
+      "proposed": "Villa María (Córdoba) — 1970."
+    },
+    {
+      "source": "Visita de la Virgen de Guadalupe. Ingreso a la localidad.",
+      "proposed": "Visita della Vergine di Guadalupe. L'ingresso al paese."
+    },
+    {
+      "source": "Visita del gobernador provincial Carlos Reutemann. Centenario de la localidad - 1992.",
+      "proposed": "Visita del governatore provinciale Carlos Reutemann. Centenario della località — 1992."
+    },
+    {
+      "source": "Visita Moneñor Storni.",
+      "proposed": "Visita di monsignor Storni."
+    },
+    {
+      "source": "Vista a Ruta N°4.",
+      "proposed": "Vista verso la Ruta N°4."
+    },
+    {
+      "source": "Vista sobre Ruta N°4.",
+      "proposed": "Una vista sulla Ruta N°4."
+    },
+    {
+      "source": "Vista sobre Ruta N°4. hacia el pueblo, avecinándose un frente de tormenta desde el sur.",
+      "proposed": "Una vista sulla Ruta N°4 verso il paese, con un fronte temporalesco in arrivo da sud."
+    },
+    {
+      "source": "Vivero de eucaliptus. Debajo del techo, los plantines que se plantaban en tarros de conservas traidos de Rosario por los camioneros de Bonino (Risso y \"Mono\" Aguilar).",
+      "proposed": "Vivaio di eucalipti. Sotto il tetto, le piantine, messe in barattoli di latta portati da Rosario dai camionisti di Bonino (Risso e «Mono» Aguilar)."
+    },
+    {
+      "source": "Yerra (marca a fuego de los animales) en el establecimiento. En la fotografía: Bocardo Martínez; Monjo Martín; Abel y Chacho Díaz; García y su hijo: Peloncho Roa; Miguel Giménez y Manuel Díaz y los niños Carlos y Jorge Díaz. Año 1967.",
+      "proposed": "Una yerra (la marchiatura del bestiame) nell'azienda. Nella fotografia: Bocardo Martínez; Monjo Martín; Abel e Chacho Díaz; García e suo figlio; Peloncho Roa; Miguel Giménez e Manuel Díaz, e i ragazzi Carlos e Jorge Díaz. 1967."
+    }
+  ]
+}
