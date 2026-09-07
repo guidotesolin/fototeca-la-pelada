@@ -44,17 +44,22 @@ const alegreyaItalic = Alegreya({
 /** The logo's charcoal, from the favicon design pass. Both root layouts declare it. */
 export const THEME_COLOR = '#26292c'
 
+/**
+ * The two font classes, for the one page that cannot use the component below:
+ * `app/not-found.tsx` is rendered inside a bare document Next supplies itself, so
+ * there is no `<html>` of ours to hang the variables on and they have to ride an
+ * element inside it. Exported rather than duplicated -- a second `Alegreya()` call
+ * would register the same faces under a second class name.
+ */
+export const FONT_VARIABLES = `${alegreya.variable} ${alegreyaItalic.variable}`
+
 export function Document({ lang, children }: { lang: string; children: ReactNode }) {
   return (
     // `suppressHydrationWarning` because the inline script in the public layout
     // puts `show-sensitive` on this element before React ever runs, and React would
     // otherwise report the class it did not write as a mismatch. It suppresses that
     // check on this element alone, not on the tree under it.
-    <html
-      lang={lang}
-      className={`${alegreya.variable} ${alegreyaItalic.variable} h-full`}
-      suppressHydrationWarning
-    >
+    <html lang={lang} className={`${FONT_VARIABLES} h-full`} suppressHydrationWarning>
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   )

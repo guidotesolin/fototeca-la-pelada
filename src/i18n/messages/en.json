@@ -39,7 +39,8 @@
   "notFound": {
     "title": "This page does not exist",
     "body": "The address you are looking for is not in the archive. The link may be misspelled, or the photograph may have moved.",
-    "back": "Go to the archive"
+    "back": "Back to the home page",
+    "label": "No record"
   },
   "gallery": {
     "index": "Index",

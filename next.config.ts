@@ -115,6 +115,8 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   experimental: {
+    globalNotFound: true,
+
     // The stylesheet costs a whole round trip before anything paints, and at the
     // latencies this archive is read over that is most of the first paint. Next's
     // own guidance for this flag is atomic CSS plus first-time visitors, which is

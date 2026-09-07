@@ -39,7 +39,8 @@
   "notFound": {
     "title": "Questa pagina non esiste",
     "body": "L'indirizzo che cerchi non è nell'archivio. Il link potrebbe essere scritto male, o la fotografia potrebbe essere stata spostata.",
-    "back": "Vai all'archivio"
+    "back": "Torna alla home",
+    "label": "Nessuna scheda"
   },
   "gallery": {
     "index": "Indice",

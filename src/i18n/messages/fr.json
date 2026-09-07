@@ -39,7 +39,8 @@
   "notFound": {
     "title": "Cette page n'existe pas",
     "body": "L'adresse que vous cherchez ne figure pas dans l'archive. Le lien est peut-être mal orthographié, ou la photographie a changé de place.",
-    "back": "Aller à l'archive"
+    "back": "Retour à l'accueil",
+    "label": "Aucune notice"
   },
   "gallery": {
     "index": "Index",

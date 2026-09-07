@@ -958,6 +958,34 @@ body > header {
   background-color: var(--color-accent);
 }
 
+/*
+ * The hole in the album, which is the whole of the 404's design: the four corners
+ * above hold nothing. A recess in the ground colour and not a dashed outline -- a
+ * dashed rectangle is a placeholder in a design tool, where an empty mount is what
+ * a page of an album actually looks like when the copy was never pasted onto it.
+ *
+ * 4:3 because that is what the home page's featured print is set at: the hole is
+ * the shape of the thing that is missing, and not a shape of its own.
+ */
+.album-gap {
+  display: grid;
+  place-content: center;
+  text-align: center;
+  aspect-ratio: 4 / 3;
+  background-color: var(--color-ground);
+  box-shadow: inset 0 0 0 1px var(--color-rule);
+}
+
+/* The figure, set in the hairline's own colour: it reads as the code it is and
+   still leaves the sentence under the mount as what the page says. `aria-hidden`
+   in the markup -- the heading carries the fact, and "404" spoken is a number and
+   not a sentence -- which is what makes a decorative contrast legitimate here. */
+.album-gap-number {
+  font: 500 clamp(88px, 15vw, 176px) / 1 var(--font-serif);
+  letter-spacing: -0.02em;
+  color: var(--color-rule);
+}
+
 @media (min-width: 640px) {
   .album {
     padding: 48px 52px 44px;
