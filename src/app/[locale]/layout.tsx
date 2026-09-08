@@ -9,7 +9,7 @@ import { Document, THEME_COLOR } from '@/components/document'
 import { MenuDismiss } from '@/components/menu-dismiss'
 import { SensitiveSwitch } from '@/components/sensitive-switch'
 import { LOCALE_LABELS, isLocale, localeHref, locales } from '@/i18n/config'
-import logo from '@/brand/header-logo.png'
+import logo from '@/brand/header-logo.webp'
 import type { Locale } from '@/i18n/config'
 
 /**

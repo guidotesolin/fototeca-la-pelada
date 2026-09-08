@@ -220,6 +220,31 @@ body {
  * reader browsing without JavaScript sees. The veil replicates the reference: the
  * description lives in the DOM at opacity 0 and appears on hover, over 300 ms.
  */
+/*
+ * The hole the deck drops into, held open by the server.
+ *
+ * The deck cannot exist until it has hydrated and measured the viewport, so
+ * without this it appeared out of nothing and pushed the whole index down: 0.167
+ * of the 0.189 CLS the desktop report measured, and nothing at all on a phone,
+ * where the deck never mounts. A media query reserves it in the first paint with
+ * no JavaScript, which is the only layer that can be right before hydration.
+ *
+ * 396 px is `.deck-card`'s 340 plus the 56 of padding below, measured on the
+ * running build and not computed. The margin lives here rather than on `.deck` so
+ * that it is reserved too, and so that a phone -- where the slot is an empty div
+ * -- pays neither.
+ *
+ * ponytail: a number that has to follow the card. If the deck is ever resized and
+ * this is not, the shift comes back; the check is `.deck`'s height in the console
+ * at >= 900 px, which is where it came from.
+ */
+@media (min-width: 900px) {
+  .deck-slot {
+    margin-top: 24px;
+    min-height: 396px;
+  }
+}
+
 .deck .swiper {
   padding: 24px 0 32px;
 }

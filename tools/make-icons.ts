@@ -87,10 +87,17 @@ async function main() {
     create: { width: wide, height: tall, channels: 3, background: TEXT },
   })
     .joinChannel(alpha, { raw: { width: wide, height: tall, channels: 1 } })
-    .png({ compressionLevel: 9 })
+    // Lossless WebP, not PNG: the mark is lettering knocked out of transparency, so
+    // there is nothing here a lossy encoder can win on -- and measured against the
+    // same pixels, lossless WebP came out at 4540 bytes where PNG at compression 9
+    // was 6650, with every quality setting between them *larger* than lossless. It
+    // is the smaller file and the identical image, which is not a trade at all.
+    // The page's own report asked for it: a PNG served for a 56x36 box was the one
+    // image on the index that was ours rather than Google's.
+    .webp({ lossless: true, effort: 6 })
     .toBuffer()
 
-  writeFileSync(join(ROOT, 'src', 'brand', 'header-logo.png'), mark)
+  writeFileSync(join(ROOT, 'src', 'brand', 'header-logo.webp'), mark)
   console.log(`header-logo   ${wide}x${tall}, lettering on transparent  ${mark.length} bytes`)
 }
 

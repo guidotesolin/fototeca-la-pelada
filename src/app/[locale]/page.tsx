@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
 import { SectionDeck } from '@/components/section-deck'
+import { MapFacade } from '@/components/map-facade'
 import { PhotoImage } from '@/components/photo-image'
 import { PhotoWall } from '@/components/photo-wall'
 import {
@@ -64,8 +65,14 @@ export default async function Home(props: PageProps<'/[locale]'>) {
         {/* The deck (Swiper, desktop only): the reference is Europeana. Its own
             aria-label names it, so dropping the heading costs nothing spoken. It
             opens the page, and a phone never sees it — the component returns null
-            below 900 px, so nothing here reserves space it will not use. */}
-        <SectionDeck sections={sections} locale={locale} label={t('deck')} labels={labels} />
+            below 900 px, where `.deck-slot` is flat for the same reason.
+
+            The slot is what makes the deck cost nothing to arrive: it cannot
+            decide it has room until it has hydrated, so the space it will take is
+            held open by CSS the server already sent. See its note in globals.css. */}
+        <div className="deck-slot">
+          <SectionDeck sections={sections} locale={locale} label={t('deck')} labels={labels} />
+        </div>
 
         {/* Centred under the centred title: left-aligned it read as an orphan in the
             corner of a symmetric composition. The four figures used to sit below it
@@ -83,15 +90,12 @@ export default async function Home(props: PageProps<'/[locale]'>) {
             <div className="mount">
               {/* The ratio is declared so the frame is reserved before the map
                   arrives: an iframe that sizes itself on load is layout shift.
-                  Lazy, because it is Google's payload and not our content. */}
+                  Empty until somebody asks for it — `loading="lazy"` was here and
+                  did nothing, because Chrome fetches a frame this close to the
+                  viewport anyway. See `MapFacade`: it is the decision the
+                  Videoteca's player already took, applied to the other embed. */}
               <div className="print relative" style={{ aspectRatio: '4 / 3' }}>
-                <iframe
-                  src={mapUrl}
-                  title={t('map')}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="absolute inset-0 h-full w-full border-0"
-                />
+                <MapFacade src={mapUrl} title={t('map')} open={t('showMap')} />
               </div>
             </div>
           )}

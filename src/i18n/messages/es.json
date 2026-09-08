@@ -33,6 +33,7 @@
   "home": {
     "deck": "Explorar por sección",
     "map": "Mapa de La Pelada",
+    "showMap": "Ver el mapa",
     "featured": "Destacadas",
     "allSections": "Todas las secciones · {count, plural, one {# fotografía} other {# fotografías}}"
   },

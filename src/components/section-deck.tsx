@@ -1,15 +1,21 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { Swiper, SwiperSlide } from 'swiper/react'
-import { A11y, EffectCoverflow, Keyboard } from 'swiper/modules'
-import { PhotoImage } from '@/components/photo-image'
-import { localeHref, type Locale } from '@/i18n/config'
-import type { PhotoImageLabels } from '@/components/photo-image'
-import type { Section } from '@/db/queries/gallery'
-import 'swiper/css'
-import 'swiper/css/effect-coverflow'
+import dynamic from 'next/dynamic'
+import type { SectionDeckProps } from '@/components/section-deck-swiper'
+
+/**
+ * Swiper and the deck it draws, fetched the moment the viewport turns out to be
+ * wide enough and never before. `ssr: false` because the gate below is a browser
+ * measurement -- there is no width to read on the server, which is also why the
+ * deck has never travelled in the server HTML.
+ *
+ * The import is a `next/dynamic` rather than a plain one so the package lands in a
+ * chunk of its own: statically imported it rode the index's bundle to every phone,
+ * 30 KB over the wire to render `null`. A type-only import of the props is erased
+ * at compile time and pulls nothing.
+ */
+const SectionDeckSwiper = dynamic(() => import('@/components/section-deck-swiper'), { ssr: false })
 
 /**
  * True only when the deck has room. It mounts only then, rather than hiding with
@@ -37,102 +43,20 @@ function useWideEnough(query = '(min-width: 900px)') {
 }
 
 /**
- * The index deck. Swiper with `effect: 'coverflow'`, which is exactly what the
- * reference uses (Europeana: `swiper-coverflow swiper-3d`), with the values
- * measured off it live: 300 ms transition, no autoplay, the description at
- * opacity 0 until hover, and a click on a card that is not active selecting it
- * rather than navigating. Two attempts by hand never reached this smoothness; the
- * third correct decision was the package.
+ * The gate, and nothing else -- 900 px and up, which on phone and tablet leaves
+ * the card list, which is also what a reader browsing without JavaScript sees.
  *
- * Desktop only (>= 900 px): on phone and tablet the card list stays, which is also
- * what a reader browsing without JavaScript sees -- which is why the deck never
- * travels in the server HTML.
- *
- * The locale and the region's label arrive as props: this is the one client
- * component that renders links, and reading the message files here would ship all
- * four languages to the browser for one string.
+ * **The space it will take is reserved by the server**, in `.deck-slot`: this
+ * component cannot decide anything until it has hydrated and measured, and until
+ * T16 that meant 396 px of deck appearing under the title and shoving the page
+ * down. It was the whole of the index's layout shift on desktop -- CLS 0.189,
+ * 0.167 of it this -- and invisible on a phone, where the gate stays shut. The
+ * slot is a media query and no JavaScript, so the hole is in the first paint.
  */
-export function SectionDeck({
-  sections,
-  locale,
-  label,
-  labels,
-}: {
-  sections: Section[]
-  locale: Locale
-  label: string
-  /** The frame's own three, for the covers this draws. See `PhotoImageLabels`. */
-  labels: PhotoImageLabels
-}) {
+export function SectionDeck(props: SectionDeckProps) {
   const wide = useWideEnough()
-  /**
-   * A card that is not active gets selected, not followed: navigating is the next
-   * click. The decision is taken on pointerdown — by the time the click arrives,
-   * Swiper has already put `swiper-slide-active` on the clicked card and the guard
-   * would come too late. A keyboard click (detail 0) never goes through pointerdown
-   * and always navigates.
-   */
-  const arm = (event: React.PointerEvent<HTMLAnchorElement>) => {
-    const slide = event.currentTarget.closest('.swiper-slide')
-    event.currentTarget.dataset.wasActive = slide?.classList.contains('swiper-slide-active')
-      ? '1'
-      : ''
-  }
-  const guard = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (event.detail !== 0 && event.currentTarget.dataset.wasActive !== '1') {
-      event.preventDefault()
-    }
-  }
 
   if (!wide) return null
 
-  return (
-    <div className="deck mt-6" role="region" aria-label={label}>
-      <Swiper
-        modules={[EffectCoverflow, A11y, Keyboard]}
-        effect="coverflow"
-        centeredSlides
-        slideToClickedSlide
-        grabCursor
-        speed={300}
-        keyboard={{ enabled: true }}
-        initialSlide={Math.floor(sections.length / 2)}
-        slidesPerView="auto"
-        coverflowEffect={{
-          rotate: 0,
-          stretch: 96,
-          depth: 200,
-          modifier: 1,
-          scale: 0.86,
-          slideShadows: false,
-        }}
-      >
-        {sections.map((section) => (
-          <SwiperSlide key={section.slug} className="deck-card">
-            <Link
-              href={localeHref(locale, `/categoria/${section.slug}`)}
-              prefetch={false}
-              onPointerDown={arm}
-              onClick={guard}
-              className="focus-visible:outline-focus absolute inset-0 block overflow-hidden focus-visible:outline-2"
-            >
-              {/* Never `priority`: on a phone the deck is absent, and an eager
-                  high-priority image would be fetched all the same, stealing
-                  bandwidth from the visible content. Lazy, it is not fetched. */}
-              {section.cover && (
-                <PhotoImage photo={section.cover} sizes="240px" labels={labels} fill />
-              )}
-              {/* The description, as in the reference: always in the DOM, shown on hover. */}
-              <span className="deck-veil">
-                {section.intro && <span className="deck-intro">{section.intro}</span>}
-              </span>
-              <span className="deck-chip">
-                {section.name} · {section.photos}
-              </span>
-            </Link>
-          </SwiperSlide>
-        ))}
-      </Swiper>
-    </div>
-  )
+  return <SectionDeckSwiper {...props} />
 }

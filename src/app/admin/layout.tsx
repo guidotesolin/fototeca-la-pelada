@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { currentAdmin, signOut } from '@/lib/auth'
 import { Document, THEME_COLOR } from '@/components/document'
 import { MenuDismiss } from '@/components/menu-dismiss'
-import logo from '@/brand/header-logo.png'
+import logo from '@/brand/header-logo.webp'
 
 /**
  * The panel's frame, and **a root layout of its own since T13**: it renders
