@@ -30,6 +30,35 @@ and every caption was loose text under an image. This application replaces it wi
 
 Mobile first: a 24-photo gallery scores 98 on Lighthouse's mobile profile, LCP 2.3 s, CLS 0.
 
+## Performance
+
+[![PageSpeed Insights on the home page: 100 performance, 100 accessibility, 100 best practices, 100 SEO, 2/2 agentic browsing](docs/screenshots/pagespeed.png)](https://pagespeed.web.dev/analysis/https-fototecalapelada-com-ar/f3d1fujpov?form_factor=mobile)
+
+The home page under Lighthouse 13.4.1 on 8 September 2026 — the
+[full report](https://pagespeed.web.dev/analysis/https-fototecalapelada-com-ar/f3d1fujpov?form_factor=mobile),
+or [run it again yourself](https://pagespeed.web.dev/analysis?url=https%3A%2F%2Ffototecalapelada.com.ar):
+
+|                          | Mobile | Desktop |
+| ------------------------ | ------ | ------- |
+| First Contentful Paint   | 0.9 s  | 0.3 s   |
+| Largest Contentful Paint | 1.8 s  | 0.6 s   |
+| Total Blocking Time      | 0 ms   | 0 ms    |
+| Cumulative Layout Shift  | 0      | 0       |
+| Speed Index              | 1.5 s  | 0.6 s   |
+
+The mobile column is an emulated Moto G Power on slow 4G, which is roughly how this archive is
+actually read. Two decisions carry those numbers, and they are the same idea twice:
+
+- **Nothing reaches Google until a reader asks for it.** The town map and the Videoteca's players
+  are facades — a frame, a mark and a real `href` in the server HTML — and the embed is created on
+  the click. The map alone was pulling 480 KB of Google's JavaScript and 484 ms of main-thread time
+  on every arrival, before its tiles; `loading="lazy"` did not help, because Chrome fetches a frame
+  that close to the viewport anyway. Fonts are downloaded at build time and served from this
+  origin, so the running site has no Google host in it at all.
+- **Whatever arrives late has its space reserved before it does.** Every photograph carries its own
+  `aspect-ratio`, and the desktop-only index deck drops into a hole a media query holds open, so
+  nothing that hydrates can shove the page around. CLS is 0 on both profiles, not merely good.
+
 ## How it is built
 
 Next.js 16 (App Router, React Server Components) · TypeScript · Tailwind CSS 4 · Postgres on Neon
