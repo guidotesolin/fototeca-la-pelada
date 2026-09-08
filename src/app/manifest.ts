@@ -7,6 +7,12 @@ import type { MetadataRoute } from 'next'
  *
  * `background_color` is the logo's own charcoal on purpose: it is the ground the
  * monogram sits on, so the install splash matches the icon instead of framing it.
+ * `theme_color` is the page ground instead, and has to stay equal to `THEME_COLOR`
+ * in `components/document.tsx`: the meta tag colours a browser tab and this one
+ * colours an installed app's title bar, so two values mean the seam is only fixed
+ * in one of the two places. Written out rather than imported, the way `proxy.ts`
+ * carries the same literal -- reaching into the document module would pull its
+ * `next/font` calls into a manifest route for a colour.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -14,7 +20,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Fototeca',
     start_url: '/',
     display: 'standalone',
-    theme_color: '#26292c',
+    theme_color: '#1B1917',
     background_color: '#26292c',
     icons: [
       { src: '/icon.png', sizes: '192x192', type: 'image/png' },

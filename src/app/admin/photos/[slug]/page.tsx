@@ -83,11 +83,15 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
   // whose filenames run together.
   const sorted = [...driveFiles].sort((a, b) => a.name.localeCompare(b.name, 'es'))
 
+  /**
+   * Renditions only. A master lives under `masters/`, which the zone rule from
+   * T14 answers 403 on the image domain -- so falling back to one drew a broken
+   * picture rather than the original. A photograph with no derivatives yet shows
+   * no preview at all, which is F39's to fill.
+   */
   const preview = photo.webKey
     ? publicUrl(keyFor(photo.webKey, photo.webWidth ?? 480, 'webp'))
-    : photo.masterKey
-      ? publicUrl(photo.masterKey)
-      : null
+    : null
 
   return (
     <>
@@ -126,9 +130,7 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
             alt=""
             className="mount max-h-[26rem] w-auto max-w-full object-contain"
           />
-          <figcaption className="t-meta mt-2">
-            {photo.webKey ? 'Como se ve en el sitio' : 'Copia original — no está publicada'}
-          </figcaption>
+          <figcaption className="t-meta mt-2">Como se ve en el sitio</figcaption>
         </figure>
       )}
 
