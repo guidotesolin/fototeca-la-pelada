@@ -100,7 +100,6 @@ body {
     'Segoe UI',
     Roboto,
     sans-serif;
-  color: var(--color-accent);
   max-width: 48ch;
 }
 
@@ -120,15 +119,43 @@ body {
     Menlo,
     monospace;
   font-variant-numeric: tabular-nums;
-  color: var(--color-muted);
 }
 
 /*
- * The page you are standing on, in the pagination. `text-accent` on the span did
- * nothing: the rule above is unlayered author CSS and Tailwind's utilities sit in
- * `@layer utilities`, which loses to it whatever the specificity -- the same
- * cascade-layer note as `body > header` further down. So the marker is unlayered
- * too.
+ * The colours of those two, and only their colours, sit in a layer. That is F30,
+ * and the split is the fix rather than tidiness.
+ *
+ * Unlayered author CSS beats every `@layer`, so a `color` declared up there beats
+ * Tailwind's `@layer utilities` whatever the specificity -- and these two classes
+ * are the ones the markup pairs with a colour utility. Measured across the public
+ * site before the change: `text-muted` on a `.t-credit` link rendered accent
+ * (#c9954e where #a2988a was asked for), and the 19 `hover:text-*` per page never
+ * fired at all, which is why `.link` carries a `transition: color` for a colour
+ * that never changed. `base` comes before `utilities` in Tailwind's own order, so
+ * from in here they are a default a utility can override, which is what a default
+ * should be.
+ *
+ * Only `color` moves. The fonts and the widths stay unlayered above, and so does
+ * every other unlayered rule in this file -- `.t-meta[aria-current]` right below,
+ * `.reveal > summary` over `blur-[9px]`, `body > header` over `z-20`. Those three
+ * *depend* on outranking a utility, and moving the whole file into a layer would
+ * have broken all three to fix a colour.
+ */
+@layer base {
+  .t-credit {
+    color: var(--color-accent);
+  }
+
+  .t-meta {
+    color: var(--color-muted);
+  }
+}
+
+/*
+ * The page you are standing on, in the pagination. It stays a rule here rather
+ * than a `text-accent` on the span: since F30 that utility would in fact work, but
+ * a marker that survives somebody editing a class list is worth more than one less
+ * line of CSS -- and being unlayered it still outranks whatever the markup says.
  *
  * The rule under it is not decoration: `aria-current` marks it for the reader that
  * speaks, and colour alone does not mark it for the one that looks (WCAG 1.4.1).
