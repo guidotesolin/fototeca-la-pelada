@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type ReactNode } from 'react'
+import { CHECKBOX } from '../ui'
 
 /**
  * The order of the sections on the home page, moved rather than numbered.
@@ -95,7 +96,7 @@ export function SectionOrder({ sections }: { sections: Section[] }) {
               name="visible"
               value={String(section.id)}
               defaultChecked={section.visible}
-              className="accent-accent focus-visible:outline-focus h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+              className={CHECKBOX}
             />
             <span className="t-label">Se ve</span>
           </label>

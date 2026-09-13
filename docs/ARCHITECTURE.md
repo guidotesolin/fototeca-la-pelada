@@ -649,6 +649,36 @@ Details that matter:
   "década del 40") already lives in the `caption`, so it needs no field of its own.
 - **`photo_category` is N:N**: a photo can sit in both Familias and Casamientos. A real improvement
   over Sites, where each photo lives on exactly one page.
+
+  **T17 is the screen that finally uses it, and it is one control rather than two.** The promise
+  below in _What can be changed without programming_ is a single line -- move a photograph, or put
+  it in two -- so the photograph's own screen carries a checkbox per section: moving is unticking
+  one and ticking another, being in two is ticking two. A "mover" button beside an "agregar a otra"
+  would have been two paths to one fact.
+
+  Two rules are enforced on the server, and both are states the archive can reach and then cannot
+  see. **A photograph may not be left in no section**: it would still be published and still
+  indexed, and reachable from no gallery -- the loss T11 already declines to take when it refuses to
+  delete a section that still holds photographs. And **a section's cover may not be taken out of
+  that section**: `cover_photo_id` would go on naming a photograph that no longer belongs to it, and
+  the home page would draw a card whose picture is not in what it opens. Clearing the cover quietly
+  was the other candidate and it is worse -- the section loses its picture and nobody is told.
+
+  **`position` is per section**, so arriving is `max(position) + 1`, which is where the Drive import
+  already puts a photograph that turns up today, and leaving closes the gap behind it: the reorder
+  screen prints the raw number in a box, so a hole in the middle is a column of numbers that stops
+  saying what it means. Every section is dense 1..N **today**, which is a fact about the archive and
+  not an invariant -- the reorder box takes any number, repeats included -- and the closing does not
+  depend on it, since subtracting one from everything above the departure preserves the order of
+  whatever numbering it finds. What nothing guarantees is uniqueness, and the public reads do not
+  break the tie: F61.
+
+  **A hidden section is still a section a photograph can belong to.** T11 hides a section instead of
+  deleting one that still holds photographs, precisely so they are kept, so the panel does not refuse
+  a photograph whose only section is hidden -- it says so, marking the hidden ones in the list. That
+  photograph is published and in no gallery, which is the same thing hiding does to a whole section
+  and is the authors' to decide.
+
 - **Stable `slug`** (`espacios-001`): the permalink `/foto/espacios-001` does not change even if
   the photo moves between categories. A permanent identifier, standard archival practice.
 - **`app_user`, not `user`**: `user` is a reserved word in Postgres.
@@ -1433,8 +1463,8 @@ something that _looks_ like prose and is really structured data.
 | Fix a caption, a year, a credit                                              | Panel → the photo → save. Revalidates its detail page and the galleries it appears in.                                                                                                                                      |
 | Flag a photo as sensitive                                                    | Panel → the sensitive checkbox.                                                                                                                                                                                             |
 | Add, rename, hide or reorder a category                                      | Panel → categories. The public route appears or disappears on its own.                                                                                                                                                      |
-| Move a photo between categories, or put it in two                            | Panel → the photo. The relation is N:N.                                                                                                                                                                                     |
-| Reorder photos within a category                                             | Panel → drag (`photo_category.position`).                                                                                                                                                                                   |
+| Move a photo between categories, or put it in two                            | Panel → the photo → Secciones: a checkbox per section. It cannot be left in none, and a section's cover cannot be taken out of that section until the cover is changed.                                                     |
+| Reorder photos within a category                                             | Panel → Fotografías, filtered by that section: a number per row (`photo_category.position`). The drag is on the home page's section list, not here.                                                                         |
 | Organize the home page                                                       | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.                                                                                                                      |
 | Change a section's intro text                                                | Panel → category → intro, per language.                                                                                                                                                                                     |
 | Change any of the site's own words                                           | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the networks.                                                                                                                          |

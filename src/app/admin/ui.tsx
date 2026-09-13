@@ -21,6 +21,15 @@ export const BUTTON =
   'border-rule bg-surface hover:border-accent focus-visible:outline-focus t-label inline-flex h-10 cursor-pointer items-center justify-center border px-4 focus-visible:outline-2 focus-visible:outline-offset-2'
 
 /**
+ * The box itself, shared because it is drawn in three shapes: `Check`, the "Se ve"
+ * switch on the home page's section list, and the list of sections on a
+ * photograph -- which sets its label in the archive's own type rather than in
+ * `.t-label`'s mono, and is why only the box could be shared.
+ */
+export const CHECKBOX =
+  'accent-accent focus-visible:outline-focus h-4 w-4 shrink-0 focus-visible:outline-2 focus-visible:outline-offset-2'
+
+/**
  * For a row where controls sit side by side and their heights show: each one
  * sizes from its own font otherwise -- selects at 39px, a search box at 40, a
  * button at 33 -- so the row gets one height and they all take it.
@@ -62,6 +71,7 @@ export const DONE: Record<string, string> = {
   restaurada: 'Se adjuntó la versión restaurada.',
   'restauracion-quitada': 'Se quitó la versión restaurada.',
   orden: 'Se guardó el orden de la sección.',
+  secciones: 'Se guardaron las secciones de la fotografía.',
   portada: 'Se guardó el orden y qué secciones se ven.',
   'seccion-creada': 'Se creó la sección. Ya tiene su página en el sitio.',
   'seccion-guardada': 'Se guardó la sección.',
@@ -96,6 +106,14 @@ export const FAILED: Record<string, string> = {
   'sin-master':
     'No se puede publicar: no encontramos la copia original de esta fotografía, ni en el archivo ni en Drive.',
   orden: 'El orden recibido no es válido.',
+  // The two refusals T17's control makes, and both are states the archive can
+  // reach and cannot see afterwards: a photograph in no section is published and
+  // reachable from no gallery, and a cover pointing outside its own section is a
+  // card on the home page showing a photograph that is no longer there.
+  'sin-seccion':
+    'Una fotografía tiene que estar en al menos una sección: si no, queda publicada pero no se llega a ella desde ninguna galería. Dejá tildada por lo menos una.',
+  'portada-en-uso':
+    'No se puede sacar de una sección a la fotografía que es su portada: la portada del sitio quedaría mostrando una fotografía que ya no está en esa sección. Elegí otra portada en Secciones → esa sección, y después sacala.',
 
   // --- sections ---
   'seccion-no-existe': 'Esa sección no existe.',
@@ -249,7 +267,7 @@ export function Check({
         name={name}
         value={value}
         defaultChecked={defaultChecked}
-        className="accent-accent focus-visible:outline-focus mt-1 h-4 w-4 focus-visible:outline-2 focus-visible:outline-offset-2"
+        className={`${CHECKBOX} mt-1`}
       />
       <span>
         <span className="t-label block">{label}</span>

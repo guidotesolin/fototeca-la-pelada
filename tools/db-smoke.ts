@@ -8,7 +8,7 @@
  *   npm run db:smoke
  */
 import assert from 'node:assert/strict'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import { Invalid } from '../src/app/admin/invalid'
@@ -40,7 +40,11 @@ const client = postgres(url, POSTGRES_OPTIONS)
 const db = drizzle(client)
 
 const CATEGORY = 'smoke-test-category'
+/** The second section, so a photograph has somewhere to be moved to. */
+const CATEGORY_B = 'smoke-test-category-b'
 const PHOTO = 'smoke-test-photo'
+/** Two more in the first section, so the hole a move leaves has neighbours. */
+const NEIGHBOURS = ['smoke-test-photo-2', 'smoke-test-photo-3']
 
 /**
  * A real `site_text` key, because the editor only accepts the seven that are
@@ -66,8 +70,8 @@ let borrowedSiteText: { key: string; locale: 'es' | 'en' | 'fr' | 'it'; value: s
 
 /** Deleting the photo and the category cascades to everything else. */
 async function clean() {
-  await db.delete(photo).where(eq(photo.slug, PHOTO))
-  await db.delete(category).where(eq(category.slug, CATEGORY))
+  await db.delete(photo).where(inArray(photo.slug, [PHOTO, ...NEIGHBOURS]))
+  await db.delete(category).where(inArray(category.slug, [CATEGORY, CATEGORY_B]))
   await db.delete(siteText).where(and(eq(siteText.key, SITE_KEY), eq(siteText.locale, 'en')))
   if (borrowedSiteText) await db.insert(siteText).values(borrowedSiteText).onConflictDoNothing()
 }
@@ -101,6 +105,7 @@ async function main() {
   // its client the moment it loads, and the static import would be hoisted above
   // `loadEnvFile` above. The same reason `search:smoke` defers its own import.
   const { writeTranslations } = await import('../src/app/admin/translations/save')
+  const { writeSections } = await import('../src/app/admin/photos/sections')
 
   // Before anything is deleted, including by `clean()` itself.
   const [existing] = await db
@@ -298,6 +303,150 @@ async function main() {
     assert.equal(await siteTextRow(), undefined, 'clearing a site text should delete the row')
     checks += 2
 
+    // --- which sections a photograph is in (T17) ---
+    // The three refusals and the position arithmetic, against a real database:
+    // every one of them is invisible when it goes wrong, which is why they are
+    // here rather than only in a browser pass.
+    const [catB] = await db
+      .insert(category)
+      .values({ slug: CATEGORY_B, position: 98, visible: false })
+      .returning()
+    await db
+      .insert(categoryTranslation)
+      .values({ categoryId: catB.id, locale: 'es', name: 'Deporte' })
+    /**
+     * Two neighbours around the one that moves, and **around** is the point: with
+     * the departing photograph first, "decrement what sat above the hole" and
+     * "decrement everything" produce the same numbers, so the check cannot tell
+     * them apart. It sits at 2, between 1 and 3.
+     */
+    const neighbours = await db
+      .insert(photo)
+      .values(
+        NEIGHBOURS.map((slug) => ({
+          slug,
+          masterSource: 'sites' as const,
+          masterKey: `masters/smoke/${slug}.jpg`,
+          masterWidth: 1024,
+          masterHeight: 768,
+          masterBytes: 149998,
+          masterSha256: 'b'.repeat(64),
+        })),
+      )
+      .returning()
+    await db.insert(photoCategory).values(
+      neighbours.map((row, index) => ({
+        photoId: row.id,
+        categoryId: cat.id,
+        position: index === 0 ? 1 : 3,
+      })),
+    )
+    await db
+      .update(photoCategory)
+      .set({ position: 2 })
+      .where(and(eq(photoCategory.photoId, ph.id), eq(photoCategory.categoryId, cat.id)))
+
+    const sectionsOf = async (photoId: number) => {
+      const rows = await db
+        .select({ slug: category.slug, position: photoCategory.position })
+        .from(photoCategory)
+        .innerJoin(category, eq(category.id, photoCategory.categoryId))
+        .where(eq(photoCategory.photoId, photoId))
+        .orderBy(asc(category.slug))
+      return rows
+    }
+    const positionsIn = async (categoryId: number) => {
+      const rows = await db
+        .select({ position: photoCategory.position })
+        .from(photoCategory)
+        .where(eq(photoCategory.categoryId, categoryId))
+        .orderBy(asc(photoCategory.position))
+      return rows.map((r) => r.position)
+    }
+    const setSections = (photoId: number, wanted: string[]) =>
+      db.transaction((tx) => writeSections(tx as never, photoId, wanted))
+
+    // Moving: out of the first section, last into the second, and the two left
+    // behind close the hole -- they were 2 and 3.
+    await setSections(ph.id, [CATEGORY_B])
+    assert.deepEqual(await sectionsOf(ph.id), [{ slug: CATEGORY_B, position: 1 }])
+    assert.deepEqual(await positionsIn(cat.id), [1, 2], 'a move must not leave a hole behind it')
+    checks += 2
+
+    // In two at once, which is the other half of what N:N promises. Back into the
+    // first section it goes last, at 3.
+    await setSections(ph.id, [CATEGORY, CATEGORY_B])
+    assert.deepEqual(await sectionsOf(ph.id), [
+      { slug: CATEGORY, position: 3 },
+      { slug: CATEGORY_B, position: 1 },
+    ])
+    checks += 1
+
+    // Nothing ticked: refused, because a photograph in no section is published
+    // and reachable from no gallery.
+    await assert.rejects(
+      () => setSections(ph.id, []),
+      (error: Error) => error instanceof Invalid && error.message === 'sin-seccion',
+      'a photograph may not be left in no section',
+    )
+    // A section that is not there is refused rather than skipped.
+    await assert.rejects(
+      () => setSections(ph.id, [CATEGORY, 'no-such-section']),
+      (error: Error) => error instanceof Invalid && error.message === 'seccion-no-existe',
+      'an unknown section must be refused',
+    )
+    assert.equal((await sectionsOf(ph.id)).length, 2, 'a refused save must change nothing')
+    checks += 3
+
+    // A section's cover cannot be taken out of that section: the home page would
+    // draw a card whose photograph is no longer in what it opens.
+    await db.update(category).set({ coverPhotoId: ph.id }).where(eq(category.id, catB.id))
+    await assert.rejects(
+      () => setSections(ph.id, [CATEGORY]),
+      (error: Error) => error instanceof Invalid && error.message === 'portada-en-uso',
+      "a section's cover may not leave the section",
+    )
+    assert.deepEqual(
+      await sectionsOf(ph.id),
+      [
+        { slug: CATEGORY, position: 3 },
+        { slug: CATEGORY_B, position: 1 },
+      ],
+      'the refused removal must not have happened',
+    )
+    checks += 2
+
+    /**
+     * **The decrement does not assume a dense numbering**, which the comment in
+     * `sections.ts` claims and which `saveOrder` can break in a single save: it
+     * takes any number in the box, repeats included. Hand-numbered 3, 10, 20, and
+     * the one in the middle leaves: 3 stays where it is and only 20 moves down.
+     */
+    await db.update(category).set({ coverPhotoId: null }).where(eq(category.id, catB.id))
+    const at = (photoId: number, position: number) =>
+      db
+        .update(photoCategory)
+        .set({ position })
+        .where(and(eq(photoCategory.photoId, photoId), eq(photoCategory.categoryId, cat.id)))
+    await at(ph.id, 10)
+    await at(neighbours[0].id, 3)
+    await at(neighbours[1].id, 20)
+    await setSections(ph.id, [CATEGORY_B])
+    assert.deepEqual(
+      await positionsIn(cat.id),
+      [3, 19],
+      'a hand-numbered section keeps its order, and its gaps, when one leaves it',
+    )
+    checks += 1
+
+    // Ticking exactly what is already ticked is the commonest submit there is, and
+    // it writes nothing.
+    const unchanged = await sectionsOf(ph.id)
+    await setSections(ph.id, [CATEGORY_B])
+    assert.deepEqual(await sectionsOf(ph.id), unchanged, 'saving an unchanged set changes nothing')
+    assert.deepEqual(await positionsIn(cat.id), [3, 19], 'and leaves the other sections alone')
+    checks += 2
+
     // --- the takedown flow leans on these cascades ---
     await db.delete(photo).where(eq(photo.slug, PHOTO))
     const orphans = await db
@@ -308,7 +457,7 @@ async function main() {
 
     console.log(
       `db smoke ok: 2 translations, trigger, unaccent, per-language stemming, cascades, ` +
-        `and ${checks} assertions on the panel's translation writes`,
+        `and ${checks} assertions on the panel's translation and section writes`,
     )
   } finally {
     await clean()

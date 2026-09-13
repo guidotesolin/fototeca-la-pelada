@@ -22,25 +22,26 @@
 
 ## Board
 
-| ID  | Branch                   | Depends on |
-| --- | ------------------------ | ---------- |
-| T0  | `main`                   | —          |
-| T1  | `t1-rescue-archive`      | T0         |
-| T2  | `t2-db-schema`           | T0         |
-| T3  | `t3-image-pipeline`      | T0         |
-| T4  | `t4-seed-archive`        | T1, T2, T3 |
-| T5  | `t5-design-proposals`    | T1         |
-| T6  | `t6-public-galleries`    | T4, T5     |
-| T7  | `t7-photo-detail`        | T6         |
-| T8  | `t8-search`              | T6         |
-| T9  | `t9-auth-admin-shell`    | T2         |
-| T10 | `t10-admin-photos`       | T9, T3     |
-| T11 | `t11-admin-home`         | T9         |
-| T12 | `t12-admin-drive-import` | T9, T3     |
-| T13 | `t13-i18n-public`        | T7, T8     |
-| T14 | `t14-deploy-hardening`   | all        |
-| T15 | `t15-translation-editor` | T13        |
-| T16 | `t16-videoteca`          | T13, T15   |
+| ID  | Branch                    | Depends on |
+| --- | ------------------------- | ---------- |
+| T0  | `main`                    | —          |
+| T1  | `t1-rescue-archive`       | T0         |
+| T2  | `t2-db-schema`            | T0         |
+| T3  | `t3-image-pipeline`       | T0         |
+| T4  | `t4-seed-archive`         | T1, T2, T3 |
+| T5  | `t5-design-proposals`     | T1         |
+| T6  | `t6-public-galleries`     | T4, T5     |
+| T7  | `t7-photo-detail`         | T6         |
+| T8  | `t8-search`               | T6         |
+| T9  | `t9-auth-admin-shell`     | T2         |
+| T10 | `t10-admin-photos`        | T9, T3     |
+| T11 | `t11-admin-home`          | T9         |
+| T12 | `t12-admin-drive-import`  | T9, T3     |
+| T13 | `t13-i18n-public`         | T7, T8     |
+| T14 | `t14-deploy-hardening`    | all        |
+| T15 | `t15-translation-editor`  | T13        |
+| T16 | `t16-videoteca`           | T13, T15   |
+| T17 | `t17-move-photo-sections` | T10, T11   |
 
 ---
 
@@ -1114,6 +1115,175 @@ republishing reuses the same poster key; a description translates with its title
 falls back field by field.
 _Commit_: `feat(videoteca): add the video library, its panel and its own permalinks`
 
+### T17 — Admin: move a photograph between sections
+
+The control _What can be changed without programming_ has promised from the first draft and nobody
+has built: "Move a photo between categories, or put it in two — Panel → the photo. The relation is
+N:N." **F36**. T10's card scoped the fields, the flags, publishing, reordering and the restoration,
+T11 shipped the sections themselves, and so the one thing `photo_category` exists for has never had
+a screen.
+
+Now, because a **Tenis Criollo** section is about to be created and the photographs that belong in
+it are in Deporte. Creating the section is T11's and already works; moving the photographs is what
+is missing.
+
+**One control and not two, which is the only design decision on this card.** `photo_category` is
+N:N and the promise above is two sentences: move, and be in two. A "Mover a…" button beside an
+"Agregar a otra sección" button would be two paths to one fact, so what the screen carries is
+**which sections this photograph belongs to** — a checkbox per section — and moving is unticking
+one and ticking another. It goes where the read-only list of sections already sits, on the
+photograph's own screen, `src/app/admin/photos/[slug]/page.tsx`.
+
+Scope: one photograph at a time, from its edit screen. **No bulk selection from the list**: nobody
+knows yet how many photographs the move involves, and that is a decision to take with the number in
+view rather than a screen to build against a guess.
+
+Three refusals, all enforced on the server, all measured against the archive as it stands — 601
+photographs, 601 rows in `photo_category`, every one of them in exactly one section:
+
+- **A photograph may not be left in no section.** One in none is still published and still indexed,
+  and reachable from no gallery. Refused, saying why.
+- **A photograph that is a section's cover may not be taken out of that section.** All eleven
+  sections carry a `cover_photo_id`, so the home page would draw a card whose picture no longer
+  belongs to the section it stands for. Refused, and it says where to fix it — the criterion T11
+  already refuses to delete a section that still holds photographs with. Clearing the cover quietly
+  is worse: it leaves the home page with a hole and tells nobody.
+- **`position` is per section.** Arriving, a photograph goes last in the section, which is where the
+  Drive import already puts one. Leaving, the gap closes behind it, so the numbers the reorder
+  screen prints stay 1..N.
+
+**Revalidation is wider than the two galleries**, and that is the part worth checking rather than
+assuming: the counts in the header's _Secciones_ menu ("Sociales 104"), the deck and the section
+grid on the home page, the photograph's own ficha and the gallery pagination all move with it.
+
+_Acceptance_: from the panel, unticking one section and ticking another takes the photograph out of
+the first gallery, puts it at the end of the second, and moves both counts in the header's menu —
+verified against `npm run build && npm run start`, not only `next dev`. Ticking a second section
+without unticking the first leaves the photograph in both. Unticking every section is refused;
+taking a photograph out of a section it is the cover of is refused; and the photographs left behind
+keep a gapless order.
+_Commit_: `feat(admin): move a photograph between sections from its own screen`
+
+#### Where it departed from the plan
+
+- **The write is not in the action, and that is what made the refusals checkable.** A `'use server'`
+  file drags in `next/navigation` and Auth.js, so nothing outside Next can call it -- which is the
+  reason `writeTranslations` sits in a file of its own, and the same reason applies harder here:
+  three refusals and an arithmetic that is invisible when it is wrong. `src/app/admin/photos/sections.ts`
+  is that file, `saveSections` is the shape of the form around it, and `npm run db:smoke` asserts
+  every branch against a real database from a plain Node process. The check was proved able to fail
+  before it was believed: breaking the gap-closing statement makes it red on "a move must not leave
+  a hole behind it", and deleting the cover check makes it red on the missing rejection.
+- **The gap closes with `position - 1` above the hole, not by renumbering the section.** Every
+  section is dense 1..N today, so decrementing what sat behind the departure keeps it dense while
+  touching the fewest rows; a `row_number()` renumber would also rewrite a numbering somebody typed
+  by hand -- the reorder screen accepts any number, and 10/20/30 is a scheme this would flatten.
+- **The cover is checked before the first write** rather than per section as the loop goes. A save
+  can touch two sections, and half of one applied is exactly the state the refusals exist to
+  prevent. Verified: unticking Deporte **and** ticking Campo in the same submit on the section's
+  cover left the photograph in Deporte alone -- the addition did not happen either.
+- **A photograph that comes back to a section comes back last**, at `max(position) + 1`, not to the
+  place it had. It is the Drive import's rule and the honest one: the position it used to hold
+  belongs to whoever closed the gap behind it.
+- **The checkbox list is not `Check`.** That component sets its label in `.t-label`, which is
+  uppercase mono at 11px -- right for "Contenido sensible" and wrong for a section's name, which the
+  sections screen already sets in the archive's own type. What is shared instead is the box, as
+  `CHECKBOX` beside `FIELD` and `BUTTON`, and the label carries `py-1.5` so the target clears the
+  24 px F25 already cost this repository once.
+- **Nothing says which section a photograph is the cover of** before the refusal fires. Every
+  refusal names what to do, so add it if anybody hits that wall twice.
+
+#### Verified on delivery
+
+Against `npm run build && npm run start` and a **branch of the Neon production database**, never
+against the live data: the branch was made from `production`, `.env.local` pointed at it for the
+whole pass, and it was deleted afterwards. R2 does not branch and did not need to -- this change
+writes `photo_category` and nothing else.
+
+Moving `deporte-003` from Deporte to Sociales, with the panel driven in a real browser:
+
+| What                     | Before    | After                                                |
+| ------------------------ | --------- | ---------------------------------------------------- |
+| Deporte's gallery        | 53, at #3 | 52, gone; `deporte-001, -002, -004` now head it      |
+| Sociales' last page      | 16 of 112 | 17 of 113, `deporte-003` **last**                    |
+| The header's _Secciones_ | 53 / 112  | 52 / 113                                             |
+| The home page's grid     | 53 / 112  | 52 / 113                                             |
+| The photograph's ficha   | Deporte   | Sociales, with «anterior» re-aimed at `sociales-112` |
+
+Every one of them turned over on the **fifth request**, about three seconds after the save, which is
+`revalidateTag(GALLERY_TAG, 'max')` serving the old page while it renders the new one -- and F50 is
+where that stops being the fastest available answer.
+
+**The search was measured separately, and the difference matters.** `/buscar` composes a
+photograph's section names into the document it searches, so a move changes what it matches -- but
+not with the two sections above, and the first attempt to check it was wrong in a way worth
+recording. Searching `Sociales` went on returning the photograph after the move, which reads as a
+stale cache and is the caption: "Club Atlético y **Social** Independiente" stems to the same root.
+So the check was run as a move of its own, into the one section ARCHITECTURE records as appearing in
+no caption: `/buscar?q=Educación` answered **43 before and 44 after** adding `deporte-003` to
+Educación, and 43 again once it was taken out. That is the measurement; the table above is the
+Deporte-to-Sociales move and never touched Educación.
+
+Then the three edge cases, each refused with the archive's own words and **nothing written**:
+unticking every section answers `?error=sin-seccion` and the photograph is still in Deporte on the
+next render; unticking Deporte on `deporte-016`, which is that section's cover, answers
+`?error=portada-en-uso`; and after a move out, a move back and a move to a second section, all
+eleven sections are dense 1..N with the eleven counts exactly as they started.
+
+**The section this card was written for already exists.** _Tenis Criollo_ was created from the
+panel, by one of the brothers, while this was being built -- the archive went from 601 photographs
+and eleven sections to 608 and twelve in the hour the branch was open, which is the reason the whole
+pass ran against a copy. The control lists it fourth, right after Deporte, and the photographs are
+one save away.
+
+#### What the review of this branch changed
+
+An independent pass over the diff, with no knowledge of why anything was written the way it was.
+Four of its findings were defects and three of those were in the documentation, which is the part
+that had not been checked against itself.
+
+- **The `sin-seccion` refusal counted hidden sections, so the invariant it advertises had a hole.**
+  `listCategories` does not filter by `visible` and nothing on screen said which were which, so a
+  photograph could be moved into a hidden section alone: published, in the sitemap, and reachable
+  from no gallery -- `/categoria/<slug>` answers 404 for a hidden section and `getPhoto` leaves it
+  out of the ficha. **Refusing it would have been wrong**, and that is the interesting half: T11
+  hides a section rather than delete it precisely so its photographs are kept, and its own
+  `con-fotos` message tells an administrator to do exactly that. So the panel says it instead --
+  hidden sections carry an "oculta" tag, and one sentence appears above the list when any of them
+  is, and only then. The card had this as a cosmetic omission. It was the invariant.
+- **The mutation test was the check on the check, and the first version failed it.** Breaking the
+  gap-closing statement two ways -- decrementing everything instead of what sat above the hole, and
+  decrementing by zero -- left `db:smoke` **green**, because in both fixtures the departing
+  photograph was the first in its section, where the two behaviours produce the same numbers. It
+  sits in the middle now, and both mutations are red. Two assertions were added with it: a section
+  numbered 3, 10, 20 by hand keeps its order and its gaps when the middle one leaves, and ticking
+  exactly what is already ticked writes nothing.
+- **Three comments claimed more than the code does.** `sections.ts` called itself "the one place
+  `photo_category` gains and loses rows" -- the Drive import inserts, `saveOrder` rewrites and both
+  foreign keys cascade -- and it justified the decrement with "every section is dense 1..N", which
+  ARCHITECTURE had been given as an invariant. It is a fact about the archive today and `saveOrder`
+  can break it in one save, so both now say so, and the decrement is defended by what it actually
+  does: it preserves the order of whatever numbering it is given.
+- **The `/buscar` row in the table above was measured on a different move**, which is corrected in
+  place. As written it invited a reader to reproduce it and conclude the search does not revalidate.
+- Two smaller ones: the ticked slugs are deduplicated before the `in` list, so a repeated value can
+  neither be a mismatch nor a longer query than there are sections; and `CHECKBOX` had been
+  extracted for two call sites while a third, `categories/reorder.tsx`, kept the same literal --
+  folded in, which is the point of extracting it.
+
+What was recorded rather than fixed: **F60** (a stale form silently drops a membership added
+elsewhere), **F61** (`position` has no tiebreak in the public reads and two writers compute
+`max + 1` without a lock) and **F62** (the cover rule is a check, not a lock). All three need two
+administrators writing in the same seconds, and all three are older than this card in everything but
+F60.
+
+**With JavaScript disabled** the whole thing still works: the form posts itself, the action answers
+303 and the next render carries the outcome, which is how the rest of the panel is built.
+`npm run db:smoke` (19 assertions on the panel's writes, eleven of them this card's), `auth:smoke`
+(now 17 exported actions across 6 files, all gated), `takedown:smoke`, `url:smoke`, `slug:smoke`,
+`tsc`, `eslint` and `prettier` are clean. `npm run db:seed:verify` is **red and was red before this
+branch**: F59.
+
 ---
 
 ## Follow-ups
@@ -1160,7 +1330,7 @@ out: `grep -rn "ponytail:" src tools` lists those.
 | ~~F33~~ | ~~Search reads the Spanish translation row only~~                                                                                                              | `SEARCH_CONFIG` was `es_unaccent` and the join was pinned to `es`. **Closed in T13**, and it was not one constant and one join condition: the configuration follows the language on both sides of the query, the vector falls back to Spanish, and that fallback needs `nullif(…, ''::tsvector)` because the trigger writes an _empty_ vector for a row with no caption rather than a null one. Without it a language goes silently unsearchable                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | done                                                       |
 | ~~F34~~ | ~~The panel can answer 500 on the first request after Neon suspends its compute~~                                                                              | **Closed in T9, and the diagnosis in this row was wrong.** Not a cold start: Node 22 gives each address a host resolves to 250 ms to complete its handshake, and Neon's `us-east-2` pooler measures 208-311 ms from Argentina, so the default sits inside the jitter. 7 failures in 12 connections before, 0 in 12 after raising it, in `src/db/connect.ts`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | done                                                       |
 | ~~F35~~ | ~~A takedown leaves the photograph's master reachable in R2~~                                                                                                  | **Closed in T14**, and not in application code -- the bucket serves images directly, which is the free-egress design a gallery depends on. A zone-level WAF custom rule blocks `/masters/` on `img.fototecalapelada.com.ar` and answers 403. Verified in both directions: the renditions still answer 200, and the percent-encoded, case-varied and dot-segment spellings all answer 403 or 404. _Production_ in ARCHITECTURE carries the expression and the measurements.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | T14                                                        |
-| F36     | The panel cannot move a photograph between sections                                                                                                            | The N:N relation is in the model and _What can be changed_ promises it, but T10's card scopes the fields, the flags, publishing, reordering and the restoration. T11 is where categories are managed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | T11                                                        |
+| ~~F36~~ | ~~The panel cannot move a photograph between sections~~                                                                                                        | The N:N relation is in the model and _What can be changed_ promises it, but T10's card scopes the fields, the flags, publishing, reordering and the restoration, and T11 shipped the categories themselves without it. **Closed in T17**: the photograph's own screen carries a checkbox per section where it printed a read-only list, so moving is unticking one and ticking another and being in two is ticking two -- one control, because the promise is one line. Measured against the production build: the photograph leaves the first gallery, arrives last in the second, and Deporte 53 → 52 and Sociales 112 → 113 move in the header's menu, on the home page and in the search that reads section names                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | done                                                       |
 | F37     | After a takedown the photograph's page can keep serving for about two seconds                                                                                  | The proxy memoizes the takedown list rather than asking the database on every photograph view, which would undo the decision that keeps Neon out of the request path. Measured: the derivatives are unreachable the moment the panel answers, and the page serves its stale pre-rendered copy for `MEMO_MS` plus one request -- about 1.9 s of 200, then 404, then 410 at ~2.7 s. The opposite direction, a republished photograph still answering 410, is closed: the proxy confirms the list before it says 410                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | when there is a store the panel writes and the proxy reads |
 | ~~F38~~ | ~~`npm run search:smoke` fails before it runs a single check~~                                                                                                 | It imports `@/db`, and the `server-only` guard F8 added in T9 throws the moment a plain `tsx` process loads it. Not introduced by T10 — verified by stashing the branch and running it on `main`. **Closed here**: the marker package resolves to an empty module under the `react-server` export condition, which is what the App Router sets and a CLI does not, so the npm script passes `--conditions=react-server` and the tool says it is the server. 74 checks pass. The alternative was threading a client through `search.ts` for one test                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | done                                                       |
 | F39     | An imported photograph with no derivatives yet has nothing to preview on its edit screen                                                                       | It cannot happen today: the import always generates derivatives, so the preview falls back to the web copy. It becomes visible the first time somebody unpublishes an imported photograph, and closing it means proxying a Drive thumbnail through a route of our own — a new public endpoint for a preview                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | T13+, or whoever asks                                      |
@@ -1183,3 +1353,7 @@ out: `grep -rn "ponytail:" src tools` lists those.
 | ~~F56~~ | ~~`Incendios rurales` has no proposal in any of the three languages~~                                                                                          | Surfaced by `npm run translations:export` in T16 and **not introduced by it**: the string is in the database and in none of the three proposal files, so it was added from the panel after the last export ran. It is one section name. Left rather than translated in passing, because content the card did not ask for is content nobody reviewed; the export has recorded it now, which is the part that was missing. **Closed as moot, and the row had it wrong twice**: it is not a section name, it is the caption of `campo-049` -- the database has eleven categories and none of them is this string -- and it was **not untranslated**. All three were done by hand in the panel and are live: `Wildfires`, `Incendies de campagne`, `Incendi rurali`. So what the export found was an empty proposal slot for a piece that no longer needs one, which is not a gap: `row.tsx` pre-fills a box from the stored translation when there is one and from a proposal only when there is not. Left empty on purpose rather than filled in to close the row -- an invented proposal is not what the machine said, and keeping the file honest about that is the whole reason it lives in git                                                                                                                                                                                                                      | done                                                       |
 | F57     | The translations dashboard reads 0% for interview titles that are deliberately untranslated                                                                    | `Memorias de La Pelada — <a name>` is a series and a person, so it is the same in four languages and its `en`/`fr`/`it` rows are left null on purpose -- the SQL fallback serves the Spanish. The screen counts non-empty fields, so it reports 0/3 and invites work that should not be done. It is measuring state honestly and there is no `do not translate` state to measure; the glossary is the place that knows, and teaching the dashboard to read it is more machinery than three rows justify                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | nobody until the Videoteca is longer                       |
 | F58     | `generateStaticParams` still reads two cached queries, so a new **section** can miss its pre-render                                                            | F55's residue, and narrower than F55 was: the pagination route reads `listSections` and the photo route `listSections` plus `listCategoryOrder` for the non-Spanish locales, and both are `perLocale`-cached because the galleries read them on every request -- so they cannot simply be uncached the way the three slug readers were. What it costs is the same as F55: a pre-render and not a page, since `dynamicParams` is true. Narrower because a section is added once in a while and a photograph every day                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | whoever adds a section and minds the first click           |
+| F59     | `npm run db:seed:verify` has been red since the first Drive import                                                                                             | It asserts the database holds exactly what `archive/archive.json` holds -- 592 photographs, Sociales 104, Trabajo 55 -- and T12's import writes photographs that were never in the rescue, so it reads 601, 112 and 56 and fails on the first assertion. Nothing is wrong with the archive: the count the check compares against is the **rescue's**, and the archive has grown since, which is what the import is for. The same run reports 22 R2 objects no row points at, which is the other half and a different question. Found while running the suite after T17, which changes neither number -- it writes only `photo_category`, and the eleven per-section counts came back exactly as they were. The fix is for the verifier to check the rescued 592 are still there rather than that they are all there is                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | unassigned                                                 |
+| F60     | A sections form that was rendered before somebody else's save silently drops what they added                                                                   | The ticked set is authoritative: `writeSections` compares it against the rows it reads inside the transaction, not against what the screen was rendered from. Two administrators, or one with a tab left open -- A opens a photograph, B adds it to Sociales, A ticks anything and saves, and Sociales is gone with `ok=secciones` on screen. Left because the fix is a hidden field carrying the slugs the form was drawn with and a refusal when they no longer match, which is a real amount of screen and prose for a race between two people who mostly sit in different houses. Found by the review of T17                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | unassigned                                                 |
+| F61     | `photo_category.position` has no tiebreak in the public reads, and two writers compute `max + 1` without a lock                                                | `listSectionPhotos` and `listCategoryOrder` order by `position` alone, where `listSections` deliberately breaks the tie on `category.position` because nothing makes it unique. Nothing makes this one unique either: `saveOrder` accepts any number per row, repeats included, and both the Drive import and T17 insert at `coalesce(max(position),0)+1` read outside a lock. With a tie the grid and the photograph's own «anterior/siguiente» are two cache entries that can resolve it opposite ways. The cheap half is `asc(photoCategory.position), asc(photo.slug)` in those two reads; the lock is the expensive half and probably never. Also from here: `saveOrder` caps a position at six digits and the box at 999999, so a section whose maximum is typed that high refuses every later reorder. Found by the review of T17, older than it                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | unassigned                                                 |
+| F62     | The cover rule is a check and not a lock                                                                                                                       | `writeSections` refuses to take a photograph out of a section it is the cover of, and `saveCategory` refuses a cover that is not a member -- each reading the other's column outside a lock, so the two committing in the same instant leave `cover_photo_id` pointing outside its section, which is the state both refusals exist to prevent. `select … for update` on the `category` row closes it. Left because it needs two administrators in the same second on the same section, and because the consequence is one wrong card on the home page until somebody changes the cover. Found by the review of T17                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | unassigned                                                 |

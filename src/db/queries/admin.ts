@@ -182,7 +182,17 @@ export async function listPhotos(options: {
 export async function listCategories() {
   return (
     db
-      .select({ id: category.id, slug: category.slug, name: categoryTranslation.name })
+      // `visible` is for the sections control on a photograph: a hidden section is
+      // still a section a photograph can belong to -- T11 hides one rather than
+      // delete it precisely so its photographs are kept -- but it is off the site,
+      // so the panel has to say which ones those are instead of drawing eleven
+      // identical boxes.
+      .select({
+        id: category.id,
+        slug: category.slug,
+        name: categoryTranslation.name,
+        visible: category.visible,
+      })
       .from(category)
       .innerJoin(
         categoryTranslation,
