@@ -1,16 +1,22 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPhotoForEdit, photoTranslations, restoredFromDrive } from '@/db/queries/admin'
+import {
+  getPhotoForEdit,
+  listCategories,
+  photoTranslations,
+  restoredFromDrive,
+} from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { RESTORED_FOLDER_NAME, listImages, restoredFolder } from '@/lib/drive'
 import { keyFor, publicUrl } from '@/lib/photo'
-import { Back, BUTTON, Check, FIELD, Field, Notice, Row, one } from '../../ui'
+import { Back, BUTTON, CHECKBOX, Check, FIELD, Field, Notice, Row, one } from '../../ui'
 import {
   attachRestoration,
   attachRestorationFromDrive,
   removeRestoration,
   saveDetails,
+  saveSections,
   setPublished,
 } from '../actions'
 import { TakedownHelp } from '../../takedown-help'
@@ -56,7 +62,9 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
   const params = await props.searchParams
   // What the other three languages already say about this photograph, and what
   // the machine proposed for whichever of them is still empty.
-  const stored = await photoTranslations(slug)
+  // `categories` is every section there is, for the checkboxes below;
+  // `photo.sections` is the ones this photograph is in.
+  const [stored, categories] = await Promise.all([photoTranslations(slug), listCategories()])
   const proposals = Object.fromEntries(TARGET_LOCALES.map((l) => [l, proposalsFor(l)]))
 
   /**
@@ -440,12 +448,63 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         )}
       </section>
 
+      {/* Where the read-only list of sections used to be printed. The relation is
+          N:N, and _What can be changed without programming_ promises both of the
+          things that makes possible in one line -- move a photograph, or put it in
+          two -- so this is one control and not a "mover" button beside an "agregar
+          a otra". Ticking is being in two; moving is unticking one and ticking
+          another. Checkboxes rather than a multiple `<select>`: the panel works on
+          a phone, and a multi-select is where a stray tap clears the lot. */}
+      <section className="mt-14">
+        <h2 className="t-label border-rule border-b pb-2">Secciones</h2>
+        <p className="t-intro text-muted mt-4">
+          En qué secciones aparece esta fotografía. Puede estar en más de una: para moverla,
+          destildá una y tildá otra. Al sumarla a una sección queda al final; el orden se cambia
+          desde Fotografías, filtrando por esa sección.
+        </p>
+        {/* Only when there is one, because a warning about a state that does not
+            exist is a warning nobody reads. A hidden section is a legitimate place
+            for a photograph -- T11 hides a section instead of deleting it so that
+            its photographs are kept -- but it is off the site, so a photograph
+            whose only section is hidden is published and in no gallery. The panel
+            says so rather than refusing, which would contradict T11. */}
+        {categories.some((c) => !c.visible) && (
+          <p className="t-intro text-muted mt-3">
+            Las secciones marcadas como ocultas no están en el sitio: una fotografía que sólo esté
+            en ésas queda publicada pero no se llega a ella desde ninguna galería.
+          </p>
+        )}
+        <form action={saveSections} className="mt-5">
+          <input type="hidden" name="slug" value={photo.slug} />
+          <div className="grid gap-1 sm:grid-cols-2">
+            {categories.map((section) => (
+              /* The name in the archive's own type and not in `.t-label`'s mono:
+                 it is content, and the sections list sets it the same way. The
+                 padding is the touch target -- the box is 16 px and the label is
+                 what you actually hit (WCAG 2.2 SC 2.5.8, which F25 already cost
+                 us once). */
+              <label key={section.slug} className="flex cursor-pointer items-center gap-3 py-1.5">
+                <input
+                  type="checkbox"
+                  name="section"
+                  value={section.slug}
+                  defaultChecked={photo.sections.some((s) => s.slug === section.slug)}
+                  className={CHECKBOX}
+                />
+                <span className="t-caption-grid">{section.name}</span>
+                {!section.visible && <span className="t-label text-muted">oculta</span>}
+              </label>
+            ))}
+          </div>
+          <button type="submit" className={`${BUTTON} mt-6`}>
+            Guardar secciones
+          </button>
+        </form>
+      </section>
+
       <section className="mt-14">
         <h2 className="t-label border-rule border-b pb-2">Archivo</h2>
         <dl className="border-rule mt-1 border-t">
-          <Row label="Secciones">
-            {photo.sections.length ? photo.sections.map((s) => s.name).join(', ') : '—'}
-          </Row>
           <Row label="Master">
             {photo.masterSource === 'drive' ? 'Drive' : 'rescatado de Sites'} · {photo.masterWidth}×
             {photo.masterHeight}

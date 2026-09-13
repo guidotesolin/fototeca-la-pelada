@@ -19,6 +19,7 @@ import { getBytes, newPrefix, put } from '@/lib/r2'
 import { readTranslations } from '../translations/items'
 import { writeTranslations } from '../translations/save'
 import { Invalid, outcome } from '../write'
+import { writeSections } from './sections'
 
 /**
  * Every write the photo screens make. Two rules hold across all of them:
@@ -381,6 +382,37 @@ export async function removeRestoration(form: FormData) {
         restoredDriveFileId: null,
       })
       .where(eq(photo.id, row.id))
+  })
+  redirect(`/admin/photos/${slug}?${result}`)
+}
+
+/**
+ * Which sections a photograph belongs to. **One control for both of the things
+ * the model allows**, because `photo_category` is N:N and _What can be changed
+ * without programming_ promises both in one line: moving is unticking one section
+ * and ticking another, and being in two is ticking two. A "Mover a…" button
+ * beside an "Agregar a otra" would have been two paths to one fact.
+ *
+ * The write itself is `./sections`, for the reason `writeTranslations` is not in
+ * here either: it carries three refusals and an arithmetic that is invisible when
+ * it is wrong, and `npm run db:smoke` can only reach it outside a `'use server'`
+ * file. What is left here is the shape of the form.
+ */
+export async function saveSections(form: FormData) {
+  await requireAdmin()
+  const slug = form.get('slug')
+  if (typeof slug !== 'string' || !SLUG.test(slug)) redirect('/admin/photos?error=no-existe')
+
+  const result = await outcome('photos', 'secciones', async () => {
+    const row = await load(slug)
+    // The ticked set is the whole of what the form says about membership: an
+    // unticked box sends nothing at all, which is the case `writeSections`
+    // refuses rather than obeys.
+    const wanted = form.getAll('section').map((value) => {
+      if (typeof value !== 'string') throw new Invalid('seccion-no-existe')
+      return value
+    })
+    await db.transaction((tx) => writeSections(tx, row.id, wanted))
   })
   redirect(`/admin/photos/${slug}?${result}`)
 }
