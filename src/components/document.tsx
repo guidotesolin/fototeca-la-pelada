@@ -41,8 +41,13 @@ const alegreyaItalic = Alegreya({
   preload: false,
 })
 
-/** The logo's charcoal, from the favicon design pass. Both root layouts declare it. */
-export const THEME_COLOR = '#26292c'
+/**
+ * The page ground, `--color-ground`, and not the logo's charcoal: on Android the
+ * address bar takes this colour and any other value ends the page a shade off,
+ * a visible seam above the header. The manifest keeps the charcoal for
+ * `background_color`, which is the icon's own ground and a different question.
+ */
+export const THEME_COLOR = '#1B1917'
 
 /**
  * The two font classes, for the one page that cannot use the component below:

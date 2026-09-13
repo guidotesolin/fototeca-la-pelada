@@ -377,6 +377,22 @@ export const listSectionPhotos = perLocale(
 )
 
 /**
+ * **The three readers below are the only uncached ones in this file, and that is
+ * the fix for F55.** They exist for `generateStaticParams` and nothing else, so
+ * they run at build time, once per segment -- where a persistent cache buys
+ * nothing and costs correctness: an `unstable_cache` entry lives in `.next/cache`
+ * and survives from before a panel write into the next build, so the build
+ * pre-rendered a list of slugs that no longer existed. Measured in T16: three
+ * videos created from the panel, then a build, and the segment pre-rendered
+ * **zero** of its twelve pages. `revalidateTag` cannot reach it -- the panel
+ * invalidates the running server's cache, and the build reads a store that never
+ * saw the write, which on Vercel is the restored build cache.
+ *
+ * Uncached, each is one indexed query per build. In `dev` it is one per request
+ * of a page in that segment, which is also the behaviour anybody would want
+ * there.
+ */
+/**
  * How many photographs each section holds, published or not, for
  * `generateStaticParams` on the pagination route. Same reason as `listPhotoSlugs`
  * below: counting only the published ones means publishing the 25th photograph
@@ -385,17 +401,14 @@ export const listSectionPhotos = perLocale(
  *
  * A count, so it is the same in four languages.
  */
-export const countSectionPhotos = cached(
-  'section-photo-counts',
-  async (): Promise<Record<string, number>> => {
-    const rows = await db
-      .select({ slug: category.slug, n: sql<number>`count(*)::int` })
-      .from(photoCategory)
-      .innerJoin(category, eq(category.id, photoCategory.categoryId))
-      .groupBy(category.slug)
-    return Object.fromEntries(rows.map((r) => [r.slug, r.n]))
-  },
-)
+export async function countSectionPhotos(): Promise<Record<string, number>> {
+  const rows = await db
+    .select({ slug: category.slug, n: sql<number>`count(*)::int` })
+    .from(photoCategory)
+    .innerJoin(category, eq(category.id, photoCategory.categoryId))
+    .groupBy(category.slug)
+  return Object.fromEntries(rows.map((r) => [r.slug, r.n]))
+}
 
 /**
  * Every photograph in the archive, for `generateStaticParams` on the detail page.
@@ -414,10 +427,10 @@ export const countSectionPhotos = cached(
  * Slugs, so it is the same in four languages -- and the route only pre-renders
  * the Spanish ones anyway; see its own note.
  */
-export const listPhotoSlugs = cached('photo-slugs', async (): Promise<string[]> => {
+export async function listPhotoSlugs(): Promise<string[]> {
   const rows = await db.select({ slug: photo.slug }).from(photo).orderBy(asc(photo.slug))
   return rows.map((r) => r.slug)
-})
+}
 
 /**
  * Every public address the archive wants indexed, for `app/sitemap.ts`.
@@ -661,7 +674,7 @@ export const getVideo = perLocale('video', async (locale, slug: string): Promise
 })
 
 /** Every slug, published or not, for `generateStaticParams`. Same rule as the photographs'. */
-export const listVideoSlugs = cached('video-slugs', async (): Promise<string[]> => {
+export async function listVideoSlugs(): Promise<string[]> {
   const rows = await db.select({ slug: video.slug }).from(video).orderBy(asc(video.slug))
   return rows.map((r) => r.slug)
-})
+}

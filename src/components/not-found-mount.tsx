@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { headers } from 'next/headers'
 import { locale as localeParam } from 'next/root-params'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
@@ -8,36 +9,53 @@ import type { Locale } from '@/i18n/config'
 /**
  * The 404, once, for the two files that have to render it.
  *
- * There are two, because a 404 arrives here by two different roads and the
- * framework answers them at two different layers:
+ * There are three, because a 404 arrives by three roads and the framework answers
+ * each at a different layer:
  *
  * - **`app/[locale]/not-found.tsx`** catches a `notFound()` thrown by a page of
  *   the archive -- a mistyped permalink, a gallery page past the end -- and
  *   renders inside the public layout, so the reader keeps the header, the footer
  *   and their own language.
- * - **`app/not-found.tsx`** catches everything the route tree never matched:
- *   `/adsaddsa`, which the proxy rewrites to `/es/adsaddsa` and nothing answers.
- *   That is the layer *above* both root layouts, so it renders with no layout at
- *   all and has to bring its own `<html>`.
+ * - **`app/global-not-found.tsx`** catches every address the route tree never
+ *   matched, which is most of them: `/adsaddsa`, `/en/vzcxz`, `/admin/nada`.
+ * - **`app/not-found.tsx`** catches what is left, a `notFound()` from a root
+ *   layout itself, which only an address with a dot in it can reach.
  *
- * Neither is reachable from the other, and the second one was the bare
- * `<html id="__next_error">` until it existed. So the page itself lives here and
- * both files are three lines: one design, whichever road the reader took.
+ * None of the three is reachable from the others, and all three were Next's bare
+ * `<html id="__next_error">` until they existed. So the page lives here once and
+ * each file is a few lines: one design, whichever road the reader took.
  */
 
 /**
- * The reader's language, and Spanish wherever the URL does not say.
+ * The reader's language, read twice because the two roads carry it differently,
+ * and Spanish only when the address really does not name one.
  *
  * `next/root-params` and not `params`, because a `not-found.tsx` gets none: that
  * is exactly what root params are for -- `[locale]` sits above the root layout, so
  * its value is readable from any Server Component without prop drilling. It is
  * typed `string | undefined` because there are two root layouts and only one of
- * them has the segment, which is also the honest answer for an address that
- * matched no route at all: there is no locale in `/adsaddsa` to read.
+ * them has the segment.
+ *
+ * **And a header under it, because `/en/vzcxz` says `en` in plain sight and has no
+ * root params at all.** An address the route tree never matched has no segment for
+ * `locale()` to read, so every 404 under a prefixed language was answered in
+ * Spanish -- the archive telling an English reader, in Spanish, that their address
+ * is wrong. next-intl's middleware has already resolved the language by then and
+ * passes it on as `x-next-intl-locale`, so this is the same decision `[locale]` is
+ * made of rather than a second one. It arrives from a request, so it is read
+ * through `isLocale` like every other value that does: the worst a forged header
+ * can do is print this page in one of the other three.
+ *
+ * `/admin` and the addresses with a dot in them are outside the proxy's matcher
+ * and carry no header, which is why the fallback stays: the panel is Spanish, and
+ * `/foo.php` names no language to answer in.
  */
 export async function notFoundLocale(): Promise<Locale> {
   const asked = await localeParam()
-  return isLocale(asked) ? asked : defaultLocale
+  if (isLocale(asked)) return asked
+
+  const said = (await headers()).get('x-next-intl-locale')
+  return isLocale(said) ? said : defaultLocale
 }
 
 /** Never indexed: it is not a page of the archive, it is the absence of one. */

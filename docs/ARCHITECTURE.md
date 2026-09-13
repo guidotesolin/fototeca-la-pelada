@@ -948,9 +948,12 @@ depends on -- so `published` is something only the site reads, and hiding is inv
 holding the file's address. Nothing links it once the photograph is hidden, and the keys carry a
 random component so it cannot be guessed or walked, but a link written down before still resolves.
 
-So **hiding is not a takedown**, and the footer invites takedown requests on every page. The gap is real
-and it is not closable in application code: honouring one means the bucket refusing to serve the
-object, which is bucket configuration -- the same change F16 and F35 already carry into T14, where
+So **hiding is not a takedown**, and the requests reach the archive through the people who make it:
+Lautaro and Marcos are the ones who get the photographs and talk to the families, so a correction or
+a request to hide one arrives in person, well before it would arrive at the address in the footer.
+That is why the footer carries the address and makes no speech about it (F49). The gap is real and
+it is not closable in application code: honouring one means the bucket refusing to serve the object,
+which is bucket configuration -- the same change F16 and F35 already carry into T14, where
 `masters/` comes off the public domain. Until that exists, a neighbour who asks for their photograph
 to be removed gets it hidden from the site and the file survives. Whoever runs the archive should
 know that before promising otherwise.
@@ -1505,8 +1508,7 @@ fototeca-la-pelada/
 │   │   │   ├── categoria/[slug]/
 │   │   │   ├── foto/[slug]/
 │   │   │   ├── buscar/
-│   │   │   ├── videoteca/        #   the interviews: a list and a page each
-│   │   │   └── creditos/         #   planned, never built (F13); `/sobre` was dropped
+│   │   │   └── videoteca/        #   the interviews: a list and a page each
 │   │   ├── admin/                 # dynamic, authenticated, Spanish strings
 │   │   │   ├── layout.tsx         #   the second ROOT layout: <html lang="es">
 │   │   │   ├── photos/
