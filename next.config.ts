@@ -53,10 +53,9 @@ const dev = process.env.NODE_ENV === 'development'
  * the pre-rendering; revisit if Next ever applies a nonce without opting the page
  * out of static generation.
  *
- * **`style-src` carries it too**, for two reasons that are not going away:
- * `experimental.inlineCss` turns every stylesheet into a `<style>` tag on
- * purpose, and React writes `style` attributes for the per-photo `aspect-ratio`
- * that keeps CLS at zero.
+ * **`style-src` carries it too**, and for a reason that is not going away:
+ * React writes `style` attributes for the per-photo `aspect-ratio` that keeps CLS
+ * at zero.
  *
  * `'unsafe-eval'` is added in development only, which is Next's own instruction:
  * React evaluates server error stacks with it, and `next dev` is unusable without.
@@ -117,12 +116,13 @@ const nextConfig: NextConfig = {
   experimental: {
     globalNotFound: true,
 
-    // The stylesheet costs a whole round trip before anything paints, and at the
-    // latencies this archive is read over that is most of the first paint. Next's
-    // own guidance for this flag is atomic CSS plus first-time visitors, which is
-    // exactly here: Tailwind, and readers arriving once from a shared link.
-    // ponytail: experimental flag. If it is ever dropped, the cost is one round trip.
-    inlineCss: true,
+    // No `inlineCss`, and it is not an omission. It bought one round trip before
+    // first paint and it was paid for on every ISR write: the flag inlines the
+    // Tailwind bundle into the `<style>` tag *and* twice more into the RSC payload,
+    // which is 119 KB of the 294 KB a photograph's page costs to store. Vercel
+    // charges ISR writes in 8 KB units and the archive re-renders ~2,500 addresses
+    // per pass, so the round trip was costing about 40% of a free tier that pauses
+    // the project when it runs out. The stylesheet is one cached file again.
 
     /**
      * The panel uploads a restoration through a server action, and the default

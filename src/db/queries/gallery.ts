@@ -42,8 +42,19 @@ import { defaultLocale, type Locale } from '@/i18n/config'
  *   `perLocale` is what makes that impossible to forget.
  */
 
-/** A day. Publishing revalidates by tag, so this is only the floor. */
-export const REVALIDATE = 86_400
+/**
+ * No clock. Every write in the panel calls `revalidateTag(GALLERY_TAG)`, so an
+ * interval can only re-read what nothing has changed -- which is what Next's own
+ * documentation means by "omit or pass `false` to cache until `revalidateTag`".
+ *
+ * **It was never only this cache's floor, and that is why the day had to go.**
+ * Next propagates the value to the pages that read it, so `86_400` here put
+ * `initialRevalidateSeconds: 86400` on all 838 pre-rendered routes: the whole
+ * archive regenerated itself daily and wrote itself back to Vercel's durable ISR
+ * store, whose free tier pauses the project at 200,000 write units a month. It
+ * was spending a tenth of that on a pass nobody asked for.
+ */
+export const REVALIDATE = false as const
 
 export const GALLERY_TAG = 'gallery'
 
