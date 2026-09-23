@@ -8,7 +8,7 @@ import { PhotoImage } from '@/components/photo-image'
 import { PhotoWall } from '@/components/photo-wall'
 import {
   archiveFacts,
-  listFeatured,
+  listRecent,
   listSections,
   listSiteText,
   listVideos,
@@ -45,11 +45,11 @@ export default async function Home(props: PageProps<'/[locale]'>) {
   if (!isLocale(asked)) notFound()
   const locale: Locale = asked
 
-  const [sections, facts, text, featured, videos, t, tv, labels] = await Promise.all([
+  const [sections, facts, text, recent, videos, t, tv, labels] = await Promise.all([
     listSections(locale),
     archiveFacts(),
     listSiteText(locale),
-    listFeatured(locale),
+    listRecent(locale),
     listVideos(locale),
     getTranslations({ locale, namespace: 'home' }),
     getTranslations({ locale, namespace: 'videoteca' }),
@@ -117,17 +117,6 @@ export default async function Home(props: PageProps<'/[locale]'>) {
         </div>
       </section>
 
-      {/* The highlights, which are `photo.featured` and nothing else: no order of
-          their own, no second table, and the strip is simply not there while
-          nothing is marked. It reuses the gallery's wall rather than inventing a
-          row of its own -- same mounted prints, same blur over a sensitive one. */}
-      {featured.length > 0 && (
-        <section className="mt-14 sm:mt-20" id="destacadas">
-          <h2 className="t-label border-rule border-b pb-3">{t('featured')}</h2>
-          <PhotoWall photos={featured} locale={locale} />
-        </section>
-      )}
-
       <section className="mt-14 sm:mt-20" id="secciones">
         {/* The list, which on a phone is all there is, and on desktop sits below.
             An h2: it is the section's only heading now, and h1 -> h3 would skip. */}
@@ -167,6 +156,19 @@ export default async function Home(props: PageProps<'/[locale]'>) {
           )}
         </ul>
       </section>
+
+      {/* The newest arrivals, by `created_at` and nothing else: no flag to set and
+          no order to keep, it follows the Drive import on its own. Last, after the
+          sections, because it is what somebody who already knows the archive
+          scrolls down for. It reuses the gallery's wall -- same mounted prints,
+          same blur over a sensitive one -- and is not on the page at all while
+          nothing has a date. */}
+      {recent.length > 0 && (
+        <section className="mt-14 sm:mt-20" id="recientes">
+          <h2 className="t-label border-rule border-b pb-3">{t('recent')}</h2>
+          <PhotoWall photos={recent} locale={locale} />
+        </section>
+      )}
     </>
   )
 }

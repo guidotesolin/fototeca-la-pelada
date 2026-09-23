@@ -27,7 +27,7 @@
  *   BASE_URL=http://localhost:3001 npm run home:smoke
  */
 import assert from 'node:assert/strict'
-import { and, asc, eq, like, sql } from 'drizzle-orm'
+import { and, asc, eq, isNull, like, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
 import { encode } from 'next-auth/jwt'
 import postgres from 'postgres'
@@ -153,8 +153,8 @@ async function eventually(
   assert.fail(`${what}: still not true after 25 requests over ${Date.now() - started} ms`)
 }
 
-/** Set while the highlights strip is being exercised, so the `finally` can undo it. */
-let featuredSubject: { id: number; featured: boolean } | null = null
+/** Set while the recent strip is being exercised, so the `finally` can undo it. */
+let recentSubject: { id: number; createdAt: Date | null } | null = null
 
 /**
  * How the `finally` tells the site that the archive it is serving has changed.
@@ -311,31 +311,34 @@ async function main() {
     check(saved.location === '/admin/site-text?ok=textos', 'the site text was saved')
     await eventually('/', (body) => body.includes(stamped), 'the home page shows the new title')
 
-    // --- 5b. the highlights strip, which is F14 and had no data to be tested on ---
-    // `featured` is flipped in the database rather than through the photo screen,
-    // because `saveDetails` is the whole form and resending a caption to set a
-    // checkbox is how a caption gets lost. The revalidation comes from a panel
-    // write either way -- the layout save below, which changes nothing.
+    // --- 5b. the recent strip, T18 ---
+    // A photograph from the Sites rescue, which has no `created_at`, is stamped as
+    // if it had just been imported: nothing in the panel writes that column, so
+    // the database is the only way to set it. The revalidation comes from a panel
+    // write -- the layout save below, which changes nothing. Undated, it cannot be
+    // in the strip already, so its absence afterwards is a real assertion.
     const [subject] = await db
-      .select({ id: photo.id, slug: photo.slug, featured: photo.featured })
+      .select({ id: photo.id, slug: photo.slug, createdAt: photo.createdAt })
       .from(photo)
       .innerJoin(photoCategory, eq(photoCategory.photoId, photo.id))
       .innerJoin(
         category,
         and(eq(category.id, photoCategory.categoryId), eq(category.visible, true)),
       )
-      .where(and(eq(photo.published, true), sql`${photo.webKey} is not null`))
+      .where(
+        and(eq(photo.published, true), isNull(photo.createdAt), sql`${photo.webKey} is not null`),
+      )
       .orderBy(asc(category.position), asc(photoCategory.position))
       .limit(1)
-    assert.ok(subject, 'no published photograph to feature')
-    featuredSubject = { id: subject.id, featured: subject.featured }
+    assert.ok(subject, 'no published, undated photograph to stamp')
+    recentSubject = { id: subject.id, createdAt: subject.createdAt }
 
     const sameLayout = {
       id: rows.map((r) => String(r.id)),
       position: rows.map((r) => String(r.position)),
       visible: rows.filter((r) => r.id !== target.id).map((r) => String(r.id)),
     }
-    await db.update(photo).set({ featured: true }).where(eq(photo.id, subject.id))
+    await db.update(photo).set({ createdAt: new Date() }).where(eq(photo.id, subject.id))
     check(
       (await post('/admin/categories', layout, sameLayout, session)).location ===
         '/admin/categories?ok=portada',
@@ -343,20 +346,22 @@ async function main() {
     )
     await eventually(
       '/',
-      (body) => body.includes('Destacadas') && body.includes(`/foto/${subject.slug}`),
-      `the home page shows ${subject.slug} in the highlights strip`,
+      (body) => body.includes('Recién añadidas') && body.includes(`/foto/${subject.slug}`),
+      `the home page shows ${subject.slug} in the recent strip`,
     )
 
-    await db.update(photo).set({ featured: subject.featured }).where(eq(photo.id, subject.id))
+    await db.update(photo).set({ createdAt: subject.createdAt }).where(eq(photo.id, subject.id))
     check(
       (await post('/admin/categories', layout, sameLayout, session)).location ===
         '/admin/categories?ok=portada',
-      'and the flag goes back the way it came',
+      'and the date goes back the way it came',
     )
+    // `/foto/` and not the heading: once anything has been imported the strip is
+    // there for good, and the home page links a photograph from nowhere else.
     await eventually(
       '/',
-      (body) => !body.includes('Destacadas'),
-      'with nothing featured the strip is not on the page at all',
+      (body) => !body.includes(`/foto/${subject.slug}`),
+      `undated again, ${subject.slug} leaves the strip`,
     )
 
     // --- 5c. saving a section does not silently drop its cover photograph ---
@@ -543,11 +548,11 @@ async function main() {
           .set({ position: row.position, visible: row.visible, coverPhotoId: row.coverPhotoId })
           .where(eq(category.id, row.id))
       }
-      if (featuredSubject) {
+      if (recentSubject) {
         await tx
           .update(photo)
-          .set({ featured: featuredSubject.featured })
-          .where(eq(photo.id, featuredSubject.id))
+          .set({ createdAt: recentSubject.createdAt })
+          .where(eq(photo.id, recentSubject.id))
       }
       await tx.delete(siteText)
       if (textBefore.length) await tx.insert(siteText).values(textBefore)

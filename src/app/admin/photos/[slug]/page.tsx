@@ -211,12 +211,6 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
             label="Contenido sensible"
             hint="Se muestra desenfocada con un aviso, nunca oculta."
           />
-          <Check
-            name="featured"
-            defaultChecked={photo.featured}
-            label="Destacada"
-            hint="Aparece en la franja de destacadas de la portada, arriba de las secciones."
-          />
         </div>
 
         {/* Inside this form on purpose: one Guardar saves the Spanish and the

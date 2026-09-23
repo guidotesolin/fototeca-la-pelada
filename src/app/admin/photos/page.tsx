@@ -150,7 +150,6 @@ export default async function AdminPhotos(props: PageProps<'/admin/photos'>) {
               <span className="t-label hidden shrink-0 gap-2 sm:flex">
                 {!row.published && <Tag>sin publicar</Tag>}
                 {row.sensitive && <Tag>sensible</Tag>}
-                {row.featured && <Tag>destacada</Tag>}
                 {row.restored && <Tag>restaurada</Tag>}
               </span>
 
