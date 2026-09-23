@@ -64,6 +64,20 @@
       "when": 1788546551158,
       "tag": "0008_orange_carmella_unuscione",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790185160899,
+      "tag": "0009_photo_created_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790185163174,
+      "tag": "0010_drop_photo_featured",
+      "breakpoints": true
     }
   ]
 }

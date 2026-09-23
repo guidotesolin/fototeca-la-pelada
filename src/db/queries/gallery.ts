@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { unstable_cache } from 'next/cache'
 import { db } from '@/db'
@@ -305,25 +305,18 @@ export const listSections = perLocale('sections', async (locale): Promise<Sectio
 })
 
 /**
- * The home page's highlights. `photo.featured` is the only field behind it, and
- * the order is not its own: sections first, then curatorial order inside each --
- * which is ARCHITECTURE's decision that a `featured_position` gets added when
- * that default becomes annoying, and not before.
+ * The home page's newest arrivals, by `photo.created_at` and nothing else. The
+ * 592 rescued from Sites carry null there -- nobody knows when they arrived -- so
+ * they are left out rather than competing for "new" on a date the migration made
+ * up. A bulk import stamps rows in the same instant, and `id` breaks the tie in
+ * the order they were written.
  *
- * A photograph in two sections joins twice and is still one highlight, so the
- * list is deduplicated by slug. `new Map` keeps each key's **last** row and its
- * first position, which is safe only because every column selected here comes
- * from `photo` or `photo_translation`, so the duplicate rows are identical.
- * Anything category-dependent added to this select would silently take its value
- * from the photograph's worst-placed section.
- *
- * ponytail: capped at twelve. It is a strip on the index, not a gallery, and a
- * home page that grows without limit is how an archive of 592 ends up with all
- * of them on the front. Raise the constant if they ever ask.
+ * ponytail: capped at eight. It is a strip on the index, not a gallery; a
+ * `/recientes` page is the way out if they ever want the whole list.
  */
-export const FEATURED_LIMIT = 12
+export const RECENT_LIMIT = 8
 
-export const listFeatured = perLocale('featured', async (locale): Promise<PhotoCard[]> => {
+export const listRecent = perLocale('recent', async (locale): Promise<PhotoCard[]> => {
   const rows = await db
     .select({
       slug: photo.slug,
@@ -337,20 +330,16 @@ export const listFeatured = perLocale('featured', async (locale): Promise<PhotoC
     .from(photo)
     .leftJoin(asked, onAsked(locale))
     .leftJoin(source, onSource)
-    .leftJoin(photoCategory, eq(photoCategory.photoId, photo.id))
-    .leftJoin(category, and(eq(category.id, photoCategory.categoryId), eq(category.visible, true)))
-    .where(and(eq(photo.featured, true), eq(photo.published, true)))
-    .orderBy(asc(category.position), asc(photoCategory.position), asc(photo.slug))
+    .where(and(eq(photo.published, true), isNotNull(photo.createdAt)))
+    .orderBy(desc(photo.createdAt), desc(photo.id))
+    .limit(RECENT_LIMIT)
 
-  const unique = [...new Map(rows.map((r) => [r.slug, r])).values()]
   // Same rule as the gallery: without derivatives there is nothing to show.
-  return unique
-    .flatMap((r) =>
-      r.webKey && r.webWidth && r.webHeight
-        ? [{ ...r, webKey: r.webKey, webWidth: r.webWidth, webHeight: r.webHeight }]
-        : [],
-    )
-    .slice(0, FEATURED_LIMIT)
+  return rows.flatMap((r) =>
+    r.webKey && r.webWidth && r.webHeight
+      ? [{ ...r, webKey: r.webKey, webWidth: r.webWidth, webHeight: r.webHeight }]
+      : [],
+  )
 })
 
 /** One section's photos, in the order its authors put them. */

@@ -46,7 +46,6 @@ export const FILTERS = {
   publicadas: 'Publicadas',
   'sin-publicar': 'Sin publicar',
   sensibles: 'Sensibles',
-  destacadas: 'Destacadas',
   'sin-epigrafe': 'Sin epígrafe',
   restauradas: 'Con versión restaurada',
 } as const
@@ -64,7 +63,6 @@ export type AdminPhotoRow = {
   credit: string | null
   published: boolean
   sensitive: boolean
-  featured: boolean
   restored: boolean
   thumbKey: string | null
   /** Only when the list is narrowed to one section: its curatorial order. */
@@ -102,8 +100,6 @@ function narrows(filter: Filter) {
       return eq(photo.published, false)
     case 'sensibles':
       return eq(photo.sensitive, true)
-    case 'destacadas':
-      return eq(photo.featured, true)
     case 'sin-epigrafe':
       return or(isNull(photoTranslation.caption), eq(photoTranslation.caption, ''))
     case 'restauradas':
@@ -145,7 +141,6 @@ export async function listPhotos(options: {
       credit: photo.credit,
       published: photo.published,
       sensitive: photo.sensitive,
-      featured: photo.featured,
       restored: sql<boolean>`${photo.restoredWebKey} is not null`,
       thumbKey: photo.thumbKey,
       position: section ? photoCategory.position : sql<number | null>`null::int`,
@@ -220,7 +215,6 @@ export async function getPhotoForEdit(slug: string) {
       yearTo: photo.yearTo,
       place: photo.place,
       sensitive: photo.sensitive,
-      featured: photo.featured,
       published: photo.published,
       masterSource: photo.masterSource,
       masterKey: photo.masterKey,
@@ -406,32 +400,6 @@ export async function getCategoryForEdit(slug: string) {
     ...row,
     candidates: candidates.flatMap((c) => (c.thumbKey ? [{ ...c, thumbKey: c.thumbKey }] : [])),
   }
-}
-
-/**
- * The highlights as the panel shows them: same order as the public strip, but
- * uncached and carrying the unpublished ones too, so a photograph that is
- * flagged and invisible can be seen to be both.
- */
-export async function listFeaturedForAdmin() {
-  const rows = await db
-    .select({
-      slug: photo.slug,
-      caption: photoTranslation.caption,
-      thumbKey: photo.thumbKey,
-      published: photo.published,
-    })
-    .from(photo)
-    .leftJoin(photoTranslation, and(eq(photoTranslation.photoId, photo.id), spanish))
-    .leftJoin(photoCategory, eq(photoCategory.photoId, photo.id))
-    .leftJoin(category, and(eq(category.id, photoCategory.categoryId), eq(category.visible, true)))
-    .where(eq(photo.featured, true))
-    .orderBy(asc(category.position), asc(photoCategory.position), asc(photo.slug))
-
-  // A photograph in two sections joins twice. It is one highlight either way, and
-  // nothing category-dependent is selected, so which of the duplicate rows the map
-  // keeps cannot matter -- see the same note on `listFeatured`.
-  return [...new Map(rows.map((r) => [r.slug, r])).values()]
 }
 
 /**

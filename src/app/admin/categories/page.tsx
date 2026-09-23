@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { listCategoriesForHome, listFeaturedForAdmin } from '@/db/queries/admin'
+import { listCategoriesForHome } from '@/db/queries/admin'
 import { requireAdmin } from '@/lib/auth'
 import { publicUrl } from '@/lib/photo'
 import { Back, BUTTON, Notice } from '../ui'
@@ -24,7 +24,7 @@ export const metadata: Metadata = { title: 'Editar secciones' }
 export default async function AdminCategories(props: PageProps<'/admin/categories'>) {
   await requireAdmin()
   const params = await props.searchParams
-  const [sections, featured] = await Promise.all([listCategoriesForHome(), listFeaturedForAdmin()])
+  const sections = await listCategoriesForHome()
 
   return (
     <>
@@ -46,59 +46,10 @@ export default async function AdminCategories(props: PageProps<'/admin/categorie
       <Notice params={params} />
 
       <p className="t-intro text-muted mt-6">
-        Así queda la portada: primero las destacadas, después las secciones en este orden. Una
-        sección oculta no aparece en la portada ni en el menú, y no pierde ninguna fotografía.
+        Así queda la portada: las secciones en este orden y, al final, las recién añadidas, que
+        aparecen solas. Una sección oculta no aparece en la portada ni en el menú, y no pierde
+        ninguna fotografía.
       </p>
-
-      <section className="mt-12">
-        <h2 className="t-label border-rule border-b pb-2">
-          Destacadas · {featured.length} {featured.length === 1 ? 'fotografía' : 'fotografías'}
-        </h2>
-        {featured.length === 0 ? (
-          <p className="t-meta mt-4">
-            Todavía no hay ninguna. Se marcan una por una, en{' '}
-            <Link href="/admin/photos" className="link text-accent hover:text-text">
-              Fotografías
-            </Link>
-            , con la casilla «Destacada».
-          </p>
-        ) : (
-          <ul className="mt-5 flex flex-wrap gap-3">
-            {featured.map((row) => (
-              <li key={row.slug}>
-                <Link
-                  href={`/admin/photos/${row.slug}`}
-                  title={row.caption ?? row.slug}
-                  className="focus-visible:outline-focus relative block focus-visible:outline-2 focus-visible:outline-offset-2"
-                >
-                  {row.thumbKey ? (
-                    // The panel is not a page we optimize: the thumbnails R2 has.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={publicUrl(row.thumbKey)}
-                      alt=""
-                      width={88}
-                      height={88}
-                      loading="lazy"
-                      decoding="async"
-                      className="mount h-22 w-22 object-cover"
-                    />
-                  ) : (
-                    <span className="bg-surface text-muted flex h-22 w-22 items-center justify-center text-center font-sans text-[10px] leading-tight">
-                      sin publicar
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-        {featured.some((row) => !row.published) && (
-          <p className="t-meta mt-4">
-            Alguna está marcada como destacada pero sin publicar, así que en la portada no aparece.
-          </p>
-        )}
-      </section>
 
       {/* One form for the whole list: moving three secciones is one write. The
           order lives in `SectionOrder`, which submits it as a hidden position per

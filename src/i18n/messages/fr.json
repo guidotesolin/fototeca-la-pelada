@@ -34,7 +34,7 @@
     "deck": "Explorer par section",
     "map": "Carte de La Pelada",
     "showMap": "Voir la carte",
-    "featured": "À la une",
+    "recent": "Ajouts récents",
     "allSections": "Toutes les sections · {count, plural, one {# photographie} other {# photographies}}"
   },
   "notFound": {

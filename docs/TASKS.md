@@ -42,6 +42,7 @@
 | T15 | `t15-translation-editor`  | T13        |
 | T16 | `t16-videoteca`           | T13, T15   |
 | T17 | `t17-move-photo-sections` | T10, T11   |
+| T18 | `t18-recent-strip`        | T11, T12   |
 
 ---
 
@@ -1283,6 +1284,39 @@ F60.
 (now 17 exported actions across 6 files, all gated), `takedown:smoke`, `url:smoke`, `slug:smoke`,
 `tsc`, `eslint` and `prettier` are clean. `npm run db:seed:verify` is **red and was red before this
 branch**: F59.
+
+---
+
+### T18 — Home: recently added instead of featured
+
+T11 closed F14 with a highlights strip fed by `photo.featured`, and nobody has marked a single
+photograph since: the strip has never been on the live site. What the authors do do, every week, is
+import from Drive -- and a visitor who already knows the archive has no way to see what arrived.
+So the strip changes what it is fed by rather than asking for more curation: **the newest
+photographs, by a date the import writes on its own.**
+
+**`photo.featured` is removed, not left beside it.** A flag the panel offers and the site ignores
+is a checkbox that lies; the column, the checkbox on the photograph's screen, the _Destacadas_
+filter and tag in the list, and the block on the Home screen all go.
+
+**The Sites rescue has no date, and that is a null rather than a guess.** A column added with a
+default is backfilled with that default, which would make all 592 "new" on the day of the
+migration and put an arbitrary eight of them on the front page. So `0009` adds the column empty,
+stamps the Drive imports -- the only rows ever _added_ rather than rescued -- with one shared
+moment, and only then sets `DEFAULT now()`. Among the shared stamp `id` breaks the tie, which is
+import order, so the strip is right from the deploy. Two migrations and not one: drizzle-kit reads
+a drop and an add in one diff as a possible rename and asks interactively.
+
+Scope: eight photographs, after the section grid and before the footer -- it is what a returning
+visitor scrolls down for, and the deck and the sections stay what the page opens on. Hidden while
+nothing has a date. No `/recientes` page: a strip is what was asked for.
+
+_Acceptance_: after `db:migrate` the rescued photographs have no `created_at` and the imported ones
+do; the home page shows the newest eight published ones under "Recién añadidas" (and "Recently
+added" in `/en`), after the sections; a new Drive import appears first in it after the import's
+revalidation, with no deploy; nothing in the panel or the schema mentions `featured`.
+`npm run home:smoke` stamps an undated photograph, sees it in the strip, and sees it leave.
+_Commit_: `feat(home): replace the featured strip with recently added`
 
 ---
 

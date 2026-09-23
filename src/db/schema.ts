@@ -71,8 +71,14 @@ export const photo = pgTable(
     place: text(),
     /** Covered on first appearance, never hidden. See "Sensitive content". */
     sensitive: boolean().notNull().default(false),
-    featured: boolean().notNull().default(false),
     published: boolean().notNull().default(true),
+    /**
+     * When the row was written, which is what the home page's "Recién añadidas"
+     * orders by. Null for the 592 rescued from Sites: nobody knows when they
+     * arrived, and stamping them all with the migration's date would make an
+     * arbitrary dozen of them "new".
+     */
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 
     // --- preservation master ---
     masterSource: masterSource('master_source').notNull(),

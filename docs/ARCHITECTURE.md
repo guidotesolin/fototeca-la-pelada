@@ -569,8 +569,8 @@ photo                            photo_translation
   year_to
   place
   sensitive         -- bool; see "Sensitive content"
-  featured          -- bool; appears on the home page
   published
+  created_at        -- "Recién añadidas"; null for the Sites rescue
   -- preservation master
   master_source     -- 'drive' | 'sites'
   drive_file_id     -- null while the master comes from the Sites rescue
@@ -684,7 +684,8 @@ Details that matter:
 - **`app_user`, not `user`**: `user` is a reserved word in Postgres.
 - **The home page is organized with fields that already exist**: the section list comes from
   `category.position` (order), `category.visible` (show or hide) and `category.cover_photo_id`
-  (which photo represents it). The only new field is `photo.featured` for the highlights strip.
+  (which photo represents it). The only new field is `photo.created_at`, which orders the
+  "Recién añadidas" strip on its own -- T18 replaced the hand-marked highlights, which nobody marked.
 - **`site_text` is where every word of the site lives**, keyed, one row per locale. T6 seeded twelve
   keys: `home_title`, `home_intro`, `rights_notice`, `thanks`, `authors`, `contact`, `town_title`,
   `town_intro`, `map_embed_url`, and the three network addresses. The last six arrived while
@@ -745,8 +746,7 @@ Details that matter:
   which networks the archive is on is theirs to change. Exact hostname match and never `endsWith`,
   because `maps.google.com.evil.com` ends with the right string. `npm run url:smoke` covers the
   cases that fool a naive parser, userinfo and `javascript:` among them.
-  Highlights have no order of their own: they follow category order, and a `featured_position`
-  gets added when that default becomes annoying.
+  The recent strip has no order of its own either: newest `created_at` first, capped at eight.
 - **Search**: `tsvector` with Postgres dictionaries (`spanish`, `english`, `french`, `italian`)
   plus the `unaccent` extension, so that "Tesolin" finds "Tesolín". T2 built this as four text
   search configurations (`es_unaccent` and friends), because the built-in dictionaries cannot be
@@ -1465,7 +1465,7 @@ something that _looks_ like prose and is really structured data.
 | Add, rename, hide or reorder a category                                      | Panel → categories. The public route appears or disappears on its own.                                                                                                                                                      |
 | Move a photo between categories, or put it in two                            | Panel → the photo → Secciones: a checkbox per section. It cannot be left in none, and a section's cover cannot be taken out of that section until the cover is changed.                                                     |
 | Reorder photos within a category                                             | Panel → Fotografías, filtered by that section: a number per row (`photo_category.position`). The drag is on the home page's section list, not here.                                                                         |
-| Organize the home page                                                       | Panel → Home: section order and visibility, each section's cover photo, and which photos are featured.                                                                                                                      |
+| Organize the home page                                                       | Panel → Home: section order and visibility, and each section's cover photo. The recent strip needs nothing: it follows the Drive import.                                                                                    |
 | Change a section's intro text                                                | Panel → category → intro, per language.                                                                                                                                                                                     |
 | Change any of the site's own words                                           | Panel → textos del sitio: the home copy, the rights notice, the thanks, the contact, the networks.                                                                                                                          |
 | Move the map's pin                                                           | Not from the panel: `site_text.map_embed_url` is fixed and edited in the database. The home page renders it.                                                                                                                |

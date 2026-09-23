@@ -122,7 +122,6 @@ export async function saveDetails(form: FormData) {
           yearFrom,
           yearTo,
           sensitive: flag(form, 'sensitive'),
-          featured: flag(form, 'featured'),
         })
         .where(eq(photo.id, row.id))
       // The Spanish row is the source language and it may not exist yet: 73 of the
