@@ -28,7 +28,8 @@
     "families": "{count, plural, one {# familia} other {# familias}}",
     "inCharge": "A cargo del archivo",
     "contact": "Contacto",
-    "networks": "Redes"
+    "networks": "Redes",
+    "developedBy": "Desarrollado por"
   },
   "home": {
     "deck": "Explorar por sección",
