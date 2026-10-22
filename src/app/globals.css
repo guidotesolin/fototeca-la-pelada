@@ -1057,6 +1057,29 @@ body > header {
   }
 }
 
+/* The studio's signature under the footer: `.t-label`'s voice a step quieter in
+   spacing, and no colour of its own, so the link's hover utilities reach it. */
+.t-sign {
+  font:
+    400 11px/1 ui-monospace,
+    Menlo,
+    monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.t-sign-name {
+  font: 500 15px/1 var(--font-serif);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+@media (min-width: 640px) {
+  .t-sign {
+    font-size: 12px;
+  }
+}
+
 /* A link that answers. Without this the page feels printed, not usable. */
 .link {
   transition: color 160ms ease;

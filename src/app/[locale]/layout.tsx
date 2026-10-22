@@ -576,6 +576,51 @@ export default async function PublicLayout({ children, params }: LayoutProps<'/[
               )}
             </dl>
           </div>
+
+          {/* The studio's signature, set below everything the archive says so it
+                never competes with it. A new tab like the networks above: every
+                external address on this site opens in one. */}
+          <div className="bg-rule mt-14 h-px sm:mt-22" />
+          <div className="flex flex-col items-center gap-1 pt-3 sm:flex-row sm:justify-between sm:pt-4">
+            <span className="t-sign text-muted">
+              © {new Date().getFullYear()} Fototeca La Pelada
+            </span>
+            <a
+              href={
+                locale === 'es'
+                  ? 'https://pipacode.studio/?utm_source=fototecalapelada&utm_medium=footer'
+                  : 'https://pipacode.studio/en/?utm_source=fototecalapelada&utm_medium=footer'
+              }
+              target="_blank"
+              rel="noopener"
+              className="t-sign text-muted link group hover:text-accent focus-visible:text-accent focus-visible:outline-focus flex min-h-11 items-center gap-2 focus-visible:outline-2 focus-visible:outline-offset-[3px]"
+            >
+              {tf('developedBy')}
+              <svg
+                width="22"
+                height="19"
+                viewBox="0 0 64 56"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={7}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+                focusable="false"
+                className="h-[17px] w-5 shrink-0 sm:h-[19px] sm:w-[22px]"
+              >
+                <g transform="translate(0,6)">
+                  <path d="M6 36 C16 36 23 42 33 42" />
+                  <path d="M31 26 H57" />
+                  <path d="M34 26 V38 A10 10 0 0 0 54 38 V26" />
+                  <path d="M45 19 L38.5 12.5 L45 6" strokeWidth={6} />
+                </g>
+              </svg>
+              <span className="t-sign-name text-text group-hover:text-accent group-focus-visible:text-accent link">
+                Pipa Code
+              </span>
+            </a>
+          </div>
         </div>
       </footer>
     </Document>
