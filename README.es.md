@@ -3,7 +3,8 @@
 # Versión en Español
 
 Archivo digital fotográfico de La Pelada, Santa Fe, Argentina. Migración del sitio en Google Sites
-a una aplicación propia: 592 fotografías, casi todas con epígrafe y crédito, consultables por
+a una aplicación propia: más de 700 fotografías (1879–2007) en 12 secciones, prestadas por 46
+familias, casi todas con epígrafe y crédito, consultables por
 búsqueda y filtros, y administrables por sus autores sin tocar código.
 
 Proyecto sin fines de lucro. Autores del archivo: Lautaro y Marcos Tesolín — fototecalp@gmail.com

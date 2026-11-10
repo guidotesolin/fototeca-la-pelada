@@ -3,8 +3,9 @@
 [![CI](https://github.com/guidotesolin/fototeca-la-pelada/actions/workflows/ci.yml/badge.svg)](https://github.com/guidotesolin/fototeca-la-pelada/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-The digital photographic archive of La Pelada, a small town in Santa Fe, Argentina: **592 historical
-photographs**, each with its caption and the family that lent it, searchable, shareable and
+The digital photographic archive of La Pelada, a small town in Santa Fe, Argentina: **over 700 historical
+photographs** from 1879 to 2007, in 12 sections, lent by 46 families, each with its caption,
+searchable, shareable and
 administered by the two history teachers who built the collection — without touching code.
 
 **Live at [fototecalapelada.com.ar](https://fototecalapelada.com.ar/)** · Versión en español:
