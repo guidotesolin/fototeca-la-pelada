@@ -155,13 +155,24 @@ export default async function PublicLayout({ children, params }: LayoutProps<'/[
           The second mark is the panel's, written by `/admin`'s layout on the way
           in and rubbed out on the way out, and it is read here for the same
           reason: this layout is pre-rendered, and asking the server who is signed
-          in would make all 592 photo pages dynamic for one link in a dropdown. */}
+          in would make all 592 photo pages dynamic for one link in a dropdown.
+
+          The last two lines are F32: a GET form sends its empty fields too, so a
+          search left `?q=x&seccion=&decada=&credito=` in the address. Empty fields
+          are disabled on submit, which keeps them out of the URL, and enabled
+          again on `pageshow` so a page restored by the back button is usable.
+          Without script the form works as before, with the longer address. */}
       <script
         dangerouslySetInnerHTML={{
           __html:
             'try{var c=document.documentElement.classList;' +
             "if(localStorage.getItem('sensitive'))c.add('show-sensitive');" +
-            "if(localStorage.getItem('admin'))c.add('show-admin')}catch(e){}",
+            "if(localStorage.getItem('admin'))c.add('show-admin')}catch(e){}" +
+            "addEventListener('submit',function(e){var f=e.target;if(f.method!=='get')return;" +
+            'for(var i=0;i<f.elements.length;i++){var x=f.elements[i];' +
+            "if(x.name&&!x.value){x.disabled=true;x.dataset.empty=''}}});" +
+            "addEventListener('pageshow',function(){var l=document.querySelectorAll('[data-empty]');" +
+            'for(var i=0;i<l.length;i++){l[i].disabled=false;delete l[i].dataset.empty}})',
         }}
       />
 
