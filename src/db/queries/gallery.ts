@@ -362,7 +362,7 @@ export const listSectionPhotos = perLocale(
       .leftJoin(asked, onAsked(locale))
       .leftJoin(source, onSource)
       .where(and(eq(category.slug, slug), eq(photo.published, true)))
-      .orderBy(asc(photoCategory.position))
+      .orderBy(asc(photoCategory.position), asc(photo.slug))
       .limit(PER_PAGE)
       .offset((page - 1) * PER_PAGE)
 
@@ -571,7 +571,7 @@ export const listCategoryOrder = cached(
       .innerJoin(category, eq(category.id, photoCategory.categoryId))
       .innerJoin(photo, and(eq(photo.id, photoCategory.photoId), eq(photo.published, true)))
       .where(eq(category.slug, slug))
-      .orderBy(asc(photoCategory.position))
+      .orderBy(asc(photoCategory.position), asc(photo.slug))
     return rows.map((r) => r.slug)
   },
 )

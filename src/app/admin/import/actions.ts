@@ -12,6 +12,7 @@ import { dropDerivatives, generate } from '@/lib/derivatives'
 import { download, isFileId, isInsideFolder, listImages, mastersFolderId } from '@/lib/drive'
 import { MAX_BYTES, read } from '@/lib/images'
 import { isSectionSlug } from '@/lib/slug'
+import { lockSections } from '../photos/sections'
 import { Invalid, outcome } from '../write'
 
 /**
@@ -180,6 +181,7 @@ export async function importNext(form: FormData) {
 
         // Last in the section, which is where a photograph that arrives today
         // belongs until somebody orders it by hand.
+        await lockSections(tx, [found.id])
         const [{ position }] = await tx
           .select({ position: sql<number>`coalesce(max(${photoCategory.position}), 0) + 1` })
           .from(photoCategory)

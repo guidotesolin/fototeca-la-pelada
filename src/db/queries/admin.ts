@@ -167,7 +167,7 @@ export async function listPhotos(options: {
   const paged = section ? undefined : { limit: ADMIN_PER_PAGE, offset: (page - 1) * ADMIN_PER_PAGE }
   const ordered = scoped
     .where(where)
-    .orderBy(section ? asc(photoCategory.position) : asc(photo.slug))
+    .orderBy(...(section ? [asc(photoCategory.position), asc(photo.slug)] : [asc(photo.slug)]))
   const rows = await (paged ? ordered.limit(paged.limit).offset(paged.offset) : ordered)
 
   return { rows, total: rows[0]?.total ?? 0 }
@@ -392,7 +392,7 @@ export async function getCategoryForEdit(slug: string) {
     .innerJoin(photo, eq(photo.id, photoCategory.photoId))
     .leftJoin(photoTranslation, and(eq(photoTranslation.photoId, photo.id), spanish))
     .where(and(eq(photoCategory.categoryId, row.id), eq(photo.published, true)))
-    .orderBy(asc(photoCategory.position))
+    .orderBy(asc(photoCategory.position), asc(photo.slug))
 
   // A photograph with no thumbnail cannot be shown in the picker, and the home
   // page could not draw it either. Narrowed here rather than asserted at the call.
