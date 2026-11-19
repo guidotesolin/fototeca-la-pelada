@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server'
 import createIntlMiddleware from 'next-intl/middleware'
 import type { NextRequest } from 'next/server'
 import { clientKey, overLimit } from '@/lib/rate-limit'
-import { defaultLocale, isLocale, locales, splitLocale, switchHref } from '@/i18n/config'
+import {
+  defaultLocale,
+  isLocale,
+  localeHref,
+  locales,
+  splitLocale,
+  switchHref,
+  type Locale,
+} from '@/i18n/config'
 
 /**
  * Two things, and Next allows exactly one `proxy.ts` -- so they are composed here
@@ -186,9 +194,9 @@ function refresh(origin: string): Promise<void> {
  * Plain and self-contained: the page's own chrome is three database reads away,
  * and neither of the two answers that use this is a page of the archive.
  *
- * Spanish in all four languages, which is the 410's own decision from T10 kept
- * rather than revisited: localising it means the message files inside the proxy
- * bundle, for two sentences nobody is meant to read.
+ * In the reader's language (F43), from `PLAIN` below rather than the message
+ * files: those would ride into the proxy bundle, which runs on every public
+ * request, for a dozen sentences nobody is meant to read.
  *
  * Both arguments are escaped even though both call sites pass a literal today.
  * This used to take none -- T14 is what gave it parameters -- and the obvious next
@@ -199,9 +207,66 @@ function refresh(origin: string): Promise<void> {
 const escapeHtml = (text: string): string =>
   text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] as string)
 
-function plainPage(title: string, message: string): string {
+type Plain = { title: string; body: string }
+
+/** Every sentence these pages say, per language. `home` is the link back. */
+const PLAIN: Record<Locale, { home: string; photo: Plain; video: Plain; flood: Plain }> = {
+  es: {
+    home: 'Ir al archivo',
+    photo: { title: 'Fotografía retirada', body: 'Esta fotografía fue retirada del archivo.' },
+    video: { title: 'Entrevista retirada', body: 'Esta entrevista fue retirada del archivo.' },
+    flood: {
+      title: 'Demasiadas búsquedas',
+      body: 'Demasiadas búsquedas seguidas. Probá de nuevo en un minuto.',
+    },
+  },
+  en: {
+    home: 'Go to the archive',
+    photo: {
+      title: 'Photograph withdrawn',
+      body: 'This photograph has been withdrawn from the archive.',
+    },
+    video: {
+      title: 'Interview withdrawn',
+      body: 'This interview has been withdrawn from the archive.',
+    },
+    flood: {
+      title: 'Too many searches',
+      body: 'Too many searches in a row. Please try again in a minute.',
+    },
+  },
+  fr: {
+    home: "Aller à l'archive",
+    photo: {
+      title: 'Photographie retirée',
+      body: "Cette photographie a été retirée de l'archive.",
+    },
+    video: { title: 'Entretien retiré', body: "Cet entretien a été retiré de l'archive." },
+    flood: {
+      title: 'Trop de recherches',
+      body: "Trop de recherches d'affilée. Réessayez dans une minute.",
+    },
+  },
+  it: {
+    home: "Vai all'archivio",
+    photo: {
+      title: 'Fotografia ritirata',
+      body: "Questa fotografia è stata ritirata dall'archivio.",
+    },
+    video: {
+      title: 'Intervista ritirata',
+      body: "Questa intervista è stata ritirata dall'archivio.",
+    },
+    flood: {
+      title: 'Troppe ricerche',
+      body: 'Troppe ricerche di seguito. Riprova tra un minuto.',
+    },
+  },
+}
+
+function plainPage(locale: Locale, { title, body }: Plain): string {
   return `<!doctype html>
-<html lang="es">
+<html lang="${locale}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -219,8 +284,8 @@ function plainPage(title: string, message: string): string {
 </head>
 <body>
 <main>
-  <p>${escapeHtml(message)}</p>
-  <p><a href="/">Ir al archivo</a></p>
+  <p>${escapeHtml(body)}</p>
+  <p><a href="${localeHref(locale, '/')}">${escapeHtml(PLAIN[locale].home)}</a></p>
 </main>
 </body>
 </html>
@@ -228,21 +293,13 @@ function plainPage(title: string, message: string): string {
 }
 
 /**
- * The two kinds of address that can be taken down, and the sentence each one gets.
+ * The two kinds of address that can be taken down, and which sentence each gets.
  * A section is added here and in `listGonePaths`, and nowhere else -- the rest of
  * this function does not care which is which.
  */
 const GONE = [
-  {
-    prefix: '/foto/',
-    title: 'Fotografía retirada',
-    body: 'Esta fotografía fue retirada del archivo.',
-  },
-  {
-    prefix: '/videoteca/',
-    title: 'Entrevista retirada',
-    body: 'Esta entrevista fue retirada del archivo.',
-  },
+  { prefix: '/foto/', copy: 'photo' },
+  { prefix: '/videoteca/', copy: 'video' },
 ] as const
 
 /**
@@ -260,8 +317,8 @@ const GONE = [
  */
 type Gone = (typeof GONE)[number]
 
-function gonePath(pathname: string): (Gone & { path: string }) | null {
-  const { path } = splitLocale(pathname)
+function gonePath(pathname: string): (Gone & { path: string; locale: Locale }) | null {
+  const { locale, path } = splitLocale(pathname)
   const kind = GONE.find((k) => path.startsWith(k.prefix))
   if (!kind) return null
   const raw = path.slice(kind.prefix.length)
@@ -272,7 +329,7 @@ function gonePath(pathname: string): (Gone & { path: string }) | null {
   } catch {
     slug = raw
   }
-  return { ...kind, path: kind.prefix + slug }
+  return { ...kind, locale, path: kind.prefix + slug }
 }
 
 /** The 410 response, or null when this address is not on the takedown list. */
@@ -312,7 +369,7 @@ async function takenDown(request: NextRequest): Promise<NextResponse | null> {
     if (!memo?.paths.has(gone.path)) return null
   }
 
-  return new NextResponse(plainPage(gone.title, gone.body), {
+  return new NextResponse(plainPage(gone.locale, PLAIN[gone.locale][gone.copy]), {
     status: 410,
     headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
   })
@@ -320,25 +377,20 @@ async function takenDown(request: NextRequest): Promise<NextResponse | null> {
 
 /** The 429 for a search flood, or null when this is not one. */
 function searchFlood(request: NextRequest): NextResponse | null {
-  if (splitLocale(request.nextUrl.pathname).path !== '/buscar') return null
+  const { locale, path } = splitLocale(request.nextUrl.pathname)
+  if (path !== '/buscar') return null
   if (!overLimit(`s:${clientKey(request.headers)}`, SEARCH_LIMIT, SEARCH_WINDOW_MS)) return null
 
-  return new NextResponse(
-    plainPage(
-      'Demasiadas búsquedas',
-      'Demasiadas búsquedas seguidas. Probá de nuevo en un minuto.',
-    ),
-    {
-      status: 429,
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-        // Seconds, per RFC 9110. The window is fixed, so this is its length and
-        // not the time left in it -- which errs long, which is the safe way.
-        'retry-after': String(SEARCH_WINDOW_MS / 1000),
-        'cache-control': 'no-store',
-      },
+  return new NextResponse(plainPage(locale, PLAIN[locale].flood), {
+    status: 429,
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      // Seconds, per RFC 9110. The window is fixed, so this is its length and
+      // not the time left in it -- which errs long, which is the safe way.
+      'retry-after': String(SEARCH_WINDOW_MS / 1000),
+      'cache-control': 'no-store',
     },
-  )
+  })
 }
 
 /**

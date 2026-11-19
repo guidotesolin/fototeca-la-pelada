@@ -24,6 +24,7 @@ import {
   photoCategory,
   photoTranslation,
   siteText,
+  video,
 } from '../src/db/schema'
 import { derive } from '../src/lib/images'
 import { keyFor, masterKeyFor } from '../src/lib/photo'
@@ -165,23 +166,30 @@ async function inBatches<T, R>(items: T[], size: number, work: (item: T) => Prom
 }
 
 /**
- * What the task card asks for: counts per category against T1, a sample of hashes
+ * What the task card asks for: the rescued photos still present, a sample of hashes
  * read back out of R2, and a thumbnail on every photo. Re-runnable, reads only.
  */
 async function verify(sections: Section[]) {
-  let bad = 0
+  /**
+   * Counts per section are printed, not asserted: the archive has grown since the
+   * rescue (Drive imports) and photographs move between sections (T17), so a
+   * section matching T1 is no longer the promise. The promise is that nothing
+   * rescued was lost, and that every photograph sits in some section.
+   */
   for (const section of sections) {
     const [row] = await db
       .select({ n: sql<number>`count(*)::int` })
       .from(photoCategory)
       .innerJoin(category, eq(category.id, photoCategory.categoryId))
       .where(eq(category.slug, section.slug))
-    const ok = row.n === section.photos.length
-    if (!ok) bad++
-    console.log(
-      `  ${ok ? 'ok  ' : 'MAL '} ${section.slug.padEnd(16)} ${row.n} / ${section.photos.length}`,
-    )
+    console.log(`  ${section.slug.padEnd(16)} ${row.n} now, ${section.photos.length} rescued`)
   }
+  const [{ n: sectionless }] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(photo)
+    .where(
+      sql`not exists (select 1 from ${photoCategory} where ${photoCategory.photoId} = ${photo.id})`,
+    )
 
   const rows = await db
     .select({
@@ -257,14 +265,25 @@ async function verify(sections: Section[]) {
   // The restoration's two keys count as references from T10 on: a photograph can
   // now carry a second master and a second set of derivatives, and leaving them
   // out of this list would report every restoration in the archive as an orphan.
-  const referenced = rows.flatMap((r) => [r.mk, r.wk, r.rmk, r.rwk].filter(Boolean) as string[])
+  const photoKeys = rows.flatMap((r) => [r.mk, r.wk, r.rmk, r.rwk].filter(Boolean) as string[])
+  // The Videoteca's posters (T16) live in the same bucket, referenced from `video`.
+  const posters = await db.select({ wk: video.webKey, tk: video.thumbKey }).from(video)
+  const referenced = [
+    ...photoKeys,
+    ...(posters.flatMap((v) => [v.wk, v.tk]).filter(Boolean) as string[]),
+  ]
   const stored = await listKeys()
   const orphans = stored.filter((k) => !referenced.some((p) => k === p || k.startsWith(`${p}-`)))
   console.log(`  R2: ${stored.length} objects, ${orphans.length} referenced by no row`)
+  for (const k of orphans) console.log(`    ${k}`)
 
-  const total = sections.reduce((n, s) => n + s.photos.length, 0)
-  assert.equal(rows.length, total, 'every photo in archive.json is in the database')
-  assert.equal(bad, 0, 'every category count matches')
+  const inDb = new Set(rows.map((r) => r.slug))
+  const lost = sections.flatMap((s) => s.photos.map((p) => p.slug)).filter((x) => !inDb.has(x))
+  console.log(
+    `  rescued: ${lost.length} missing from the database, ${sectionless} rows in no section`,
+  )
+  assert.deepEqual(lost, [], 'every photo in archive.json is still in the database')
+  assert.equal(sectionless, 0, 'every photo is in at least one section')
   assert.equal(missingThumb.length + absent.length, 0, 'every photo has a thumbnail in R2')
   assert.equal(dropped.length, 0, 'no hidden photo has lost the renditions it names')
   assert.equal(mismatched, 0, 'every sampled master matches its hash')

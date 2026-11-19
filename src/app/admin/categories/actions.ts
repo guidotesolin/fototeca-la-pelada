@@ -7,6 +7,7 @@ import { SOURCE_LOCALE } from '@/db/queries/gallery'
 import { category, categoryTranslation, photo, photoCategory } from '@/db/schema'
 import { requireAdmin } from '@/lib/auth'
 import { isSectionSlug } from '@/lib/slug'
+import { lockSections } from '../photos/sections'
 import { readTranslations } from '../translations/items'
 import { writeTranslations } from '../translations/save'
 import { Invalid, outcome } from '../write'
@@ -129,26 +130,16 @@ export async function saveCategory(form: FormData) {
      * Absent leaves the column alone. Empty is the "Ninguna" radio, and only that
      * clears it.
      */
+    // Only parsed here: whether the photograph is still a member is checked inside
+    // the transaction, under the section's lock, or a T17 save taking it out of
+    // the section in the same instant could leave the cover outside it (F62).
     let coverPhotoId = row.coverPhotoId
     if (form.has('coverPhotoId')) {
       const raw = form.get('coverPhotoId')
       coverPhotoId = null
       if (typeof raw === 'string' && raw !== '') {
         if (!/^\d{1,9}$/.test(raw)) throw new Invalid('portada')
-        const [found] = await db
-          .select({ id: photo.id })
-          .from(photoCategory)
-          .innerJoin(photo, eq(photo.id, photoCategory.photoId))
-          .where(
-            and(
-              eq(photoCategory.categoryId, row.id),
-              eq(photo.id, Number(raw)),
-              eq(photo.published, true),
-            ),
-          )
-          .limit(1)
-        if (!found) throw new Invalid('portada')
-        coverPhotoId = found.id
+        coverPhotoId = Number(raw)
       }
     }
 
@@ -156,6 +147,22 @@ export async function saveCategory(form: FormData) {
     const translations = readTranslations(form)
 
     await db.transaction(async (tx) => {
+      await lockSections(tx, [row.id])
+      if (coverPhotoId !== null) {
+        const [member] = await tx
+          .select({ id: photo.id })
+          .from(photoCategory)
+          .innerJoin(photo, eq(photo.id, photoCategory.photoId))
+          .where(
+            and(
+              eq(photoCategory.categoryId, row.id),
+              eq(photo.id, coverPhotoId),
+              eq(photo.published, true),
+            ),
+          )
+          .limit(1)
+        if (!member) throw new Invalid('portada')
+      }
       await tx.update(category).set({ coverPhotoId }).where(eq(category.id, row.id))
       await tx
         .insert(categoryTranslation)

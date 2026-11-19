@@ -1,5 +1,5 @@
 import 'server-only'
-import { and, eq, gt, inArray, sql } from 'drizzle-orm'
+import { and, asc, eq, gt, inArray, or, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { category, photoCategory } from '@/db/schema'
 import { Invalid } from '../invalid'
@@ -26,7 +26,50 @@ import { Invalid } from '../invalid'
 /** Both `db` and a transaction satisfy this, without naming Drizzle's internals. */
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
-export async function writeSections(tx: Tx, photoId: number, wanted: string[]): Promise<void> {
+/**
+ * **Every writer of a section's membership, cover or order takes this lock first**
+ * (F61, F62): the Drive import and `writeSections` compute `max(position) + 1`,
+ * `saveOrder` renumbers, and the cover rule is checked from both sides -- each a
+ * read followed by a write, which two administrators can interleave. Locking the
+ * `category` row serialises them per section and leaves the rest of the panel
+ * alone. Always in `id` order, so two writers touching the same pair of sections
+ * cannot deadlock.
+ */
+export async function lockSections(tx: Tx, ids: number[]): Promise<void> {
+  if (ids.length === 0) return
+  await tx
+    .select({ id: category.id })
+    .from(category)
+    .where(inArray(category.id, ids))
+    .orderBy(asc(category.id))
+    .for('update')
+}
+
+/**
+ * Rewrites a section's positions as 1..N in the order they already have, ties
+ * broken by slug the way the public reads break them. After it, repeats and gaps
+ * are gone and no position exceeds the section's size, so the six-digit box on
+ * the reorder screen can never be outgrown. The caller holds `lockSections`.
+ */
+export async function renumberSection(tx: Tx, categoryId: number): Promise<void> {
+  await tx.execute(sql`
+    update photo_category pc set position = r.n
+    from (
+      select pc2.photo_id, row_number() over (order by pc2.position, p.slug)::int as n
+      from photo_category pc2 join photo p on p.id = pc2.photo_id
+      where pc2.category_id = ${categoryId}
+    ) r
+    where pc.category_id = ${categoryId} and pc.photo_id = r.photo_id and pc.position <> r.n
+  `)
+}
+
+export async function writeSections(
+  tx: Tx,
+  photoId: number,
+  wanted: string[],
+  /** The sections the form was drawn with; omitted only by callers with no form. */
+  was?: string[],
+): Promise<void> {
   /**
    * **Nothing ticked is refused and never obeyed.** A photograph in no section is
    * still published and still indexed, and it is reachable from no gallery -- the
@@ -47,6 +90,28 @@ export async function writeSections(tx: Tx, photoId: number, wanted: string[]): 
   // value repeated in the post is neither a mismatch nor a longer `in` list than
   // there are sections.
   const asked = [...new Set(wanted)]
+
+  // Every section this save can touch: the ones ticked and the ones it is in now.
+  const touched = await tx
+    .select({ id: category.id })
+    .from(category)
+    .where(
+      or(
+        inArray(category.slug, asked),
+        inArray(
+          category.id,
+          tx
+            .select({ id: photoCategory.categoryId })
+            .from(photoCategory)
+            .where(eq(photoCategory.photoId, photoId)),
+        ),
+      ),
+    )
+  await lockSections(
+    tx,
+    touched.map((t) => t.id),
+  )
+
   const chosen = await tx
     .select({ id: category.id })
     .from(category)
@@ -56,12 +121,29 @@ export async function writeSections(tx: Tx, photoId: number, wanted: string[]): 
   const current = await tx
     .select({
       id: photoCategory.categoryId,
+      slug: category.slug,
       position: photoCategory.position,
       cover: category.coverPhotoId,
     })
     .from(photoCategory)
     .innerJoin(category, eq(category.id, photoCategory.categoryId))
     .where(eq(photoCategory.photoId, photoId))
+
+  /**
+   * **A form drawn before somebody else's save is refused, not obeyed** (F60).
+   * The ticked set is authoritative, so a tab left open would otherwise undo
+   * whatever another administrator added or removed since, under an `ok` message.
+   * Compared here, after `lockSections`, so the check and the write see the same
+   * rows.
+   */
+  if (was) {
+    const drawn = [...new Set(was)].sort().join()
+    const now = current
+      .map((c) => c.slug)
+      .sort()
+      .join()
+    if (drawn !== now) throw new Invalid('secciones-cambiaron')
+  }
 
   const keep = new Set(chosen.map((c) => c.id))
   const remove = current.filter((c) => !keep.has(c.id))
@@ -86,9 +168,8 @@ export async function writeSections(tx: Tx, photoId: number, wanted: string[]): 
      * so a gap in the middle is a column of numbers that stops saying what it
      * means, and the next photograph out leaves another.
      *
-     * Every section is dense 1..N **today**, which is a fact about the archive and
-     * not an invariant -- `saveOrder` accepts any number in the box, repeats
-     * included. This does not depend on it: subtracting one from everything
+     * `saveOrder` renumbers to 1..N on every save, so dense is the normal state,
+     * but this does not depend on it: subtracting one from everything
      * strictly above the departure preserves the order of whatever numbering it
      * finds, and dense is what it keeps when dense is what it was given.
      */

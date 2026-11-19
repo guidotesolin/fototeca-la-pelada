@@ -105,7 +105,7 @@ async function main() {
   // its client the moment it loads, and the static import would be hoisted above
   // `loadEnvFile` above. The same reason `search:smoke` defers its own import.
   const { writeTranslations } = await import('../src/app/admin/translations/save')
-  const { writeSections } = await import('../src/app/admin/photos/sections')
+  const { renumberSection, writeSections } = await import('../src/app/admin/photos/sections')
 
   // Before anything is deleted, including by `clean()` itself.
   const [existing] = await db
@@ -445,6 +445,27 @@ async function main() {
     await setSections(ph.id, [CATEGORY_B])
     assert.deepEqual(await sectionsOf(ph.id), unchanged, 'saving an unchanged set changes nothing')
     assert.deepEqual(await positionsIn(cat.id), [3, 19], 'and leaves the other sections alone')
+    checks += 2
+
+    // A form drawn before somebody else's save is refused (F60): this one still
+    // believes the photograph is in the first section, which it left above.
+    await assert.rejects(
+      () => db.transaction((tx) => writeSections(tx as never, ph.id, [CATEGORY], [CATEGORY])),
+      (error: Error) => error instanceof Invalid && error.message === 'secciones-cambiaron',
+      'a stale sections form must be refused',
+    )
+    await db.transaction((tx) => writeSections(tx as never, ph.id, [CATEGORY_B], [CATEGORY_B]))
+    assert.deepEqual(await sectionsOf(ph.id), unchanged, 'and a current one goes through')
+    checks += 2
+
+    // `saveOrder` renumbers after every save (F61): gaps close, and a repeat --
+    // which the box accepts -- resolves by slug, the way the public reads do.
+    await db.transaction((tx) => renumberSection(tx as never, cat.id))
+    assert.deepEqual(await positionsIn(cat.id), [1, 2], 'a renumber closes the gaps')
+    await at(neighbours[0].id, 999999)
+    await at(neighbours[1].id, 999999)
+    await db.transaction((tx) => renumberSection(tx as never, cat.id))
+    assert.deepEqual(await positionsIn(cat.id), [1, 2], 'and resolves repeats, however large')
     checks += 2
 
     // --- the takedown flow leans on these cascades ---

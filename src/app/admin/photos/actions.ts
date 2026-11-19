@@ -19,7 +19,7 @@ import { getBytes, newPrefix, put } from '@/lib/r2'
 import { readTranslations } from '../translations/items'
 import { writeTranslations } from '../translations/save'
 import { Invalid, outcome } from '../write'
-import { writeSections } from './sections'
+import { lockSections, renumberSection, writeSections } from './sections'
 
 /**
  * Every write the photo screens make. Two rules hold across all of them:
@@ -411,7 +411,11 @@ export async function saveSections(form: FormData) {
       if (typeof value !== 'string') throw new Invalid('seccion-no-existe')
       return value
     })
-    await db.transaction((tx) => writeSections(tx, row.id, wanted))
+    const was = form.getAll('was').map((value) => {
+      if (typeof value !== 'string') throw new Invalid('seccion-no-existe')
+      return value
+    })
+    await db.transaction((tx) => writeSections(tx, row.id, wanted, was))
   })
   redirect(`/admin/photos/${slug}?${result}`)
 }
@@ -451,12 +455,17 @@ export async function saveOrder(form: FormData) {
       return sql`(${Number(id)}::int, ${Number(position)}::int)`
     })
 
-    await db.execute(sql`
-      update photo_category set position = v.position
-      from (values ${sql.join(pairs, sql`, `)}) as v(photo_id, position)
-      where photo_category.photo_id = v.photo_id
-        and photo_category.category_id = ${found.id}
-    `)
+    await db.transaction(async (tx) => {
+      await lockSections(tx, [found.id])
+      await tx.execute(sql`
+        update photo_category set position = v.position
+        from (values ${sql.join(pairs, sql`, `)}) as v(photo_id, position)
+        where photo_category.photo_id = v.photo_id
+          and photo_category.category_id = ${found.id}
+      `)
+      // Whatever was typed -- repeats, gaps, 999999 -- leaves as 1..N (F61).
+      await renumberSection(tx, found.id)
+    })
   })
   redirect(`${back}&${result}`)
 }
