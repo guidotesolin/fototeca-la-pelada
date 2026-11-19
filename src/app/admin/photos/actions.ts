@@ -411,7 +411,11 @@ export async function saveSections(form: FormData) {
       if (typeof value !== 'string') throw new Invalid('seccion-no-existe')
       return value
     })
-    await db.transaction((tx) => writeSections(tx, row.id, wanted))
+    const was = form.getAll('was').map((value) => {
+      if (typeof value !== 'string') throw new Invalid('seccion-no-existe')
+      return value
+    })
+    await db.transaction((tx) => writeSections(tx, row.id, wanted, was))
   })
   redirect(`/admin/photos/${slug}?${result}`)
 }

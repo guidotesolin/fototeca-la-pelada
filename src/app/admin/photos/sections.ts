@@ -63,7 +63,13 @@ export async function renumberSection(tx: Tx, categoryId: number): Promise<void>
   `)
 }
 
-export async function writeSections(tx: Tx, photoId: number, wanted: string[]): Promise<void> {
+export async function writeSections(
+  tx: Tx,
+  photoId: number,
+  wanted: string[],
+  /** The sections the form was drawn with; omitted only by callers with no form. */
+  was?: string[],
+): Promise<void> {
   /**
    * **Nothing ticked is refused and never obeyed.** A photograph in no section is
    * still published and still indexed, and it is reachable from no gallery -- the
@@ -115,12 +121,29 @@ export async function writeSections(tx: Tx, photoId: number, wanted: string[]): 
   const current = await tx
     .select({
       id: photoCategory.categoryId,
+      slug: category.slug,
       position: photoCategory.position,
       cover: category.coverPhotoId,
     })
     .from(photoCategory)
     .innerJoin(category, eq(category.id, photoCategory.categoryId))
     .where(eq(photoCategory.photoId, photoId))
+
+  /**
+   * **A form drawn before somebody else's save is refused, not obeyed** (F60).
+   * The ticked set is authoritative, so a tab left open would otherwise undo
+   * whatever another administrator added or removed since, under an `ok` message.
+   * Compared here, after `lockSections`, so the check and the write see the same
+   * rows.
+   */
+  if (was) {
+    const drawn = [...new Set(was)].sort().join()
+    const now = current
+      .map((c) => c.slug)
+      .sort()
+      .join()
+    if (drawn !== now) throw new Invalid('secciones-cambiaron')
+  }
 
   const keep = new Set(chosen.map((c) => c.id))
   const remove = current.filter((c) => !keep.has(c.id))

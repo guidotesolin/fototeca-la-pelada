@@ -470,6 +470,11 @@ export default async function EditPhoto(props: PageProps<'/admin/photos/[slug]'>
         )}
         <form action={saveSections} className="mt-5">
           <input type="hidden" name="slug" value={photo.slug} />
+          {/* What this screen was drawn with, so a save made over somebody
+              else's is refused rather than silently undoing it (F60). */}
+          {photo.sections.map((s) => (
+            <input key={s.slug} type="hidden" name="was" value={s.slug} />
+          ))}
           <div className="grid gap-1 sm:grid-cols-2">
             {categories.map((section) => (
               /* The name in the archive's own type and not in `.t-label`'s mono:

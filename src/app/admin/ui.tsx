@@ -112,6 +112,8 @@ export const FAILED: Record<string, string> = {
   // card on the home page showing a photograph that is no longer there.
   'sin-seccion':
     'Una fotografía tiene que estar en al menos una sección: si no, queda publicada pero no se llega a ella desde ninguna galería. Dejá tildada por lo menos una.',
+  'secciones-cambiaron':
+    'Alguien cambió las secciones de esta fotografía mientras tenías la pantalla abierta, así que no guardamos nada. Fijate cómo quedaron y volvé a marcar las que quieras.',
   'portada-en-uso':
     'No se puede sacar de una sección a la fotografía que es su portada: la portada del sitio quedaría mostrando una fotografía que ya no está en esa sección. Elegí otra portada en Secciones → esa sección, y después sacala.',
 
