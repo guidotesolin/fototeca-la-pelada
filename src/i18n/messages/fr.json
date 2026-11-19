@@ -76,6 +76,7 @@
     "section": "Section",
     "sections": "Sections",
     "identifier": "Identifiant",
+    "share": "Partager",
     "home": "Accueil",
     "photographsOf": "Photographies de {section}",
     "position": "{index} sur {total}",

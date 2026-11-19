@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import type { Metadata } from 'next'
+import { NetworkIcon } from '@/components/network-icon'
 import { PhotoImage } from '@/components/photo-image'
 import {
   PER_PAGE,
@@ -12,6 +13,7 @@ import {
   listSections,
 } from '@/db/queries/gallery'
 import { keyFor, publicUrl } from '@/lib/photo'
+import { SITE_URL } from '@/lib/url'
 import { alternatesFor, defaultLocale, isLocale, localeHref, type Locale } from '@/i18n/config'
 import { photoImageLabels } from '@/i18n/labels'
 
@@ -210,6 +212,17 @@ export default async function PhotoPage(props: PageProps<'/[locale]/foto/[slug]'
    */
   const column = Math.max(width, MIN_COLUMN)
 
+  const url = new URL(localeHref(locale, `/foto/${slug}`), SITE_URL).href
+  const text = `${photo.caption ? shorten(photo.caption, 70) : t('untitled', { slug })} — Fototeca La Pelada`
+  const share = [
+    ['Facebook', `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`],
+    [
+      'X',
+      `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+    ],
+    ['WhatsApp', `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`],
+  ]
+
   /**
    * The restored copy is fetched only if it is asked for, so it is never eager.
    * It also carries **its own** width and height: it is derived from its own
@@ -343,12 +356,32 @@ export default async function PhotoPage(props: PageProps<'/[locale]/foto/[slug]'
             does not change when the panel moves it between sections -- or when the
             reader changes language. */}
         <Row label={t('identifier')}>{photo.slug}</Row>
+        {/* Plain links to each network's own share page: no script, no SDK, and the
+            preview card comes from the Open Graph metadata above. Facebook ignores
+            any text it is handed, so only X and WhatsApp get one. */}
+        <Row label={t('share')}>
+          <span className="divide-rule flex divide-x">
+            {share.map(([name, href]) => (
+              <a
+                key={name}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={name}
+                title={name}
+                className="text-accent hover:text-text focus-visible:outline-focus inline-flex items-center px-4 py-1 first:pl-0 focus-visible:outline-2 focus-visible:outline-offset-2"
+              >
+                <NetworkIcon name={name} />
+              </a>
+            ))}
+          </span>
+        </Row>
       </dl>
 
       {section && at >= 0 && (
         <nav
           aria-label={t('photographsOf', { section: section.name })}
-          className="border-rule mt-14 flex items-baseline justify-between gap-4 border-t pt-6"
+          className="mt-6 flex items-baseline justify-between gap-4"
         >
           <span className="grow basis-0">
             {previous && (
