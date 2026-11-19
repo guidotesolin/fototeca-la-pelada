@@ -143,10 +143,7 @@ async function seedSiteText(sections: Section[]) {
     ],
     // The accounts the old home page linked behind its three icons. Addresses, not
     // labels: which networks the archive is on is theirs to change.
-    [
-      'facebook_url',
-      'https://www.facebook.com/profile.php?id=61581798111586&sk=about&locale=es_LA',
-    ],
+    ['facebook_url', 'https://www.facebook.com/profile.php?id=61581798111586'],
     ['instagram_url', 'https://www.instagram.com/fototeca.lp'],
     ['youtube_url', 'https://www.youtube.com/channel/UCUJO9JPbwXfiP-GoSOwySjQ'],
   ].filter(([, value]) => value)

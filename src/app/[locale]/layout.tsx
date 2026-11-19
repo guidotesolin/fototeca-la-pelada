@@ -8,6 +8,7 @@ import { SITE_URL, externalUrl } from '@/lib/url'
 import { Document, THEME_COLOR } from '@/components/document'
 import { MenuDismiss } from '@/components/menu-dismiss'
 import { SensitiveSwitch } from '@/components/sensitive-switch'
+import { NetworkIcon } from '@/components/network-icon'
 import { LOCALE_LABELS, isLocale, localeHref, locales } from '@/i18n/config'
 import logo from '@/brand/header-logo.webp'
 import type { Locale } from '@/i18n/config'
@@ -109,62 +110,6 @@ export async function generateMetadata(props: LayoutProps<'/[locale]'>): Promise
         : undefined,
     },
   }
-}
-
-/**
- * The three marks, drawn from primitives instead of pasted brand paths. This design
- * is built from hairlines -- the mount's inner rule, the search field's underline,
- * the plate's top border -- so a stroked glyph belongs where a solid logo would sit
- * as a foreign object. They carry no colour of their own: `currentColor` means the
- * footer's accent, its hover and its focus ring all reach them for free.
- *
- * 20px at stroke 2.1, and not the 17px the label is set at: rasterised at the real
- * size, a thinner stroke lands between pixels and antialiases down to a dim brown --
- * the f stops being legible and Instagram's dot disappears on a 1x screen. Checked
- * by rendering the sizes against the strokes rather than by eye at display scale.
- */
-function NetworkIcon({ name }: { name: string }) {
-  const shape = {
-    Facebook: (
-      <>
-        <circle cx="12" cy="12" r="9.25" />
-        <path d="M15.1 8.1h-2.05c-1.1 0-1.8.78-1.8 1.92V21.2" />
-        <path d="M9.2 13.45h5.3" />
-      </>
-    ),
-    Instagram: (
-      <>
-        <rect x="3.4" y="3.4" width="17.2" height="17.2" rx="5" />
-        <circle cx="12" cy="12" r="4.15" />
-        <circle cx="17.05" cy="6.95" r="1.15" fill="currentColor" stroke="none" />
-      </>
-    ),
-    YouTube: (
-      <>
-        <rect x="2.4" y="5.7" width="19.2" height="12.6" rx="3.6" />
-        <path d="M10.55 9.4 15.85 12l-5.3 2.6Z" fill="currentColor" stroke="none" />
-      </>
-    ),
-  }[name]
-
-  if (!shape) return null
-
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.1}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-      className="shrink-0"
-    >
-      {shape}
-    </svg>
-  )
 }
 
 export default async function PublicLayout({ children, params }: LayoutProps<'/[locale]'>) {
